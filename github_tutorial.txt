@@ -1,0 +1,301 @@
+================================================================================
+                    GITHUB TUTORIAL FOR BEGINNERS
+                    MySavvyGranny Project
+================================================================================
+
+Hi! This guide will teach you everything you need to know about Git and GitHub
+so you can collaborate with your team on this project. Don't worry if you've
+never used it before - we'll go step by step!
+
+================================================================================
+PART 1: WHAT IS GIT AND GITHUB?
+================================================================================
+
+GIT:
+- Git is a "version control system" - think of it like a time machine for your code
+- It tracks every change you make to your files
+- If you mess something up, you can go back to a previous version
+- It's installed on your computer
+
+GITHUB:
+- GitHub is a website that stores your Git repositories online (in the "cloud")
+- It allows multiple people to work on the same project together
+- Think of it like Google Drive, but specifically designed for code
+
+WHY USE THEM?
+- You can all work on different parts of the project at the same time
+- No more emailing ZIP files back and forth!
+- You can see who changed what and when
+- If someone's code breaks something, you can easily undo it
+
+================================================================================
+PART 2: INITIAL SETUP (ONE-TIME ONLY)
+================================================================================
+
+STEP 1: INSTALL GIT
+--------------------
+1. Go to: https://git-scm.com/downloads
+2. Download Git for Windows
+3. Run the installer (just click Next on all options, defaults are fine)
+4. Restart your computer
+
+STEP 2: CREATE A GITHUB ACCOUNT
+-------------------------------
+1. Go to: https://github.com
+2. Click "Sign Up"
+3. Use your personal email (not school email - you'll want this after you graduate!)
+4. Choose a professional username (like your name)
+5. Verify your email
+
+STEP 3: CONFIGURE GIT ON YOUR COMPUTER
+--------------------------------------
+Open PowerShell or Command Prompt and type these commands (replace with YOUR info):
+
+    git config --global user.name "Your Name"
+    git config --global user.email "your-email@example.com"
+
+================================================================================
+PART 3: SETTING UP YOUR PROJECT REPOSITORY
+================================================================================
+
+METHOD A - IF YOU ARE THE TEAM LEADER (Creating the repository):
+----------------------------------------------------------------
+
+1. Open PowerShell and navigate to your project folder:
+   
+   cd "c:\School-Study\Semester 2\Web Development Project\Project\MySavvyGranny"
+
+2. Initialize Git in your project:
+   
+   git init
+
+3. Add all your files to Git:
+   
+   git add .
+
+4. Create your first "commit" (save point):
+   
+   git commit -m "Initial project setup with Flask scaffolding"
+
+5. Go to GitHub.com and create a new repository:
+   - Click the "+" icon in the top right corner
+   - Click "New repository"
+   - Repository name: MySavvyGranny
+   - Description: Intergenerational connection platform
+   - Keep it PUBLIC (so teammates can access)
+   - DON'T check "Add a README file" (we already have one)
+   - Click "Create repository"
+
+6. Connect your local project to GitHub (replace YOUR_USERNAME):
+   
+   git remote add origin https://github.com/YOUR_USERNAME/MySavvyGranny.git
+   git branch -M main
+   git push -u origin main
+
+7. You'll be asked to sign in - use your GitHub credentials
+
+8. Share the repository URL with your teammates!
+
+METHOD B - IF YOU ARE A TEAM MEMBER (Joining an existing repository):
+---------------------------------------------------------------------
+
+1. Get the repository URL from your team leader (looks like: https://github.com/username/MySavvyGranny.git)
+
+2. Open PowerShell and navigate to where you want the project:
+   
+   cd "c:\School-Study\Semester 2\Web Development Project\Project"
+
+3. Clone (download) the repository:
+   
+   git clone https://github.com/TEAM_LEADER_USERNAME/MySavvyGranny.git
+
+4. Enter the project folder:
+   
+   cd MySavvyGranny
+
+================================================================================
+PART 4: DAILY WORKFLOW (THE IMPORTANT PART!)
+================================================================================
+
+Every time you work on the project, follow this routine:
+
+BEFORE YOU START WORKING:
+-------------------------
+1. Open PowerShell, go to project folder:
+   
+   cd "c:\School-Study\Semester 2\Web Development Project\Project\MySavvyGranny"
+
+2. Get the latest changes from your teammates:
+   
+   git pull
+
+WHILE YOU WORK:
+---------------
+Just edit your files normally! Git tracks changes automatically.
+
+AFTER YOU'RE DONE WORKING:
+--------------------------
+1. See what files you changed:
+   
+   git status
+
+2. Add your changes:
+   
+   git add .
+
+3. Create a commit (save point) with a message describing what you did:
+   
+   git commit -m "Added login form validation"
+
+4. Push (upload) your changes to GitHub:
+   
+   git push
+
+================================================================================
+PART 5: COMMON SCENARIOS
+================================================================================
+
+SCENARIO: "I want to undo my changes before committing"
+--------------------------------------------------------
+To undo changes to a specific file:
+   
+   git checkout -- filename.html
+
+To undo ALL uncommitted changes:
+   
+   git checkout -- .
+
+SCENARIO: "Git says there's a conflict!"
+-----------------------------------------
+This happens when two people edited the same part of a file:
+
+1. Open the file with the conflict
+2. Look for these markers:
+   <<<<<<< HEAD
+   (your changes here)
+   =======
+   (teammate's changes here)
+   >>>>>>> 
+
+3. Manually edit the file to combine both changes properly
+4. Delete the conflict markers (<<<<<<<, =======, >>>>>>>)
+5. Save the file
+6. Run:
+   git add .
+   git commit -m "Resolved merge conflict"
+   git push
+
+SCENARIO: "I need to see what my teammate changed"
+--------------------------------------------------
+   git log --oneline -10
+
+This shows the last 10 commits with short descriptions.
+
+SCENARIO: "I want to see the difference in a file"
+--------------------------------------------------
+   git diff filename.py
+
+================================================================================
+PART 6: BEST PRACTICES FOR YOUR TEAM
+================================================================================
+
+1. PULL BEFORE YOU PUSH
+   Always run "git pull" before you start working to get everyone's latest changes
+
+2. COMMIT OFTEN WITH CLEAR MESSAGES
+   Bad:  git commit -m "fixed stuff"
+   Good: git commit -m "Added email validation to registration form"
+
+3. COMMUNICATE WITH YOUR TEAM
+   - Tell teammates before you start working on a shared file
+   - Use a WhatsApp/Telegram group to coordinate
+
+4. WORK ON YOUR OWN FILES
+   - Each team member should focus on their assigned feature templates
+   - This minimizes conflicts!
+
+5. DON'T COMMIT BROKEN CODE
+   - Test your changes before committing
+   - Make sure the app still runs: py app.py
+
+================================================================================
+PART 7: YOUR ASSIGNED FILES (BASED ON PRD)
+================================================================================
+
+Make sure each team member only edits their assigned templates:
+
+BRANDON - Activity Suite:
+   templates/activities/activity_list.html
+   templates/activities/tiktok_challenge.html
+   templates/activities/puzzle_challenge.html
+   templates/activities/photo_streak.html
+   routes/activities.py
+   models/activity.py
+
+ZONGRONG - Profile & Community:
+   templates/profile/view_profile.html
+   templates/profile/edit_profile.html
+   templates/profile/settings.html
+   templates/community/communities.html
+   templates/community/community_detail.html
+   templates/community/ask_grandfriend.html
+   routes/profile.py
+   routes/community.py
+   models/profile.py
+   models/community.py
+
+CASSIUS - Messaging & Slice of Life:
+   templates/messaging/inbox.html
+   templates/messaging/conversation.html
+   templates/messaging/boomerang.html
+   templates/slice_of_life/prompt.html
+   templates/slice_of_life/create_display.html
+   templates/slice_of_life/catalog.html
+   routes/messaging.py
+   models/message.py
+   models/slice_of_life.py
+
+AKIL - Skills Marketplace:
+   templates/skills/skill_library.html
+   templates/skills/skill_assignment.html
+   templates/skills/skill_match.html
+   routes/skills.py
+   models/skill.py
+
+SHARED FILES (COORDINATE BEFORE EDITING):
+   templates/base.html
+   templates/index.html
+   static/css/style.css
+   app.py
+   database/schema.sql
+
+================================================================================
+PART 8: QUICK REFERENCE CARD
+================================================================================
+
++------------------------+--------------------------------------------------+
+| Command                | What it does                                     |
++------------------------+--------------------------------------------------+
+| git status             | See what files have changed                      |
+| git add .              | Stage all changes for commit                     |
+| git commit -m "msg"    | Save changes with a message                      |
+| git push               | Upload changes to GitHub                         |
+| git pull               | Download latest changes from GitHub              |
+| git log --oneline -5   | Show last 5 commits                              |
+| git diff filename      | Show changes in a specific file                  |
+| git checkout -- file   | Undo changes to a file (before commit)           |
++------------------------+--------------------------------------------------+
+
+================================================================================
+PART 9: GETTING HELP
+================================================================================
+
+If you get stuck:
+1. Google the error message (seriously, this works 90% of the time!)
+2. Ask your teammates
+3. Check GitHub Docs: https://docs.github.com/en/get-started
+4. Watch YouTube tutorials: Search "Git and GitHub for Beginners"
+
+================================================================================
+                           GOOD LUCK WITH YOUR PROJECT!
+================================================================================

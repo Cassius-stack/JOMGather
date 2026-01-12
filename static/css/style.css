@@ -1,0 +1,510 @@
+/* MySavvyGranny Custom Styles - Based on Figma Design */
+
+/* Color Variables */
+:root {
+    --primary-blue: #3B5BDB;
+    --primary-dark: #2B4ACB;
+    --gradient-start: #4263EB;
+    --gradient-end: #3B5BDB;
+    --light-blue-bg: #E8F4FC;
+    --card-blue: #4263EB;
+    --text-dark: #1A1A2E;
+    --text-muted: #6B7280;
+    --white: #FFFFFF;
+    --success-green: #10B981;
+    --warning-orange: #F59E0B;
+}
+
+/* General Body */
+body {
+    font-family: 'Segoe UI', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background-color: var(--light-blue-bg);
+    color: var(--text-dark);
+}
+
+/* Top Navigation */
+.navbar-custom {
+    background: var(--white);
+    padding: 0.5rem 2rem;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.navbar-brand-custom {
+    font-weight: 700;
+    font-size: 1.3rem;
+    color: var(--primary-blue) !important;
+}
+
+.nav-pills-custom .nav-link {
+    color: var(--text-dark);
+    border-radius: 25px;
+    padding: 0.5rem 1.5rem;
+    font-weight: 500;
+    margin: 0 0.25rem;
+}
+
+.nav-pills-custom .nav-link.active {
+    background: var(--primary-blue);
+    color: var(--white);
+}
+
+.nav-pills-custom .nav-link:hover:not(.active) {
+    background: var(--light-blue-bg);
+}
+
+/* Hero Section */
+.hero-gradient {
+    background: linear-gradient(135deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
+    border-radius: 0 0 30px 30px;
+    padding: 3rem 2rem 2rem;
+    color: var(--white);
+}
+
+.hero-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.hero-subtitle {
+    opacity: 0.9;
+    font-size: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.btn-explore {
+    background: var(--white);
+    color: var(--primary-blue);
+    border-radius: 25px;
+    padding: 0.75rem 2rem;
+    font-weight: 600;
+    border: none;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.btn-explore:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+    color: var(--primary-dark);
+}
+
+/* Search Bar */
+.search-container {
+    background: var(--white);
+    border-radius: 30px;
+    padding: 0.5rem 1rem;
+    display: flex;
+    align-items: center;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    margin-top: -1.5rem;
+    margin-bottom: 2rem;
+}
+
+.search-input {
+    border: none;
+    outline: none;
+    flex: 1;
+    padding: 0.5rem;
+    font-size: 0.95rem;
+}
+
+.points-badge {
+    background: linear-gradient(135deg, #FFD700, #FFA500);
+    color: var(--text-dark);
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+/* Friends Section */
+.section-title {
+    font-weight: 600;
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.section-title .see-all {
+    color: var(--primary-blue);
+    font-size: 0.9rem;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.friends-list {
+    display: flex;
+    gap: 1rem;
+    overflow-x: auto;
+    padding-bottom: 0.5rem;
+}
+
+.friend-avatar {
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.friend-avatar img {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid var(--white);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.friend-avatar .add-friend {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: var(--white);
+    border: 2px dashed var(--primary-blue);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: var(--primary-blue);
+    cursor: pointer;
+}
+
+.friend-name {
+    font-size: 0.8rem;
+    margin-top: 0.5rem;
+    color: var(--text-muted);
+}
+
+.online-indicator {
+    width: 12px;
+    height: 12px;
+    background: var(--success-green);
+    border-radius: 50%;
+    border: 2px solid var(--white);
+    position: absolute;
+    bottom: 5px;
+    right: 5px;
+}
+
+/* Activity Cards */
+.activity-card {
+    border-radius: 20px;
+    overflow: hidden;
+    transition: transform 0.3s, box-shadow 0.3s;
+    cursor: pointer;
+    border: none;
+}
+
+.activity-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+}
+
+/* Slice of Life Card - Featured */
+.slice-of-life-card {
+    background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 50%, #3b7ab8 100%);
+    color: var(--white);
+    padding: 1.5rem;
+    min-height: 200px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.slice-of-life-card .daily-prompt {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    opacity: 0.8;
+    margin-bottom: 0.5rem;
+}
+
+.slice-of-life-card .prompt-text {
+    font-size: 1.4rem;
+    font-weight: 600;
+    line-height: 1.3;
+    margin-bottom: 1rem;
+}
+
+.slice-of-life-card .card-footer-custom {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.slice-of-life-card .card-title-label {
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.participant-avatars {
+    display: flex;
+}
+
+.participant-avatars img {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    border: 2px solid var(--white);
+    margin-left: -10px;
+}
+
+.participant-avatars img:first-child {
+    margin-left: 0;
+}
+
+/* Small Activity Cards */
+.small-activity-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: var(--white);
+    padding: 1.25rem;
+    border-radius: 15px;
+    min-height: 80px;
+}
+
+.small-activity-card.skills {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.small-activity-card.cyber {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.small-activity-card .card-title {
+    font-weight: 600;
+    font-size: 1rem;
+    margin: 0;
+}
+
+.small-activity-card .card-icon {
+    font-size: 1.5rem;
+    opacity: 0.9;
+}
+
+/* Boomerang Card */
+.boomerang-card {
+    background: linear-gradient(135deg, #e0e5ec 0%, #f5f7fa 100%);
+    border-radius: 20px;
+    padding: 1.5rem;
+    color: var(--text-dark);
+}
+
+.boomerang-card h5 {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.boomerang-card p {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+/* Recently Played Section */
+.recently-played-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: var(--white);
+    padding: 1.25rem;
+    border-radius: 15px;
+    min-height: 100px;
+}
+
+.recently-played-card.jukebox {
+    background: linear-gradient(135deg, #3B5BDB 0%, #5B7BFB 100%);
+}
+
+.recently-played-card.ask {
+    background: linear-gradient(135deg, #FFD93D 0%, #F6D365 100%);
+    color: var(--text-dark);
+}
+
+/* People You May Know */
+.person-card {
+    background: var(--white);
+    border-radius: 15px;
+    padding: 1.25rem;
+    text-align: center;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s;
+}
+
+.person-card:hover {
+    transform: translateY(-3px);
+}
+
+.person-card img {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-bottom: 0.75rem;
+}
+
+.person-card .name {
+    font-weight: 600;
+    font-size: 0.95rem;
+    margin-bottom: 0.25rem;
+}
+
+.person-card .role {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    margin-bottom: 0.75rem;
+}
+
+.btn-connect {
+    background: transparent;
+    border: 2px solid var(--primary-blue);
+    color: var(--primary-blue);
+    border-radius: 20px;
+    padding: 0.4rem 1.5rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.btn-connect:hover {
+    background: var(--primary-blue);
+    color: var(--white);
+}
+
+.btn-connect.connected {
+    background: var(--primary-blue);
+    color: var(--white);
+}
+
+/* Footer */
+.footer-custom {
+    background: var(--white);
+    padding: 1.5rem;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    margin-top: 3rem;
+}
+
+/* Slice of Life Feature Pages */
+.sol-prompt-container {
+    background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 50%, #3b7ab8 100%);
+    border-radius: 25px;
+    padding: 2rem;
+    color: var(--white);
+    min-height: 300px;
+}
+
+.sol-prompt-image {
+    width: 100%;
+    max-height: 200px;
+    object-fit: cover;
+    border-radius: 15px;
+    margin-bottom: 1.5rem;
+}
+
+.sol-story-input {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 15px;
+    padding: 1rem;
+    color: var(--white);
+    resize: none;
+    min-height: 150px;
+}
+
+.sol-story-input::placeholder {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.sol-story-input:focus {
+    outline: none;
+    border-color: rgba(255, 255, 255, 0.6);
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.display-card {
+    background: var(--white);
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    margin-bottom: 1.5rem;
+}
+
+.display-card .prompt-image {
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+}
+
+.display-card .stories {
+    padding: 1.5rem;
+}
+
+.display-card .story-section {
+    padding: 1rem;
+    border-radius: 10px;
+    margin-bottom: 1rem;
+}
+
+.display-card .youth-story {
+    background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%);
+}
+
+.display-card .senior-story {
+    background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+}
+
+.display-card .story-author {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.display-card .story-author img {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+}
+
+.display-card .story-author span {
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.display-card .story-text {
+    font-size: 0.95rem;
+    color: var(--text-dark);
+    line-height: 1.5;
+}
+
+.display-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 1.5rem 1.5rem;
+}
+
+.like-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.like-btn:hover,
+.like-btn.liked {
+    color: #e74c3c;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .hero-title {
+        font-size: 1.8rem;
+    }
+
+    .slice-of-life-card .prompt-text {
+        font-size: 1.1rem;
+    }
+}

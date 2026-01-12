@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+
+{% block title %}JomGather - Connect & Share{% endblock %}
+
+{% block content %}
+<!-- Hero Section with Gradient -->
+<div class="hero-gradient">
+    <div class="container">
+        <h1 class="hero-title">Connect & Share</h1>
+        <p class="hero-subtitle">Join a community where every generation has a story to tell. Start sharing your slice
+            of life today.</p>
+        <a href="{{ url_for('activities.activity_list') }}" class="btn btn-explore">
+            Explore Activities
+        </a>
+    </div>
+</div>
+
+<div class="container">
+    <!-- Search Bar -->
+    <div class="search-container mx-auto" style="max-width: 600px;">
+        <i class="bi bi-search text-muted me-2"></i>
+        <input type="text" class="search-input" placeholder="Search for activities, friends...">
+        <div class="points-badge">
+            <i class="bi bi-coin me-1"></i> 5,000
+        </div>
+    </div>
+
+    <!-- Friends Section -->
+    <div class="mb-4">
+        <div class="section-title">
+            <span>Friends (3 Online)</span>
+            <a href="#" class="see-all">See All</a>
+        </div>
+        <div class="friends-list">
+            <div class="friend-avatar">
+                <div class="add-friend">
+                    <i class="bi bi-plus"></i>
+                </div>
+                <p class="friend-name">Add</p>
+            </div>
+            <div class="friend-avatar position-relative">
+                <img src="https://i.pravatar.cc/60?img=1" alt="Aunt May">
+                <span class="online-indicator"></span>
+                <p class="friend-name">Aunt May</p>
+            </div>
+            <div class="friend-avatar position-relative">
+                <img src="https://i.pravatar.cc/60?img=3" alt="Uncle Ben">
+                <span class="online-indicator"></span>
+                <p class="friend-name">Uncle Ben</p>
+            </div>
+            <div class="friend-avatar">
+                <img src="https://i.pravatar.cc/60?img=5" alt="Grandpa...">
+                <p class="friend-name">Grandpa...</p>
+            </div>
+            <div class="friend-avatar position-relative">
+                <img src="https://i.pravatar.cc/60?img=7" alt="Sarah">
+                <span class="online-indicator"></span>
+                <p class="friend-name">Sarah</p>
+            </div>
+            <div class="friend-avatar">
+                <img src="https://i.pravatar.cc/60?img=9" alt="Marcus Lee">
+                <p class="friend-name">Marcus Lee</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Activities Section -->
+    <div class="section-title mb-3">
+        <span>Top Activities</span>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <!-- Slice of Life - Large Featured Card -->
+        <div class="col-md-6">
+            <a href="{{ url_for('slice_of_life.prompt') }}" class="text-decoration-none">
+                <div class="activity-card slice-of-life-card">
+                    <div>
+                        <p class="daily-prompt">Daily Prompt</p>
+                        <p class="prompt-text">"What is your favourite thing to do after school/work?"</p>
+                    </div>
+                    <div class="card-footer-custom">
+                        <span class="card-title-label">Slice of Life</span>
+                        <div class="participant-avatars">
+                            <img src="https://i.pravatar.cc/35?img=11" alt="Participant">
+                            <img src="https://i.pravatar.cc/35?img=15" alt="Participant">
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <!-- Right Column - Smaller Cards -->
+        <div class="col-md-6">
+            <div class="row g-3">
+                <div class="col-12">
+                    <a href="{{ url_for('skills.skill_library') }}" class="text-decoration-none">
+                        <div
+                            class="activity-card small-activity-card skills d-flex justify-content-between align-items-center">
+                            <span class="card-title">Skills Swap Marketplace</span>
+                            <i class="bi bi-lightbulb card-icon"></i>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-12">
+                    <a href="{{ url_for('activities.puzzle_challenge') }}" class="text-decoration-none">
+                        <div
+                            class="activity-card small-activity-card cyber d-flex justify-content-between align-items-center">
+                            <span class="card-title">Cyber Challenge</span>
+                            <i class="bi bi-shield-check card-icon"></i>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Boomerang Section -->
+    <div class="mb-4">
+        <a href="{{ url_for('messaging.boomerang') }}" class="text-decoration-none">
+            <div class="boomerang-card">
+                <h5><i class="bi bi-camera-video me-2"></i>Boomerang</h5>
+                <p>Send fun video messages to send back and forth</p>
+            </div>
+        </a>
+    </div>
+
+    <!-- Recently Played Section -->
+    <div class="section-title mb-3">
+        <span>Recently Played</span>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-6">
+            <a href="#" class="text-decoration-none">
+                <div class="activity-card recently-played-card jukebox">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <span class="card-title">Intergenerational<br>Jukebox</span>
+                        <i class="bi bi-music-note-beamed fs-4"></i>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-6">
+            <a href="{{ url_for('community.ask_grandfriend') }}" class="text-decoration-none">
+                <div class="activity-card recently-played-card ask">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <span class="card-title">Ask A<br>Grandfriend</span>
+                        <i class="bi bi-chat-dots fs-4"></i>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <!-- People You May Know Section -->
+    <div class="section-title mb-3">
+        <span>People You May Know</span>
+        <a href="#" class="see-all">See All</a>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="person-card">
+                <img src="https://i.pravatar.cc/70?img=20" alt="Mr. Tan">
+                <p class="name">Mr. Tan</p>
+                <p class="role">@ Senior, Tampines</p>
+                <button class="btn btn-connect connected">Connect</button>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="person-card">
+                <img src="https://i.pravatar.cc/70?img=25" alt="Dr. Chloe Gyseler">
+                <p class="name">Dr. Chloe Gyseler</p>
+                <p class="role">@ Youth, Clementi</p>
+                <button class="btn btn-connect">Connect</button>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="person-card">
+                <img src="https://i.pravatar.cc/70?img=30" alt="Grandma Rose">
+                <p class="name">Grandma Rose</p>
+                <p class="role">@ Senior, Bishan</p>
+                <button class="btn btn-connect connected">Connect</button>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="person-card">
+                <img src="https://i.pravatar.cc/70?img=35" alt="Uncle David">
+                <p class="name">Uncle David</p>
+                <p class="role">@ Senior, Yishun</p>
+                <button class="btn btn-connect">Connect</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

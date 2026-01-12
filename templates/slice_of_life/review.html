@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+
+{% block title %}Review Display - Slice of Life{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <a href="{{ url_for('slice_of_life.prompt') }}" class="text-decoration-none text-muted d-block mb-2">
+                <i class="bi bi-arrow-left me-1"></i>Back to Prompts
+            </a>
+            <h2 class="fw-bold mb-1">
+                <i class="bi bi-eye text-primary me-2"></i>Review Mode
+            </h2>
+            <p class="text-muted mb-0">Review your combined display before publishing</p>
+        </div>
+        <span class="badge bg-success fs-6 py-2 px-3">
+            <i class="bi bi-check-circle me-1"></i>Both Submitted
+        </span>
+    </div>
+
+    <!-- Prompt Banner -->
+    <div class="card border-0 shadow-sm mb-4" style="background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%);">
+        <div class="card-body p-4 text-white text-center">
+            <p class="text-uppercase small opacity-75 mb-2">Today's Prompt</p>
+            <h4 class="mb-0">"Your favourite childhood memory"</h4>
+        </div>
+    </div>
+
+    <!-- Side by Side Comparison -->
+    <div class="row g-4 mb-4">
+        <!-- Your Submission -->
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-primary bg-opacity-10 border-0 py-3">
+                    <div class="d-flex align-items-center">
+                        <img src="https://i.pravatar.cc/40?img=12" class="rounded-circle me-2" alt="You">
+                        <div>
+                            <span class="fw-bold">You</span>
+                            <span class="badge bg-primary ms-2">Youth</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <img src="https://images.unsplash.com/photo-1472745942893-4b9f730c7668?w=600&h=300&fit=crop"
+                        alt="Your photo" class="img-fluid w-100" style="max-height: 250px; object-fit: cover;">
+                    <div class="p-4">
+                        <p class="mb-0">
+                            "This is the playground near my old HDB. I used to spend every evening here after school,
+                            playing catching with my neighbors. The yellow slides were my favourite - I felt like
+                            I was flying every time I went down. Those carefree days are something I miss dearly..."
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Partner's Submission -->
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-warning bg-opacity-10 border-0 py-3">
+                    <div class="d-flex align-items-center">
+                        <img src="https://i.pravatar.cc/40?img=20" class="rounded-circle me-2" alt="Mr. Tan">
+                        <div>
+                            <span class="fw-bold">Mr. Tan</span>
+                            <span class="badge bg-warning text-dark ms-2">Senior</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <img src="https://images.unsplash.com/photo-1517457373958-b7bdd4587205?w=600&h=300&fit=crop"
+                        alt="Partner's photo" class="img-fluid w-100" style="max-height: 250px; object-fit: cover;">
+                    <div class="p-4">
+                        <p class="mb-0">
+                            "This kampung house reminds me of growing up in the 1960s. We had no TV or phones -
+                            just the sound of chickens and children playing gasing. My mother would call us home
+                            when the kerosene lamps were lit. Life was simple but we were happy..."
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Comments Section -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white border-0 py-3">
+            <h5 class="mb-0"><i class="bi bi-chat-dots text-primary me-2"></i>Comments</h5>
+        </div>
+        <div class="card-body">
+            <!-- Existing Comments -->
+            <div class="mb-4">
+                <div class="d-flex mb-3">
+                    <img src="https://i.pravatar.cc/35?img=20" class="rounded-circle me-3" alt="Mr. Tan">
+                    <div class="bg-light rounded-3 p-3 flex-grow-1">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="fw-bold">Mr. Tan</span>
+                            <small class="text-muted">10 mins ago</small>
+                        </div>
+                        <p class="mb-0">Wah, your playground looks so colourful! In my time, we just had wooden seesaws.
+                            But the fun was the same lah! 😊</p>
+                    </div>
+                </div>
+
+                <div class="d-flex mb-3">
+                    <img src="https://i.pravatar.cc/35?img=12" class="rounded-circle me-3" alt="You">
+                    <div class="bg-primary bg-opacity-10 rounded-3 p-3 flex-grow-1">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="fw-bold">You</span>
+                            <small class="text-muted">5 mins ago</small>
+                        </div>
+                        <p class="mb-0">Uncle, I never knew kampung life was like that! Playing gasing sounds so cool.
+                            Can you teach me one day? 🙏</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Add Comment -->
+            <form class="d-flex gap-2">
+                <img src="https://i.pravatar.cc/40?img=12" class="rounded-circle" alt="You">
+                <input type="text" class="form-control rounded-pill" placeholder="Add a comment..." name="comment">
+                <button type="submit" class="btn btn-primary rounded-pill px-4">
+                    <i class="bi bi-send"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Publish Section -->
+    <div class="card border-0 shadow-sm" style="border: 2px solid #10B981 !important;">
+        <div class="card-body p-4">
+            <h5 class="fw-bold mb-3"><i class="bi bi-send text-success me-2"></i>Ready to Publish?</h5>
+            <p class="text-muted mb-4">Your combined display is ready! Choose how you'd like to share it.</p>
+
+            <form method="POST" action="{{ url_for('slice_of_life.publish', display_id=1) }}">
+                <!-- Privacy Options -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <div class="form-check card p-3 h-100" style="cursor: pointer;">
+                            <input class="form-check-input" type="radio" name="privacy" id="public" value="public"
+                                checked>
+                            <label class="form-check-label w-100" for="public" style="cursor: pointer;">
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-globe fs-4 text-primary me-3"></i>
+                                    <div>
+                                        <strong>Public</strong>
+                                        <p class="text-muted small mb-0">Share in the catalog for everyone to see and
+                                            like</p>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-check card p-3 h-100" style="cursor: pointer;">
+                            <input class="form-check-input" type="radio" name="privacy" id="private" value="private">
+                            <label class="form-check-label w-100" for="private" style="cursor: pointer;">
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-lock fs-4 text-secondary me-3"></i>
+                                    <div>
+                                        <strong>Private</strong>
+                                        <p class="text-muted small mb-0">Only visible to you and your partner</p>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="d-flex gap-3">
+                    <button type="submit" class="btn btn-success btn-lg flex-grow-1">
+                        <i class="bi bi-check-lg me-2"></i>Publish Display
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary btn-lg">
+                        <i class="bi bi-pencil me-1"></i>Edit My Response
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

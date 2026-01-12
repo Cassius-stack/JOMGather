@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+
+{% block title %}Slice of Life - Daily Prompt{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1">
+                <i class="bi bi-journal-text text-primary me-2"></i>Slice of Life
+            </h2>
+            <p class="text-muted mb-0">Share your perspective on today's prompt</p>
+        </div>
+        <a href="{{ url_for('slice_of_life.catalog') }}" class="btn btn-outline-primary">
+            <i class="bi bi-collection me-1"></i>View Catalog
+        </a>
+    </div>
+
+    <!-- Today's Prompt Card -->
+    <div class="sol-prompt-container mb-4">
+        <div class="row align-items-center">
+            <div class="col-md-8 mx-auto text-center">
+                <p class="text-uppercase small opacity-75 mb-3">
+                    <i class="bi bi-calendar-event me-1"></i>Daily Prompt
+                </p>
+
+                <h2 class="mb-4" style="font-size: 2.2rem; line-height: 1.4; font-weight: 600;">
+                    "What is your favourite thing to do after school/work?"
+                </h2>
+
+                <p class="opacity-75 mb-4">
+                    Upload a photo that represents your answer and share your thoughts!
+                </p>
+
+                <div class="d-flex justify-content-center align-items-center gap-4 mb-4">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-clock me-2"></i>
+                        <span>~5 min activity</span>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-people me-2"></i>
+                        <span>24 responses today</span>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-coin me-2"></i>
+                        <span>+10 points</span>
+                    </div>
+                </div>
+
+                <a href="{{ url_for('slice_of_life.create_display') }}" class="btn btn-explore btn-lg">
+                    <i class="bi bi-camera me-2"></i>Upload & Share
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- How It Works -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body p-4">
+            <h5 class="fw-bold mb-4"><i class="bi bi-lightbulb text-warning me-2"></i>How Slice of Life Works</h5>
+            <div class="row g-4">
+                <div class="col-md-3">
+                    <div class="text-center">
+                        <div class="bg-primary bg-opacity-10 rounded-circle p-3 d-inline-block mb-3">
+                            <i class="bi bi-chat-text text-primary fs-4"></i>
+                        </div>
+                        <h6 class="fw-bold mb-1">1. See the Prompt</h6>
+                        <p class="text-muted small mb-0">Both you and your paired partner receive the same text prompt.
+                        </p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-center">
+                        <div class="bg-primary bg-opacity-10 rounded-circle p-3 d-inline-block mb-3">
+                            <i class="bi bi-upload text-primary fs-4"></i>
+                        </div>
+                        <h6 class="fw-bold mb-1">2. Upload Your Image</h6>
+                        <p class="text-muted small mb-0">Take or upload a photo that represents your answer to the
+                            prompt.</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-center">
+                        <div class="bg-primary bg-opacity-10 rounded-circle p-3 d-inline-block mb-3">
+                            <i class="bi bi-eye text-primary fs-4"></i>
+                        </div>
+                        <h6 class="fw-bold mb-1">3. Review Together</h6>
+                        <p class="text-muted small mb-0">See what your partner uploaded and comment on each other's
+                            work.</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-center">
+                        <div class="bg-primary bg-opacity-10 rounded-circle p-3 d-inline-block mb-3">
+                            <i class="bi bi-send text-primary fs-4"></i>
+                        </div>
+                        <h6 class="fw-bold mb-1">4. Publish</h6>
+                        <p class="text-muted small mb-0">Push your combined display to the catalog (public or private).
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pending Reviews -->
+    <div class="section-title mb-3">
+        <span><i class="bi bi-hourglass-split me-2"></i>Waiting for Partner</span>
+    </div>
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body p-4">
+            <div class="d-flex align-items-center">
+                <div class="me-3">
+                    <div class="bg-warning bg-opacity-10 rounded-circle p-3">
+                        <i class="bi bi-hourglass-split text-warning fs-4"></i>
+                    </div>
+                </div>
+                <div class="flex-grow-1">
+                    <h6 class="mb-1">Prompt: "What makes you smile?"</h6>
+                    <p class="text-muted small mb-0">You submitted 2 hours ago. Waiting for Grandma Rose to respond...
+                    </p>
+                </div>
+                <span class="badge bg-warning text-dark">Pending</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ready for Review -->
+    <div class="section-title mb-3">
+        <span><i class="bi bi-check-circle me-2"></i>Ready for Review</span>
+    </div>
+    <div class="card border-0 shadow-sm mb-4" style="border-left: 4px solid #10B981 !important;">
+        <div class="card-body p-4">
+            <div class="d-flex align-items-center">
+                <div class="me-3">
+                    <div class="bg-success bg-opacity-10 rounded-circle p-3">
+                        <i class="bi bi-check-circle text-success fs-4"></i>
+                    </div>
+                </div>
+                <div class="flex-grow-1">
+                    <h6 class="mb-1">Prompt: "Your favourite childhood memory"</h6>
+                    <p class="text-muted small mb-0">Both you and Mr. Tan have submitted. Review and publish!</p>
+                </div>
+                <a href="{{ url_for('slice_of_life.review', display_id=1) }}" class="btn btn-success">
+                    <i class="bi bi-eye me-1"></i>Review Now
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Displays Preview -->
+    <div class="section-title mb-3">
+        <span>Recent Displays</span>
+        <a href="{{ url_for('slice_of_life.catalog') }}" class="see-all">View All</a>
+    </div>
+
+    <div class="row g-3">
+        <!-- Display Card 1 -->
+        <div class="col-md-6">
+            <div class="display-card">
+                <div class="row g-0">
+                    <div class="col-6">
+                        <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=200&h=150&fit=crop"
+                            alt="Youth's photo" class="img-fluid h-100 object-fit-cover"
+                            style="border-radius: 20px 0 0 0;">
+                    </div>
+                    <div class="col-6">
+                        <img src="https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=200&h=150&fit=crop"
+                            alt="Senior's photo" class="img-fluid h-100 object-fit-cover"
+                            style="border-radius: 0 20px 0 0;">
+                    </div>
+                </div>
+                <div class="stories">
+                    <p class="small text-muted mb-2"><i class="bi bi-chat-quote me-1"></i>"What does freedom mean to
+                        you?"</p>
+                    <div class="d-flex gap-2 mb-2">
+                        <img src="https://i.pravatar.cc/25?img=11" class="rounded-circle" alt="Sarah">
+                        <img src="https://i.pravatar.cc/25?img=20" class="rounded-circle" alt="Mr. Tan">
+                        <span class="small text-muted">Sarah & Mr. Tan</span>
+                    </div>
+                </div>
+                <div class="display-actions">
+                    <button class="like-btn liked">
+                        <i class="bi bi-heart-fill"></i> 47 likes
+                    </button>
+                    <small class="text-muted">2 hours ago</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Display Card 2 -->
+        <div class="col-md-6">
+            <div class="display-card">
+                <div class="row g-0">
+                    <div class="col-6">
+                        <img src="https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=200&h=150&fit=crop"
+                            alt="Youth's photo" class="img-fluid h-100 object-fit-cover"
+                            style="border-radius: 20px 0 0 0;">
+                    </div>
+                    <div class="col-6">
+                        <img src="https://images.unsplash.com/photo-1445116572660-236099ec97a0?w=200&h=150&fit=crop"
+                            alt="Senior's photo" class="img-fluid h-100 object-fit-cover"
+                            style="border-radius: 0 20px 0 0;">
+                    </div>
+                </div>
+                <div class="stories">
+                    <p class="small text-muted mb-2"><i class="bi bi-chat-quote me-1"></i>"Your favourite morning
+                        ritual"</p>
+                    <div class="d-flex gap-2 mb-2">
+                        <img src="https://i.pravatar.cc/25?img=15" class="rounded-circle" alt="Marcus">
+                        <img src="https://i.pravatar.cc/25?img=25" class="rounded-circle" alt="Grandma Rose">
+                        <span class="small text-muted">Marcus & Grandma Rose</span>
+                    </div>
+                </div>
+                <div class="display-actions">
+                    <button class="like-btn">
+                        <i class="bi bi-heart"></i> 32 likes
+                    </button>
+                    <small class="text-muted">5 hours ago</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

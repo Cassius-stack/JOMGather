@@ -1,0 +1,283 @@
+{% extends "base.html" %}
+
+{% block title %}Story Catalog - Slice of Life{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1">
+                <i class="bi bi-collection text-primary me-2"></i>Story Catalog
+            </h2>
+            <p class="text-muted mb-0">Explore stories from different generations</p>
+        </div>
+        <a href="{{ url_for('slice_of_life.prompt') }}" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-1"></i>Create Story
+        </a>
+    </div>
+
+    <!-- Filter Tabs -->
+    <ul class="nav nav-pills mb-4">
+        <li class="nav-item">
+            <a class="nav-link active" href="#">All Stories</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="#">Most Loved</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="#">This Week</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="#">My Stories</a>
+        </li>
+    </ul>
+
+    <!-- Featured Story of the Week -->
+    <div class="card border-0 shadow-sm mb-4" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+        <div class="card-body p-4 text-white">
+            <div class="d-flex align-items-center mb-3">
+                <span class="badge bg-warning text-dark me-2">
+                    <i class="bi bi-star-fill me-1"></i>Featured
+                </span>
+                <span>Story of the Week</span>
+            </div>
+            <div class="row align-items-center">
+                <div class="col-md-5 mb-3 mb-md-0">
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <img src="https://images.unsplash.com/photo-1491438590914-bc09fcaaf77a?w=200&h=150&fit=crop"
+                                alt="Youth's photo" class="img-fluid rounded-3">
+                            <small class="d-block mt-1 opacity-75">Kevin's photo</small>
+                        </div>
+                        <div class="col-6">
+                            <img src="https://images.unsplash.com/photo-1517457373958-b7bdd4587205?w=200&h=150&fit=crop"
+                                alt="Senior's photo" class="img-fluid rounded-3">
+                            <small class="d-block mt-1 opacity-75">Mdm Lim's photo</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-7">
+                    <p class="small opacity-75 mb-2">Prompt: "What brings your community together?"</p>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="bg-white bg-opacity-10 rounded-3 p-3">
+                                <div class="d-flex align-items-center mb-2">
+                                    <img src="https://i.pravatar.cc/30?img=18" alt="Youth" class="rounded-circle me-2">
+                                    <span class="small fw-bold">Kevin (Youth)</span>
+                                </div>
+                                <p class="small mb-0">"Our void deck becomes alive during Mid-Autumn Festival. Kids run
+                                    around with lanterns while aunties share mooncakes..."</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="bg-white bg-opacity-10 rounded-3 p-3">
+                                <div class="d-flex align-items-center mb-2">
+                                    <img src="https://i.pravatar.cc/30?img=22" alt="Senior" class="rounded-circle me-2">
+                                    <span class="small fw-bold">Mdm Lim (Senior)</span>
+                                </div>
+                                <p class="small mb-0">"Back in my kampung, we had 'gotong royong' every month. The whole
+                                    village would come together to clean up..."</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center mt-3">
+                        <button class="btn btn-light btn-sm me-3">
+                            <i class="bi bi-heart-fill text-danger me-1"></i>156 likes
+                        </button>
+                        <span class="small opacity-75"><i class="bi bi-chat me-1"></i>23 comments</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stories Grid -->
+    <div class="row g-4">
+        <!-- Story 1 -->
+        <div class="col-md-6">
+            <div class="display-card h-100">
+                <div class="row g-0">
+                    <div class="col-6">
+                        <img src="https://images.unsplash.com/photo-1472745942893-4b9f730c7668?w=200&h=150&fit=crop"
+                            alt="Youth's photo" class="img-fluid h-100 object-fit-cover"
+                            style="border-radius: 20px 0 0 0;">
+                    </div>
+                    <div class="col-6">
+                        <img src="https://images.unsplash.com/photo-1517457373958-b7bdd4587205?w=200&h=150&fit=crop"
+                            alt="Senior's photo" class="img-fluid h-100 object-fit-cover"
+                            style="border-radius: 0 20px 0 0;">
+                    </div>
+                </div>
+                <div class="stories">
+                    <p class="small text-muted mb-2"><i class="bi bi-chat-quote me-1"></i>"Your favourite childhood
+                        memory"</p>
+                    <div class="story-section youth-story">
+                        <div class="story-author">
+                            <img src="https://i.pravatar.cc/30?img=11" alt="Sarah">
+                            <span>Sarah (Youth)</span>
+                        </div>
+                        <p class="story-text">"This playground near my HDB was my second home. Every evening after
+                            school, I'd be here with my neighbors, playing catching until the street lights came on..."
+                        </p>
+                    </div>
+                    <div class="story-section senior-story">
+                        <div class="story-author">
+                            <img src="https://i.pravatar.cc/30?img=20" alt="Mr. Tan">
+                            <span>Mr. Tan (Senior)</span>
+                        </div>
+                        <p class="story-text">"This kampung house picture takes me back. We had no fancy toys - just
+                            gasing, kites, and rubber band games. But we were happy..."</p>
+                    </div>
+                </div>
+                <div class="display-actions">
+                    <button class="like-btn liked">
+                        <i class="bi bi-heart-fill"></i> 47 likes
+                    </button>
+                    <small class="text-muted">2 hours ago</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Story 2 -->
+        <div class="col-md-6">
+            <div class="display-card h-100">
+                <div class="row g-0">
+                    <div class="col-6">
+                        <img src="https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=200&h=150&fit=crop"
+                            alt="Youth's photo" class="img-fluid h-100 object-fit-cover"
+                            style="border-radius: 20px 0 0 0;">
+                    </div>
+                    <div class="col-6">
+                        <img src="https://images.unsplash.com/photo-1445116572660-236099ec97a0?w=200&h=150&fit=crop"
+                            alt="Senior's photo" class="img-fluid h-100 object-fit-cover"
+                            style="border-radius: 0 20px 0 0;">
+                    </div>
+                </div>
+                <div class="stories">
+                    <p class="small text-muted mb-2"><i class="bi bi-chat-quote me-1"></i>"Your favourite morning
+                        ritual"</p>
+                    <div class="story-section youth-story">
+                        <div class="story-author">
+                            <img src="https://i.pravatar.cc/30?img=15" alt="Marcus">
+                            <span>Marcus (Youth)</span>
+                        </div>
+                        <p class="story-text">"My morning flat white at this café is sacred. I took this photo of my
+                            usual corner spot. It's where I mentally prepare for the day ahead..."</p>
+                    </div>
+                    <div class="story-section senior-story">
+                        <div class="story-author">
+                            <img src="https://i.pravatar.cc/30?img=25" alt="Grandma Rose">
+                            <span>Grandma Rose (Senior)</span>
+                        </div>
+                        <p class="story-text">"My kopitiam! Every morning for 40 years. The uncle still remembers my
+                            kopi-o kosong. This place has seen my whole life - first dates, grandchildren's
+                            birthdays..."</p>
+                    </div>
+                </div>
+                <div class="display-actions">
+                    <button class="like-btn">
+                        <i class="bi bi-heart"></i> 32 likes
+                    </button>
+                    <small class="text-muted">5 hours ago</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Story 3 -->
+        <div class="col-md-6">
+            <div class="display-card h-100">
+                <div class="row g-0">
+                    <div class="col-6">
+                        <img src="https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=200&h=150&fit=crop"
+                            alt="Youth's photo" class="img-fluid h-100 object-fit-cover"
+                            style="border-radius: 20px 0 0 0;">
+                    </div>
+                    <div class="col-6">
+                        <img src="https://images.unsplash.com/photo-1516733968668-dbdce39c4651?w=200&h=150&fit=crop"
+                            alt="Senior's photo" class="img-fluid h-100 object-fit-cover"
+                            style="border-radius: 0 20px 0 0;">
+                    </div>
+                </div>
+                <div class="stories">
+                    <p class="small text-muted mb-2"><i class="bi bi-chat-quote me-1"></i>"What does family mean to
+                        you?"</p>
+                    <div class="story-section youth-story">
+                        <div class="story-author">
+                            <img src="https://i.pravatar.cc/30?img=33" alt="Wei Ling">
+                            <span>Wei Ling (Youth)</span>
+                        </div>
+                        <p class="story-text">"This is from last CNY. Three generations at one table, fighting over the
+                            last piece of bak kwa. Nothing says family like this chaos..."</p>
+                    </div>
+                    <div class="story-section senior-story">
+                        <div class="story-author">
+                            <img src="https://i.pravatar.cc/30?img=28" alt="Uncle David">
+                            <span>Uncle David (Senior)</span>
+                        </div>
+                        <p class="story-text">"This is my old family altar. Every Qing Ming, we gather here. Even my
+                            children overseas video call to pay respects. Technology brought us closer..."</p>
+                    </div>
+                </div>
+                <div class="display-actions">
+                    <button class="like-btn liked">
+                        <i class="bi bi-heart-fill"></i> 89 likes
+                    </button>
+                    <small class="text-muted">Yesterday</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Story 4 -->
+        <div class="col-md-6">
+            <div class="display-card h-100">
+                <div class="row g-0">
+                    <div class="col-6">
+                        <img src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=200&h=150&fit=crop"
+                            alt="Youth's photo" class="img-fluid h-100 object-fit-cover"
+                            style="border-radius: 20px 0 0 0;">
+                    </div>
+                    <div class="col-6">
+                        <img src="https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=200&h=150&fit=crop"
+                            alt="Senior's photo" class="img-fluid h-100 object-fit-cover"
+                            style="border-radius: 0 20px 0 0;">
+                    </div>
+                </div>
+                <div class="stories">
+                    <p class="small text-muted mb-2"><i class="bi bi-chat-quote me-1"></i>"How has technology changed
+                        your life?"</p>
+                    <div class="story-section youth-story">
+                        <div class="story-author">
+                            <img src="https://i.pravatar.cc/30?img=41" alt="Jason">
+                            <span>Jason (Youth)</span>
+                        </div>
+                        <p class="story-text">"My whole life is in this phone. I took a photo of my screen time - 8
+                            hours yesterday! Sometimes I wonder what life was like before..."</p>
+                    </div>
+                    <div class="story-section senior-story">
+                        <div class="story-author">
+                            <img src="https://i.pravatar.cc/30?img=45" alt="Auntie Chen">
+                            <span>Auntie Chen (Senior)</span>
+                        </div>
+                        <p class="story-text">"This is my first handwritten letter to my mother in 1970. Now I WhatsApp
+                            my grandchildren daily. Both are blessings in different ways..."</p>
+                    </div>
+                </div>
+                <div class="display-actions">
+                    <button class="like-btn">
+                        <i class="bi bi-heart"></i> 124 likes
+                    </button>
+                    <small class="text-muted">2 days ago</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load More -->
+    <div class="text-center mt-4">
+        <button class="btn btn-outline-primary btn-lg">
+            <i class="bi bi-arrow-down-circle me-2"></i>Load More Stories
+        </button>
+    </div>
+</div>
+{% endblock %}
