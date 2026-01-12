@@ -1,0 +1,285 @@
+================================================================================
+                    MYSAVVYGRANNY STARTUP GUIDE
+                    Complete Setup Instructions
+================================================================================
+
+This guide covers EVERYTHING you need to run the MySavvyGranny project.
+Follow these steps EXACTLY in order.
+
+================================================================================
+PART 1: FIRST-TIME SETUP (Only do this ONCE)
+================================================================================
+
+STEP 1: Install Python
+----------------------
+1. Go to: https://www.python.org/downloads/
+2. Download Python 3.11 or later
+3. Run the installer
+   ⚠️ IMPORTANT: Check "Add Python to PATH" during installation!
+4. Restart your computer after installation
+
+To verify Python is installed, open PowerShell and run:
+    py --version
+You should see something like: Python 3.11.x
+
+
+STEP 2: Install Git
+-------------------
+1. Go to: https://git-scm.com/downloads
+2. Download Git for Windows
+3. Run the installer (click Next on all options, defaults are fine)
+4. Restart your computer
+
+To verify Git is installed, open PowerShell and run:
+    git --version
+You should see something like: git version 2.x.x
+
+
+STEP 3: Configure Git (your identity)
+--------------------------------------
+Open PowerShell and run these commands (replace with YOUR info):
+
+    git config --global user.name "Your Name"
+    git config --global user.email "your-email@example.com"
+
+
+STEP 4: Clone the Repository
+----------------------------
+1. Open PowerShell
+2. Navigate to where you want the project:
+
+    cd "C:\School-Study\Semester 2\Web Development Project\Project"
+
+3. Clone the repository:
+
+    git clone https://github.com/Cassius-stack/MySavvyGranny.git
+
+4. Enter the project folder:
+
+    cd MySavvyGranny
+
+
+STEP 5: Create Virtual Environment (Recommended)
+------------------------------------------------
+This keeps project dependencies separate from your system Python.
+
+1. Create the virtual environment:
+
+    py -m venv venv
+
+2. Activate the virtual environment:
+
+    .\venv\Scripts\activate
+
+You'll see (venv) at the start of your command prompt when it's active.
+
+
+STEP 6: Install Dependencies
+----------------------------
+With your virtual environment active, run:
+
+    pip install -r requirements.txt
+
+This installs Flask and all other required packages.
+
+
+================================================================================
+PART 2: STARTING THE APPLICATION (Do this every time)
+================================================================================
+
+QUICK START (3 commands):
+-------------------------
+
+1. Open PowerShell
+
+2. Navigate to project folder:
+
+    cd "C:\School-Study\Semester 2\Web Development Project\Project\MySavvyGranny"
+
+3. Activate virtual environment (if using one):
+
+    .\venv\Scripts\activate
+
+4. Start the Flask server:
+
+    py app.py
+
+5. Open your browser and go to:
+
+    http://127.0.0.1:5000
+
+   OR
+
+    http://localhost:5000
+
+
+WHAT YOU SHOULD SEE:
+--------------------
+In your terminal, you'll see something like:
+
+    * Serving Flask app 'app'
+    * Debug mode: on
+    * Running on http://127.0.0.1:5000
+    * Restarting with stat
+    * Debugger is active!
+
+This means the server is running! Keep this terminal open.
+
+
+TO STOP THE SERVER:
+-------------------
+Press Ctrl + C in the terminal
+
+
+================================================================================
+PART 3: AVAILABLE PAGES/ROUTES
+================================================================================
+
+Once the server is running, you can visit these URLs:
+
+MAIN PAGES:
+-----------
+http://127.0.0.1:5000/                          - Home Page
+http://127.0.0.1:5000/slice-of-life/prompt      - Slice of Life (Cassius)
+http://127.0.0.1:5000/slice-of-life/create      - Create Story
+http://127.0.0.1:5000/slice-of-life/catalog     - Story Catalog
+
+AUTHENTICATION:
+---------------
+http://127.0.0.1:5000/auth/login                - Login
+http://127.0.0.1:5000/auth/register             - Register
+
+PROFILE (Zongrong):
+-------------------
+http://127.0.0.1:5000/profile/1                 - View Profile
+http://127.0.0.1:5000/profile/edit              - Edit Profile
+
+ACTIVITIES (Brandon):
+---------------------
+http://127.0.0.1:5000/activities/               - Activities List
+http://127.0.0.1:5000/activities/photo-streak   - Photo Streak
+http://127.0.0.1:5000/activities/tiktok         - TikTok Challenge
+
+MESSAGING (Cassius):
+--------------------
+http://127.0.0.1:5000/messages/inbox            - Inbox
+http://127.0.0.1:5000/messages/boomerang        - BOOMERang
+
+COMMUNITY (Zongrong):
+---------------------
+http://127.0.0.1:5000/community/                - Communities
+http://127.0.0.1:5000/community/ask             - Ask a Grandfriend
+
+SKILLS (Akil):
+--------------
+http://127.0.0.1:5000/skills/library            - Skill Library
+http://127.0.0.1:5000/skills/match              - Skill Match
+
+SUPPORT:
+--------
+http://127.0.0.1:5000/support/request           - Request Help
+http://127.0.0.1:5000/support/my-requests       - My Requests
+
+REWARDS:
+--------
+http://127.0.0.1:5000/rewards/leaderboard       - Leaderboard
+http://127.0.0.1:5000/rewards/my-points         - My Points
+
+
+================================================================================
+PART 4: TROUBLESHOOTING
+================================================================================
+
+PROBLEM: "py is not recognized"
+SOLUTION: Python is not installed or not in PATH
+- Reinstall Python and check "Add Python to PATH"
+- Or try using "python" instead of "py"
+
+PROBLEM: "No module named flask"
+SOLUTION: Flask is not installed
+- Run: pip install flask
+- Or: pip install -r requirements.txt
+
+PROBLEM: "Address already in use" 
+SOLUTION: Another process is using port 5000
+- Find and close other Flask apps
+- Or run: py app.py --port 5001 (use different port)
+
+PROBLEM: "TemplateNotFound" error
+SOLUTION: You're running from the wrong folder
+- Make sure you're in the MySavvyGranny folder
+- Run: cd "path\to\MySavvyGranny" first
+
+PROBLEM: Virtual environment won't activate
+SOLUTION: PowerShell execution policy issue
+- Run as Administrator: Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+- Then try activating again
+
+PROBLEM: Page looks unstyled/broken
+SOLUTION: Static files not loading
+- Check that static/css/style.css exists
+- Hard refresh: Ctrl + Shift + R in browser
+
+
+================================================================================
+PART 5: DAILY WORKFLOW FOR TEAM MEMBERS
+================================================================================
+
+BEFORE STARTING WORK:
+---------------------
+1. Open PowerShell
+2. cd "path\to\MySavvyGranny"
+3. git pull                          # Get latest changes from team
+4. .\venv\Scripts\activate           # If using virtual environment
+5. py app.py                         # Start server
+
+WHILE WORKING:
+--------------
+- Edit your assigned files (see github_tutorial.txt for assignments)
+- Refresh browser to see changes (Flask auto-reloads in debug mode)
+
+WHEN DONE WORKING:
+------------------
+1. Save all your files
+2. Open a NEW PowerShell window (keep server running in the other one)
+3. cd "path\to\MySavvyGranny"
+4. git add .                         # Stage your changes
+5. git commit -m "Describe what you did"
+6. git push                          # Upload to GitHub
+
+
+================================================================================
+PART 6: QUICK REFERENCE CARD
+================================================================================
+
++----------------------------------+----------------------------------------+
+| What you want to do              | Command                                |
++----------------------------------+----------------------------------------+
+| Go to project folder             | cd "path\to\MySavvyGranny"             |
+| Activate virtual environment     | .\venv\Scripts\activate                |
+| Install dependencies             | pip install -r requirements.txt        |
+| Start the server                 | py app.py                              |
+| Stop the server                  | Ctrl + C                               |
+| View in browser                  | http://127.0.0.1:5000                  |
++----------------------------------+----------------------------------------+
+| Get latest code from GitHub      | git pull                               |
+| See what files changed           | git status                             |
+| Stage your changes               | git add .                              |
+| Commit with message              | git commit -m "message"                |
+| Push to GitHub                   | git push                               |
++----------------------------------+----------------------------------------+
+
+
+================================================================================
+SUPER QUICK START (COPY-PASTE THIS)
+================================================================================
+
+cd "C:\School-Study\Semester 2\Web Development Project\Project\MySavvyGranny"
+.\venv\Scripts\activate
+py app.py
+
+Then open: http://127.0.0.1:5000
+
+================================================================================
+                           HAPPY CODING!
+================================================================================
