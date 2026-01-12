@@ -1,7 +1,7 @@
 """
 MySavvyGranny - Intergenerational Connection Platform
 Main Flask Application Entry Point
-Akil BH was here. Keep it coming sausage!!!!!!
+kevin py best
 """
 
 from flask import Flask, render_template
