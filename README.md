@@ -1,4 +1,4 @@
-# MySavvyGranny
+# JOMGather
 
 An intergenerational connection platform connecting youth and seniors in Singapore.
 
@@ -11,10 +11,11 @@ An intergenerational connection platform connecting youth and seniors in Singapo
 
 ## Team Members
 
-- Brandon - Activity Suite
-- Zongrong - Profile Management, Social & Community Features
-- Deon
-- Akil - Activity/Event Management, Skills Marketplace
+- Cassius - Home page, Slice of Life
+- Brandon - Activity page, AskAGrandfriend, BOOMERang
+- Zongrong - Profile Management, Supports Swap
+- Deon - Login page, Social tab (Communities), Jukebox
+- Akil - Social tab (Inbox), Cyber Challenge, Rewards page
 
 ## Getting Started
 
@@ -27,8 +28,8 @@ An intergenerational connection platform connecting youth and seniors in Singapo
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/YOUR_USERNAME/MySavvyGranny.git
-cd MySavvyGranny
+git clone https://github.com/Cassius-stack/JOMGather.git
+cd JOMGather
 ```
 
 2. Create a virtual environment (recommended):
@@ -52,7 +53,7 @@ py app.py
 ## Project Structure
 
 ```
-MySavvyGranny/
+JOMGather/
 ├── app.py              # Main Flask application
 ├── config.py           # Configuration settings
 ├── requirements.txt    # Python dependencies
@@ -65,17 +66,18 @@ MySavvyGranny/
 ```
 
 ## Features
+- **Slice of Life**: Collaborative storytelling
+- **AskAGrandfriend**: Forums for Youth and Senior
+- **BOOMERang**: Meet new elderlies and youths
+- **Cyber Challenge**: Defending against scams daily
+- **Skills Swap**: Learn and exchange skills
+- **Jukebox**: Explore both generations' music
 
-- **User Profiles** - Youth and Senior profiles with interests
-- **Pairing System** - Match users based on interests
-- **Activity Suite** - TikTok challenges, puzzles, photo streaks
-- **Slice of Life** - Collaborative storytelling
-- **Messaging** - Direct messaging and BOOMERang quick calls
-- **Communities** - Interest-based groups
-- **Skills Marketplace** - Skill exchange between generations
-- **Support Swaps** - Micro-assistance requests
-- **Rewards** - Points, badges, and leaderboards
+- **Rewards**: Redeem coins earnt for vouchers and items
+- **Messaging**: Direct messaging with elderlies and youths
+- **Communities**: Group management for interest groups
+- **Profiles**: Customise your profile
 
 ## License
 
-This project is created for educational purposes as part of IT1125/IT1225/IT1525/IT1825/IT1925 Web Development Project.
+This project is created for educational purposes as part of IT1225 Web Development Project.g
