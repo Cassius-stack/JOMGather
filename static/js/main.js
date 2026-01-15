@@ -1,8 +1,8 @@
-/* MySavvyGranny Custom JavaScript */
+/* JOMGather Custom JavaScript */
 
 // Document ready
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('MySavvyGranny loaded successfully!');
+    console.log('JOMGather loaded successfully!');
     
     // Initialize tooltips if Bootstrap is available
     if (typeof bootstrap !== 'undefined') {

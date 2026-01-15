@@ -1,1 +1,1 @@
-"""Utils package - Helper functions for MySavvyGranny."""
+"""Utils package - Helper functions for JOMGather."""

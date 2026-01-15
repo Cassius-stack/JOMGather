@@ -1,1 +1,1 @@
-"""Routes package - Flask Blueprints for MySavvyGranny."""
+"""Routes package - Flask Blueprints for JOMGather."""

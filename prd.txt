@@ -1,212 +1,206 @@
-Web Development Ideas
-Name: JomGather(JoG)
+# JOMGather - Product Requirements Document
 
-Members
-Brandon
-Zongrong
-Deon
-Akil
+## Project Name
+JOMGather (JoG) - Intergenerational Connection Platform
 
-Features that make the app
-Social Profile (zrongrong and brandon)
-Random Search & Algorithm 
-Slice of life
-Activity Suit
-AskAGrandfriend
-BOOMERang
-Interest communities
-Physical assistance + support Swap
-Skills Marketplace
-Physical assistance
-Support swap 
-Rewards + Incentives
-Intergenerational Jukebox
-Messaging
-Sandbox
-Problem Statement
-Bridging Intergenerational Interaction in Singapore
+## Team Members & Feature Assignments
 
-Background
+### Cassius
+- **Home Page** - Main landing/dashboard
+- **Slice of Life** - Collaborative storytelling feature
 
-In Singapore’s fast-paced society, interaction between youth and seniors has become increasingly limited. Many young people are focused on school or work, while seniors may feel disconnected from younger generations due to differences in communication styles, technology use, and social interests. Initiatives such as Youth Corps Singapore’s intergenerational programs, Lions Befrienders’ digital buddy schemes, and school community service projects have shown positive impact — but these efforts are often short-term and in-person, leaving gaps for continuous connection after events end. With the rise of digital communication, there is a unique opportunity to use web technology to create a sustained digital bridge between generations — one that promotes understanding, storytelling, and mutual learning in a fun, meaningful way.
+### Brandon
+- **Activity Page** - Activity hub and list
+- **AskAGrandfriend** - Q&A forum for elderly and youth
+- **BOOMERang** - Quick call/video chat feature
 
-Problem Statement
+### Zongrong
+- **Profile Management** - User profiles, settings, edit profile
+- **Skills Swap** - Skill exchange marketplace between generations
 
+### Deon
+- **Login Page** - Authentication (login, register, onboarding)
+- **Social Tab (Communities)** - Interest groups and community management
+- **Jukebox** - Intergenerational music sharing
+
+### Akil
+- **Social Tab (Inbox)** - Messaging and conversations
+- **Cyber Challenge** - Digital literacy/scam defense challenges
+- **Rewards Page** - Points, leaderboard, vouchers
+
+---
+
+## Problem Statement
+
+### Background
+In Singapore's fast-paced society, interaction between youth and seniors has become increasingly limited. Many young people are focused on school or work, while seniors may feel disconnected from younger generations due to differences in communication styles, technology use, and social interests.
+
+### Challenge
 Intergenerational connections in Singapore are weakening due to a lack of sustained, meaningful interaction between youth and seniors. This contributes to loneliness among seniors and reduced empathy and cultural understanding among younger generations.
 
+### Solution
 How might we design a web-based platform that encourages ongoing, meaningful interactions between seniors and youth — through shared experiences, digital storytelling, or collaborative activities — in a way that is accessible, enjoyable, and sustainable?
 
-Each team can come up with the basic features such as, but not limited to: 
-• Story/Memory Sharing Management
-• Activity/Event Management 
-• Messaging/Communication Management 
-• Profile Management (Youth/Senior) 
-• Community/Group Management 
-Existing Solutions
-Elderlink
-https://devpost.com/software/elderlink
+---
 
-Main Features
-Social profile: Interest, community(s) joined, Languages
-Emotion bar (during the convo): Changes based on tone of the voice
-Health status: (AI)Mental wellness score, physical health, Peak hours
+## Feature Specifications
 
-Mentor Me Global
-https://www.mentormeglobal.org/#howitswork
-
-Main Features
-Specific Student Volunteer allocated to a senior
-Scheduled zoom meetings ahead of time
-(Based on testimonials): Elderly gain different perspectives & share their skills w one another
-
-General Problems
-No student willing to volunteer
-
-
-Solution
-MySavyGranny webpage fosters long term connections between the elderly and the youth:
-
-Bridging physical distances: with virtual meetings that could be scheduled in an instant/ahead of time, allowing elderly to connect with youth in the click of a button
-Fostering interaction: through various activities & incentives
-Sharing experiences: by letting youth connect with elderly of similar interest / Interest groups
-digital storytelling: through photos & sharing of posts
-Equipping every individual with digital capabilities: with students helping elderly resolve their problems through online interaction
-
-
-Two types of elderly:
-Isolated elderly who wants company
-Elderly with grandchildren who wants to spend more time with them
-
-
-
-
-Changes
-
-📱 App Concept: YouIN
-Persona → User journey map → POV Template → HMW → Creative Matrix → Solution Selection
-
-Basic features: (Each choose one)
-Story/Memory Sharing Management: 
-Activity/Event Management: Akil
-Messaging/Communication Management: Cassius  
-Profile Management (Youth/Senior) : ZR
-Community/Group Management: 
-
-
-1. Onboarding & User Profiles
-Target Users: Elderly & Students/Youth.
-Sign-Up Form:
-Social Profile Setup: Users input demographics and interests.
-Availability: Users set their "Peak Hours" for interaction.
-Goal: Gather data to facilitate accurate algorithmic matching.
-
-2. Pairing Ecosystem
-There are two distinct modes for connecting users.
-Pairing Mode
-Target Audience
-Mechanism
-Random Search
-Isolated individuals looking for connection.
-• Algorithm: Matches Student & Elderly based on social profile & interests, similar to LinkedIn or Facebook.
-
-• Trial: A specific "Trial Session" to evaluate compatibility.
-
-• Decision: Users vote to Confirm Pair or Find New.
-Friend Search
-Existing Grandparent-Grandchild pairs.
-• Search Bar: Find specific users by name.
-
-• Direct Pairing: Connect instantly via Friend List.
-
-
-3. Core Interactions & Activities
-These features are designed to facilitate bonding between the pairs.
-📖 The "Slice of Life" (Signature Feature) (Cassius) 
+### 1. Slice of Life (Cassius)
 A collaborative storytelling feature designed to bridge the generational gap.
-How it works: Both the elderly and the youth are given the same prompt image. They describe it based on their own unique life experiences.
-The Output: Once both sides submit, it combines into a "Display"—a shared story contrasting or harmonizing two generations.
-The Catalog: Displays are uploaded to a public or private feed.
-Engagement: Users can read stories from other pairs and "Like" them.
-Convenience: Designed as a low-friction, 5-minute task (e.g., doable on a bus ride home).
-🎮 Activity Suite (Brandon)
-TikTok Challenges: Quick, virtual video challenges following current trends.
-Puzzle Challenges: Cooperative brain games.
-Virtual Games: Casual games played within the app.
-Daily Photo Streak: Grandparents and students exchange a photo a day to maintain a streak.
 
+**How it works:**
+- Both the elderly and youth receive the same text prompt
+- Each user uploads their own photo and writes their thoughts
+- Once both submit, they enter "Review Mode" to comment on each other's work
+- The combined "Display" shows: 2 images, 2 thoughts, 2 comments
+- Displays can be published to a public or private catalog
 
+**Key Features:**
+- Text-only prompts (no prompt images)
+- User uploads their own images
+- Review mode with commenting
+- Privacy options (public/private publishing)
+- Low-friction 5-minute activity
 
-🗣️ Social & Community Features (Zongrong)   
-AskAGrandfriend: A forum where elderly users post problems or questions, and students help answer them. Great for establishing new connections outside of the main pair.
-BOOMERang: A "Quick Call" feature allowing users to jump into brief voice/video chats with elderly users for instant interaction.
-Interest Communities: Users can join specific interest groups to expand their social circle beyond their pair.
-(ZR) Physical Assistance
-🏪 Skills Marketplace (Akil)
-Skill Assignment: Both students and elderlies can choose on their profile the skills they posses (digital literacy, knitting, etc)
-Skill Library: When both have selected their skills: algorithm can show recommended skills to match based on user preference (age range, skill types, etc)
-Skill Match: When A requests B to match, B has a choice to accept or decline, and when accepted, algorithm chooses a date for both of them to meet up to carry out activity
-Skill Reward: When the activity exchange has been carried out, both elderly and student can end the session and earn badges and points
+---
 
-4. Gamification & Rewards
-A system designed to retain users and incentivize interaction.
-🏆 The Leaderboard System (Promote Competition)
-Earning Points:
-Completing meetups (virtual or physical).
-Finishing "Slice of Life" displays.
-Maintaining streaks (Daily Photo/Login).
-Winning Tik Tok/Puzzle challenges.
-Rewards (Incentive): 
-Vouchers: Redeem points for real-world items or discounts.
-Weekly Fame: "Most Loved Stories" from the Slice of Life catalog featured weekly.
-🎓 Student Incentives
-Certificate of Participation: Awarded to students who reach a minimum point threshold, serving as a volunteer/extracurricular credential to attract more youth sign-ups.
-🏡 "Support Swaps" (Micro-Assistance Requests)
-This feature expands on Zongrong's idea of Physical Assistance and Akil's Skills Marketplace by turning small, non-skill-based chores or errands into low-friction, high-impact bonding opportunities for the paired users.
-Core Concept: A dedicated, hyper-localized system for the elder to request minor, non-expert physical assistance from their paired student, making the student a reliable support mechanism.
-How it Works:
-The Request: The elder can quickly post a pre-set "Micro-Assistance Request" to their student's private feed. These are limited to simple tasks that require only time and presence, not specialized skills:
-"Help me organize these photos/books."
-"Pick up a library book on your way over."
-"Help me change a lightbulb or set up a new device."
-"Walk my pet/water my plants for 15 minutes."
-The Acceptance: The student receives a notification and can accept or decline. If accepted, the app suggests a meeting time (integrating with a calendar tool if available).
-Reciprocity Log: These completed tasks are logged. For every five Support Swaps completed by the student, the elder is prompted to offer a "Legacy Gift"—a tangible item or service (e.g., a handwritten recipe, a small homemade craft, or an offer of a Boomerang Quick Call outside of their scheduled time) reinforcing the idea of a two-way exchange.
-Safety & Scope: Clearly defined rules ensure tasks are safe, short (under 30 minutes), and do not involve money handling or heavy lifting.
-Complementary Value:
-It addresses the real, small needs of the elderly population that often go unmet.
-It gives the student a powerful sense of purpose and utility, reinforcing the value of their time and physical presence.
-It grounds the digital relationship in tangible, helpful real-world interaction, complementing the digital focus of the Activity Suite and Slice of Life.
+### 2. Activity Page (Brandon)
+Hub for interactive activities between pairs.
 
+**Features:**
+- Activity list/catalog
+- TikTok Challenges - Quick virtual video challenges
+- Puzzle Challenges - Cooperative brain games
+- Daily Photo Streak - Exchange photos daily to maintain streak
 
-5. Additional Services
-(ZR) Physical Assistance: A feature allowing elderly users to request physical help (errands, tech support) from matched students.
+---
 
-Customer Persona
-Student
-Name:
-Kevin Lim
+### 3. AskAGrandfriend (Brandon)
+A forum where users can post questions and get answers from the other generation.
 
+**Features:**
+- Question posting
+- Answer threads
+- Category filtering
+- Helpful vote system
 
-Week 9
-Here’s a clear breakdown of Week 9 (Proposal Presentation) requirements from your project guidebook:
-📌 Week 9 Deliverables
-Proposal Presentation (worth 20% of total marks)
-🔹 Group Assessment (10 marks)
-Innovation (5%)
-Identify at least 4 business needs requiring digital innovation.
-Provide detailed analysis, description, and relevant key facts.
-The more comprehensive and well-justified your needs, the higher your score.
-Proposal (5%)
-Show high empathy for users.
-Present feasible, realistic, and practical workflows that clearly add value to business needs.
-Minimize the number of improvements required.
-🔹 Individual Assessment (10 marks)
-Presentation (5%)
-Speak with confidence, clear articulation, and good volume.
-Maintain eye contact consistently.
-Engage the audience effectively.
-Prototype (5%)
-Present a wireframe design with comprehensive details.
-Include complete validation messages.
-Demonstrate exceptional user experience considerations.
-Aim for a design that fully meets user needs with minimal enhancements required.
+---
+
+### 4. BOOMERang (Brandon)
+Quick call feature for instant voice/video interaction.
+
+**Features:**
+- Quick call initiation
+- Video chat capability
+- Call history
+
+---
+
+### 5. Profile Management (Zongrong)
+User profile system.
+
+**Features:**
+- View profile
+- Edit profile (bio, interests, avatar)
+- Settings (notifications, privacy, account)
+- Demographics and interests setup
+
+---
+
+### 6. Skills Swap (Zongrong)
+Skill exchange marketplace between generations.
+
+**Features:**
+- Skill assignment - Users list skills they possess
+- Skill library - Browse available skills
+- Skill match - Request and accept skill exchanges
+- Skill reward - Earn badges/points upon completion
+
+---
+
+### 7. Login/Auth (Deon)
+Authentication system.
+
+**Features:**
+- Login
+- Register
+- Onboarding flow
+- Password reset
+
+---
+
+### 8. Communities (Deon)
+Interest-based group management.
+
+**Features:**
+- Browse communities
+- Community detail page
+- Join/leave communities
+- Community posts and discussions
+
+---
+
+### 9. Jukebox (Deon)
+Intergenerational music sharing feature.
+
+**Features:**
+- Music library from both generations
+- Playlist creation
+- Share songs with partner
+
+---
+
+### 10. Messaging/Inbox (Akil)
+Direct messaging system.
+
+**Features:**
+- Inbox with conversation list
+- Individual conversation view
+- Message types: text, images, activity invites
+- Read receipts
+
+---
+
+### 11. Cyber Challenge (Akil)
+Digital literacy and scam prevention challenges.
+
+**Features:**
+- Daily scam identification challenges
+- Educational content
+- Points for correct answers
+
+---
+
+### 12. Rewards (Akil)
+Gamification and incentive system.
+
+**Features:**
+- Points system
+- Leaderboard
+- Voucher redemption
+- Badges and achievements
+
+---
+
+## Technical Stack
+
+- **Frontend:** HTML, CSS (Bootstrap 5), JavaScript
+- **Backend:** Python Flask
+- **Database:** Supabase (PostgreSQL)
+- **Templating:** Jinja2
+
+---
+
+## Target Users
+
+1. **Youth (Students)** - Looking to volunteer, earn credentials, learn from seniors
+2. **Seniors (Elderly)** - Seeking companionship, wanting to share experiences, need tech help
+
+---
+
+## Success Metrics
+
+- User engagement (daily active users)
+- Feature completion rates (Slice of Life displays published)
+- Streak maintenance
+- Points earned and redeemed

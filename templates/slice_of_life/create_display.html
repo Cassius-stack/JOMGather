@@ -3,6 +3,36 @@
 {% block title %}Upload Your Story - Slice of Life{% endblock %}
 
 {% block content %}
+<!-- Loading Overlay - Shows after submit, reveals button after 5 seconds -->
+<div id="loadingOverlay" class="sol-loading-overlay" style="display: none;">
+    <div id="loadingSpinner">
+        <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status"></div>
+        <p class="sol-loading-text">Submitting your response...</p>
+        <p class="sol-loading-subtext" id="loadingStatus">Waiting for your partner to respond</p>
+        <div class="mt-4">
+            <div class="progress" style="width: 200px; height: 8px;">
+                <div id="progressBar" class="progress-bar" role="progressbar" style="width: 0%"></div>
+            </div>
+            <small class="text-muted mt-2 d-block" id="countdown">Partner responding in 5s...</small>
+        </div>
+    </div>
+
+    <!-- Success State - Shows after 5 seconds -->
+    <div id="successState" style="display: none;">
+        <div class="text-center">
+            <div class="bg-success bg-opacity-10 rounded-circle p-4 d-inline-block mb-4">
+                <i class="bi bi-check-circle-fill text-success" style="font-size: 3rem;"></i>
+            </div>
+            <h4 class="fw-bold mb-2">Both Responses Received!</h4>
+            <p class="text-muted mb-4">You and Grandma Rose have both submitted. Ready to review!</p>
+            <a href="{{ url_for('slice_of_life.review', display_id=1) }}" class="btn btn-success btn-lg"
+                style="border-radius: 12px;">
+                <i class="bi bi-eye me-2"></i>Enter Review Mode
+            </a>
+        </div>
+    </div>
+</div>
+
 <div class="container py-4">
     <!-- Header -->
     <div class="mb-4">
@@ -11,127 +41,103 @@
         </a>
     </div>
 
-    <div class="row">
-        <!-- Left Column - Prompt & Upload -->
-        <div class="col-lg-6 mb-4">
-            <!-- Today's Prompt -->
-            <div class="card border-0 shadow-sm mb-4"
-                style="background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%);">
-                <div class="card-body p-4 text-white">
+    <!-- Prompt Card - Full Width on Top -->
+    <div class="card border-0 shadow-sm mb-4"
+        style="background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%); border-radius: 16px;">
+        <div class="card-body p-4 text-white">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
                     <p class="text-uppercase small opacity-75 mb-2">
                         <i class="bi bi-calendar-event me-1"></i>Today's Prompt
                     </p>
-                    <h4 style="line-height: 1.4;">
+                    <h3 class="mb-0" style="line-height: 1.4;">
                         "What is your favourite thing to do after school/work?"
-                    </h4>
+                    </h3>
                 </div>
-            </div>
-
-            <!-- Image Upload Area -->
-            <div class="card border-0 shadow-sm">
-                <div class="card-body p-4">
-                    <h5 class="fw-bold mb-3">
-                        <i class="bi bi-image text-primary me-2"></i>Upload Your Photo
-                    </h5>
-                    <p class="text-muted mb-4">
-                        Share a photo that represents your answer to the prompt. It could be a place, an activity, or
-                        anything meaningful to you!
-                    </p>
-
-                    <!-- Upload Zone -->
-                    <div class="upload-zone text-center p-5 mb-3"
-                        style="border: 2px dashed #dee2e6; border-radius: 15px; background: #f8f9fa; cursor: pointer;"
-                        onclick="document.getElementById('imageUpload').click()">
-                        <div id="uploadPreview" style="display: none;">
-                            <img id="previewImage" src="" alt="Preview" class="img-fluid rounded mb-3"
-                                style="max-height: 300px;">
-                            <p class="text-success mb-0"><i class="bi bi-check-circle me-1"></i>Image selected</p>
-                        </div>
-                        <div id="uploadPlaceholder">
-                            <i class="bi bi-cloud-arrow-up text-muted" style="font-size: 3rem;"></i>
-                            <p class="text-muted mt-3 mb-1">Click to upload or drag and drop</p>
-                            <small class="text-muted">PNG, JPG up to 10MB</small>
-                        </div>
-                        <input type="file" id="imageUpload" name="image" accept="image/*" class="d-none"
-                            onchange="previewUpload(this)">
-                    </div>
-
-                    <div class="d-flex gap-2">
-                        <button type="button" class="btn btn-outline-secondary btn-sm"
-                            onclick="document.getElementById('imageUpload').click()">
-                            <i class="bi bi-folder me-1"></i>Choose File
-                        </button>
-                        <button type="button" class="btn btn-outline-secondary btn-sm">
-                            <i class="bi bi-camera me-1"></i>Take Photo
-                        </button>
-                    </div>
+                <div class="d-flex align-items-center gap-2">
+                    <img src="https://i.pravatar.cc/40?img=12" class="rounded-circle" alt="You">
+                    <i class="bi bi-arrow-left-right text-white-50"></i>
+                    <img src="https://i.pravatar.cc/40?img=25" class="rounded-circle" alt="Partner">
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- Right Column - Story Form -->
-        <div class="col-lg-6">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body p-4">
-                    <h5 class="fw-bold mb-3">
-                        <i class="bi bi-pen text-primary me-2"></i>Share Your Thoughts
-                    </h5>
-                    <p class="text-muted mb-4">
-                        What does your photo mean to you? Share the story behind it.
-                    </p>
+    <!-- Upload Photo & Share Thoughts - Side by Side Equal Proportion -->
+    <form id="storyForm" onsubmit="submitStory(event)">
+        <div class="row g-4">
+            <!-- Left: Upload Your Photo (50%) -->
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm h-100" style="border-radius: 16px;">
+                    <div class="card-body p-4">
+                        <h5 class="fw-bold mb-3">
+                            <i class="bi bi-image text-primary me-2"></i>Upload Your Photo
+                        </h5>
+                        <p class="text-muted mb-4">
+                            Share a photo that represents your answer to the prompt.
+                        </p>
 
-                    <form method="POST" action="{{ url_for('slice_of_life.create_display') }}"
-                        enctype="multipart/form-data">
-                        <!-- User Indicator -->
-                        <div class="alert alert-info d-flex align-items-center mb-4" role="alert">
-                            <i class="bi bi-info-circle me-2"></i>
-                            <span>You're responding as a <strong>Youth</strong>. Your partner <strong>Grandma
-                                    Rose</strong> will also respond.</span>
+                        <!-- Upload Zone -->
+                        <div class="upload-zone text-center p-4"
+                            style="border: 2px dashed #dee2e6; border-radius: 16px; background: #f8f9fa; cursor: pointer; min-height: 250px; display: flex; flex-direction: column; align-items: center; justify-content: center;"
+                            onclick="document.getElementById('imageUpload').click()">
+                            <div id="uploadPreview" style="display: none;">
+                                <img id="previewImage" src="" alt="Preview" class="img-fluid rounded mb-3"
+                                    style="max-height: 200px;">
+                                <p class="text-success mb-0"><i class="bi bi-check-circle me-1"></i>Image selected</p>
+                            </div>
+                            <div id="uploadPlaceholder">
+                                <i class="bi bi-cloud-arrow-up text-muted" style="font-size: 3rem;"></i>
+                                <p class="text-muted mt-3 mb-1">Click to upload or drag and drop</p>
+                                <small class="text-muted">PNG, JPG up to 10MB</small>
+                            </div>
+                            <input type="file" id="imageUpload" name="image" accept="image/*" class="d-none"
+                                onchange="previewUpload(this)">
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: Share Your Thoughts (50%) -->
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm h-100" style="border-radius: 16px;">
+                    <div class="card-body p-4 d-flex flex-column">
+                        <h5 class="fw-bold mb-3">
+                            <i class="bi bi-pen text-primary me-2"></i>Share Your Thoughts
+                        </h5>
+                        <p class="text-muted mb-3">
+                            What does your photo mean to you? Share the story behind it.
+                        </p>
 
                         <!-- Story Input -->
-                        <div class="mb-4">
-                            <label for="story" class="form-label fw-bold">Your Story</label>
-                            <textarea class="form-control" id="story" name="story" rows="8" placeholder="Tell the story behind your photo...
+                        <div class="flex-grow-1 d-flex flex-column">
+                            <textarea class="form-control flex-grow-1" id="story" name="story"
+                                style="border-radius: 12px; border-color: #e0e0e0; resize: none; min-height: 180px;"
+                                placeholder="Tell the story behind your photo...
 
 What made you choose this image?
-What memory or feeling does it capture?
-How does it relate to the prompt?
-
-Be as personal as you'd like - your partner will share their perspective too!" required maxlength="2000"></textarea>
+What memory or feeling does it capture?" required maxlength="2000"></textarea>
                             <div class="d-flex justify-content-between mt-2">
                                 <small class="text-muted">Write from the heart!</small>
                                 <small class="text-muted"><span id="charCount">0</span>/2000</small>
                             </div>
                         </div>
-
-                        <!-- Submit Button -->
-                        <button type="submit" class="btn btn-primary btn-lg w-100" id="submitBtn" disabled>
-                            <i class="bi bi-send me-2"></i>Submit My Response
-                        </button>
-
-                        <p class="text-center text-muted small mt-3 mb-0">
-                            <i class="bi bi-lock me-1"></i>Your response stays private until both partners submit
-                        </p>
-                    </form>
-                </div>
-            </div>
-
-            <!-- What Happens Next -->
-            <div class="card border-0 shadow-sm mt-4">
-                <div class="card-body p-4">
-                    <h6 class="fw-bold mb-3"><i class="bi bi-arrow-right-circle text-primary me-2"></i>What Happens
-                        Next?</h6>
-                    <ol class="mb-0 text-muted">
-                        <li class="mb-2">Your partner will receive the same prompt</li>
-                        <li class="mb-2">Once both of you submit, you'll enter <strong>Review Mode</strong></li>
-                        <li class="mb-2">Comment on each other's submissions</li>
-                        <li>Decide together to publish (public or private)</li>
-                    </ol>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
+
+        <!-- Submit Button - Full Width Below -->
+        <div class="mt-4">
+            <button type="submit" class="btn btn-primary btn-lg w-100" id="submitBtn" disabled
+                style="border-radius: 12px;">
+                <i class="bi bi-send me-2"></i>Submit My Response
+            </button>
+            <p class="text-center text-muted small mt-2 mb-0">
+                <i class="bi bi-person-hearts me-1"></i>Paired with <strong>Grandma Rose</strong>
+            </p>
+        </div>
+    </form>
 </div>
 {% endblock %}
 
@@ -169,6 +175,45 @@ Be as personal as you'd like - your partner will share their perspective too!" r
     function checkFormValidity() {
         const hasStory = storyTextarea.value.trim().length > 10;
         submitBtn.disabled = !(imageSelected && hasStory);
+    }
+
+    // Submit and show loading, then reveal button after 5 seconds
+    function submitStory(e) {
+        e.preventDefault();
+
+        const overlay = document.getElementById('loadingOverlay');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        const successState = document.getElementById('successState');
+        const progressBar = document.getElementById('progressBar');
+        const countdown = document.getElementById('countdown');
+        const loadingStatus = document.getElementById('loadingStatus');
+
+        overlay.style.display = 'flex';
+
+        let seconds = 5;
+        let progress = 0;
+
+        const interval = setInterval(() => {
+            seconds--;
+            progress += 20;
+            progressBar.style.width = progress + '%';
+
+            if (seconds <= 3) {
+                loadingStatus.textContent = 'Grandma Rose is responding...';
+            }
+            if (seconds <= 1) {
+                loadingStatus.textContent = 'Response received!';
+            }
+
+            countdown.textContent = seconds > 0 ? `Partner responding in ${seconds}s...` : 'Done!';
+
+            if (seconds <= 0) {
+                clearInterval(interval);
+                // Show success state with button (NOT auto-redirect)
+                loadingSpinner.style.display = 'none';
+                successState.style.display = 'block';
+            }
+        }, 1000);
     }
 </script>
 {% endblock %}

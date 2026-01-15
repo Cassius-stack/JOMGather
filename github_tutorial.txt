@@ -1,6 +1,6 @@
 ================================================================================
                     GITHUB TUTORIAL FOR BEGINNERS
-                    MySavvyGranny Project
+                    JOMGather Project
 ================================================================================
 
 Hi! This guide will teach you everything you need to know about Git and GitHub
@@ -63,7 +63,7 @@ METHOD A - IF YOU ARE THE TEAM LEADER (Creating the repository):
 
 1. Open PowerShell and navigate to your project folder:
    
-   cd "c:\School-Study\Semester 2\Web Development Project\Project\MySavvyGranny"
+   cd "c:\School-Study\Semester 2\Web Development Project\Project\JOMGather"
 
 2. Initialize Git in your project:
    
@@ -80,7 +80,7 @@ METHOD A - IF YOU ARE THE TEAM LEADER (Creating the repository):
 5. Go to GitHub.com and create a new repository:
    - Click the "+" icon in the top right corner
    - Click "New repository"
-   - Repository name: MySavvyGranny
+   - Repository name: JOMGather
    - Description: Intergenerational connection platform
    - Keep it PUBLIC (so teammates can access)
    - DON'T check "Add a README file" (we already have one)
@@ -88,7 +88,7 @@ METHOD A - IF YOU ARE THE TEAM LEADER (Creating the repository):
 
 6. Connect your local project to GitHub (replace YOUR_USERNAME):
    
-   git remote add origin https://github.com/YOUR_USERNAME/MySavvyGranny.git
+   git remote add origin https://github.com/YOUR_USERNAME/JOMGather.git
    git branch -M main
    git push -u origin main
 
@@ -99,7 +99,7 @@ METHOD A - IF YOU ARE THE TEAM LEADER (Creating the repository):
 METHOD B - IF YOU ARE A TEAM MEMBER (Joining an existing repository):
 ---------------------------------------------------------------------
 
-1. Get the repository URL from your team leader (looks like: https://github.com/username/MySavvyGranny.git)
+1. Get the repository URL from your team leader (looks like: https://github.com/username/JOMGather.git)
 
 2. Open PowerShell and navigate to where you want the project:
    
@@ -107,11 +107,11 @@ METHOD B - IF YOU ARE A TEAM MEMBER (Joining an existing repository):
 
 3. Clone (download) the repository:
    
-   git clone https://github.com/TEAM_LEADER_USERNAME/MySavvyGranny.git
+   git clone https://github.com/TEAM_LEADER_USERNAME/JOMGather.git
 
 4. Enter the project folder:
    
-   cd MySavvyGranny
+   cd JOMGather
 
 ================================================================================
 PART 4: DAILY WORKFLOW (THE IMPORTANT PART!)
@@ -123,7 +123,7 @@ BEFORE YOU START WORKING:
 -------------------------
 1. Open PowerShell, go to project folder:
    
-   cd "c:\School-Study\Semester 2\Web Development Project\Project\MySavvyGranny"
+   cd "c:\School-Study\Semester 2\Web Development Project\Project\JOMGather"
 
 2. Get the latest changes from your teammates:
    

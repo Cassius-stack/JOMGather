@@ -15,170 +15,221 @@
             </h2>
             <p class="text-muted mb-0">Review your combined display before publishing</p>
         </div>
-        <span class="badge bg-success fs-6 py-2 px-3">
+        <span class="badge bg-success fs-6 py-2 px-3" style="border-radius: 12px;">
             <i class="bi bi-check-circle me-1"></i>Both Submitted
         </span>
     </div>
 
     <!-- Prompt Banner -->
-    <div class="card border-0 shadow-sm mb-4" style="background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%);">
-        <div class="card-body p-4 text-white text-center">
-            <p class="text-uppercase small opacity-75 mb-2">Today's Prompt</p>
-            <h4 class="mb-0">"Your favourite childhood memory"</h4>
+    <div class="card border-0 shadow-sm mb-4"
+        style="background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%); border-radius: 16px;">
+        <div class="card-body p-3 text-white text-center">
+            <small class="text-uppercase opacity-75">Today's Prompt</small>
+            <h5 class="mb-0 mt-1">"What is your favourite thing to do after school/work?"</h5>
         </div>
     </div>
 
-    <!-- Side by Side Comparison -->
+    <!-- Side by Side Review Cards -->
     <div class="row g-4 mb-4">
-        <!-- Your Submission -->
+        <!-- Your Submission (Youth) -->
         <div class="col-md-6">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-header bg-primary bg-opacity-10 border-0 py-3">
-                    <div class="d-flex align-items-center">
-                        <img src="https://i.pravatar.cc/40?img=12" class="rounded-circle me-2" alt="You">
-                        <div>
-                            <span class="fw-bold">You</span>
-                            <span class="badge bg-primary ms-2">Youth</span>
-                        </div>
+            <div class="sol-review-card h-100">
+                <div class="sol-review-header youth">
+                    <img src="https://i.pravatar.cc/44?img=12" alt="You">
+                    <div>
+                        <strong>You</strong>
+                        <span class="sol-author-badge youth ms-2">Youth</span>
                     </div>
                 </div>
-                <div class="card-body p-0">
-                    <img src="https://images.unsplash.com/photo-1472745942893-4b9f730c7668?w=600&h=300&fit=crop"
-                        alt="Your photo" class="img-fluid w-100" style="max-height: 250px; object-fit: cover;">
-                    <div class="p-4">
-                        <p class="mb-0">
-                            "This is the playground near my old HDB. I used to spend every evening here after school,
-                            playing catching with my neighbors. The yellow slides were my favourite - I felt like
-                            I was flying every time I went down. Those carefree days are something I miss dearly..."
-                        </p>
+
+                <!-- Your Image -->
+                <img src="https://images.unsplash.com/photo-1472745942893-4b9f730c7668?w=600&h=200&fit=crop"
+                    alt="Your photo" class="sol-review-image">
+
+                <div class="sol-review-content">
+                    <!-- Your Thought -->
+                    <h6 class="fw-bold mb-2"><i class="bi bi-chat-text text-primary me-2"></i>Your Thought</h6>
+                    <div class="sol-review-thought">
+                        "After school, I love going to the playground near my HDB. This photo is from last week -
+                        I was just sitting on the swing, watching the sunset and decompressing from the day.
+                        It's my peaceful escape."
+                    </div>
+
+                    <!-- Partner's Comment on Your Work -->
+                    <h6 class="fw-bold mb-2"><i class="bi bi-chat-dots text-success me-2"></i>Grandma Rose's Comment
+                    </h6>
+                    <div class="sol-review-comment">
+                        <p class="mb-0">"Wah, your playground looks so colourful! In my time, we just had wooden
+                            seesaws.
+                            But the feeling of watching sunset is the same - very calming right? 😊"</p>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Partner's Submission -->
+        <!-- Partner's Submission (Senior) -->
         <div class="col-md-6">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-header bg-warning bg-opacity-10 border-0 py-3">
-                    <div class="d-flex align-items-center">
-                        <img src="https://i.pravatar.cc/40?img=20" class="rounded-circle me-2" alt="Mr. Tan">
-                        <div>
-                            <span class="fw-bold">Mr. Tan</span>
-                            <span class="badge bg-warning text-dark ms-2">Senior</span>
-                        </div>
+            <div class="sol-review-card h-100">
+                <div class="sol-review-header senior">
+                    <img src="https://i.pravatar.cc/44?img=25" alt="Grandma Rose">
+                    <div>
+                        <strong>Grandma Rose</strong>
+                        <span class="sol-author-badge senior ms-2">Senior</span>
                     </div>
                 </div>
-                <div class="card-body p-0">
-                    <img src="https://images.unsplash.com/photo-1517457373958-b7bdd4587205?w=600&h=300&fit=crop"
-                        alt="Partner's photo" class="img-fluid w-100" style="max-height: 250px; object-fit: cover;">
-                    <div class="p-4">
-                        <p class="mb-0">
-                            "This kampung house reminds me of growing up in the 1960s. We had no TV or phones -
-                            just the sound of chickens and children playing gasing. My mother would call us home
-                            when the kerosene lamps were lit. Life was simple but we were happy..."
-                        </p>
+
+                <!-- Partner's Image -->
+                <img src="https://images.unsplash.com/photo-1517457373958-b7bdd4587205?w=600&h=200&fit=crop"
+                    alt="Partner's photo" class="sol-review-image">
+
+                <div class="sol-review-content">
+                    <!-- Partner's Thought -->
+                    <h6 class="fw-bold mb-2"><i class="bi bi-chat-text text-warning me-2"></i>Grandma Rose's Thought
+                    </h6>
+                    <div class="sol-review-thought">
+                        "After work last time, I always go to the kopitiam near Toa Payoh.
+                        This photo is my usual seat - same corner for 30 years! I drink kopi-o and chat with the uncle.
+                        Very shiok."
                     </div>
+
+                    <!-- Your Comment on Partner's Work -->
+                    <h6 class="fw-bold mb-2"><i class="bi bi-chat-dots text-primary me-2"></i>Your Comment</h6>
+                    {% if not your_comment_added %}
+                    <form class="d-flex gap-2" onsubmit="addComment(event)">
+                        <input type="text" class="sol-comment-input flex-grow-1" placeholder="Add your comment..."
+                            id="yourComment">
+                        <button type="submit" class="btn btn-primary px-3" style="border-radius: 12px;">
+                            <i class="bi bi-send"></i>
+                        </button>
+                    </form>
+                    {% else %}
+                    <div class="sol-review-comment">
+                        <p class="mb-0" id="yourCommentDisplay">"That kopitiam looks so cozy! I should visit Toa Payoh
+                            and try the kopi-o.
+                            Maybe you can recommend which stall? 🙏"</p>
+                    </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Comments Section -->
-    <div class="card border-0 shadow-sm mb-4">
-        <div class="card-header bg-white border-0 py-3">
-            <h5 class="mb-0"><i class="bi bi-chat-dots text-primary me-2"></i>Comments</h5>
+    <!-- Completed Display Preview -->
+    <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px;">
+        <div class="card-header bg-white border-0 py-3 px-4">
+            <h5 class="mb-0"><i class="bi bi-image text-primary me-2"></i>Your Completed Display</h5>
+            <small class="text-muted">This is how it will appear in the catalog</small>
         </div>
-        <div class="card-body">
-            <!-- Existing Comments -->
-            <div class="mb-4">
-                <div class="d-flex mb-3">
-                    <img src="https://i.pravatar.cc/35?img=20" class="rounded-circle me-3" alt="Mr. Tan">
-                    <div class="bg-light rounded-3 p-3 flex-grow-1">
-                        <div class="d-flex justify-content-between mb-1">
-                            <span class="fw-bold">Mr. Tan</span>
-                            <small class="text-muted">10 mins ago</small>
-                        </div>
-                        <p class="mb-0">Wah, your playground looks so colourful! In my time, we just had wooden seesaws.
-                            But the fun was the same lah! 😊</p>
-                    </div>
+        <div class="card-body p-4">
+            <div class="sol-completed-display">
+                <!-- 2 Images Side by Side -->
+                <div class="sol-completed-images">
+                    <img src="https://images.unsplash.com/photo-1472745942893-4b9f730c7668?w=400&h=180&fit=crop"
+                        alt="Youth's photo">
+                    <img src="https://images.unsplash.com/photo-1517457373958-b7bdd4587205?w=400&h=180&fit=crop"
+                        alt="Senior's photo">
                 </div>
 
-                <div class="d-flex mb-3">
-                    <img src="https://i.pravatar.cc/35?img=12" class="rounded-circle me-3" alt="You">
-                    <div class="bg-primary bg-opacity-10 rounded-3 p-3 flex-grow-1">
-                        <div class="d-flex justify-content-between mb-1">
-                            <span class="fw-bold">You</span>
-                            <small class="text-muted">5 mins ago</small>
-                        </div>
-                        <p class="mb-0">Uncle, I never knew kampung life was like that! Playing gasing sounds so cool.
-                            Can you teach me one day? 🙏</p>
+                <!-- Youth Section: Thought + Comment -->
+                <div class="sol-completed-section youth-section">
+                    <div class="d-flex align-items-center mb-2">
+                        <img src="https://i.pravatar.cc/30?img=12" class="rounded-circle me-2" alt="You">
+                        <span class="sol-author-badge youth">You (Youth)</span>
                     </div>
+                    <p class="mb-2"><strong>Thought:</strong> "After school, I love going to the playground near my
+                        HDB..."</p>
+                    <p class="mb-0 text-muted fst-italic"><i class="bi bi-reply me-1"></i><strong>Grandma Rose
+                            commented:</strong> "Wah, your playground looks so colourful!"</p>
+                </div>
+
+                <!-- Senior Section: Thought + Comment -->
+                <div class="sol-completed-section senior-section">
+                    <div class="d-flex align-items-center mb-2">
+                        <img src="https://i.pravatar.cc/30?img=25" class="rounded-circle me-2" alt="Grandma Rose">
+                        <span class="sol-author-badge senior">Grandma Rose (Senior)</span>
+                    </div>
+                    <p class="mb-2"><strong>Thought:</strong> "After work last time, I always go to the kopitiam near
+                        Toa Payoh..."</p>
+                    <p class="mb-0 text-muted fst-italic"><i class="bi bi-reply me-1"></i><strong>You
+                            commented:</strong> "That kopitiam looks so cozy!"</p>
                 </div>
             </div>
-
-            <!-- Add Comment -->
-            <form class="d-flex gap-2">
-                <img src="https://i.pravatar.cc/40?img=12" class="rounded-circle" alt="You">
-                <input type="text" class="form-control rounded-pill" placeholder="Add a comment..." name="comment">
-                <button type="submit" class="btn btn-primary rounded-pill px-4">
-                    <i class="bi bi-send"></i>
-                </button>
-            </form>
         </div>
     </div>
 
     <!-- Publish Section -->
-    <div class="card border-0 shadow-sm" style="border: 2px solid #10B981 !important;">
-        <div class="card-body p-4">
-            <h5 class="fw-bold mb-3"><i class="bi bi-send text-success me-2"></i>Ready to Publish?</h5>
-            <p class="text-muted mb-4">Your combined display is ready! Choose how you'd like to share it.</p>
+    <div class="sol-publish-card">
+        <h5 class="fw-bold mb-3"><i class="bi bi-send text-success me-2"></i>Ready to Publish?</h5>
+        <p class="text-muted mb-4">Your combined display is complete with 2 images, 2 thoughts, and 2 comments!</p>
 
-            <form method="POST" action="{{ url_for('slice_of_life.publish', display_id=1) }}">
-                <!-- Privacy Options -->
-                <div class="row g-3 mb-4">
-                    <div class="col-md-6">
-                        <div class="form-check card p-3 h-100" style="cursor: pointer;">
-                            <input class="form-check-input" type="radio" name="privacy" id="public" value="public"
-                                checked>
-                            <label class="form-check-label w-100" for="public" style="cursor: pointer;">
-                                <div class="d-flex align-items-center">
-                                    <i class="bi bi-globe fs-4 text-primary me-3"></i>
-                                    <div>
-                                        <strong>Public</strong>
-                                        <p class="text-muted small mb-0">Share in the catalog for everyone to see and
-                                            like</p>
-                                    </div>
-                                </div>
-                            </label>
+        <form method="POST" action="{{ url_for('slice_of_life.publish', display_id=display_id) }}">
+            <!-- Privacy Options -->
+            <div class="row g-3 mb-4">
+                <div class="col-md-6">
+                    <label class="sol-privacy-option selected w-100" onclick="selectPrivacy(this, 'public')">
+                        <input type="radio" name="privacy" value="public" checked class="d-none">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-globe fs-4 text-primary me-3"></i>
+                            <div>
+                                <strong>Public</strong>
+                                <p class="text-muted small mb-0">Share in the catalog for everyone</p>
+                            </div>
                         </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-check card p-3 h-100" style="cursor: pointer;">
-                            <input class="form-check-input" type="radio" name="privacy" id="private" value="private">
-                            <label class="form-check-label w-100" for="private" style="cursor: pointer;">
-                                <div class="d-flex align-items-center">
-                                    <i class="bi bi-lock fs-4 text-secondary me-3"></i>
-                                    <div>
-                                        <strong>Private</strong>
-                                        <p class="text-muted small mb-0">Only visible to you and your partner</p>
-                                    </div>
-                                </div>
-                            </label>
-                        </div>
-                    </div>
+                    </label>
                 </div>
+                <div class="col-md-6">
+                    <label class="sol-privacy-option w-100" onclick="selectPrivacy(this, 'private')">
+                        <input type="radio" name="privacy" value="private" class="d-none">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-lock fs-4 text-secondary me-3"></i>
+                            <div>
+                                <strong>Private</strong>
+                                <p class="text-muted small mb-0">Only you and your partner can see</p>
+                            </div>
+                        </div>
+                    </label>
+                </div>
+            </div>
 
-                <!-- Action Buttons -->
-                <div class="d-flex gap-3">
-                    <button type="submit" class="btn btn-success btn-lg flex-grow-1">
-                        <i class="bi bi-check-lg me-2"></i>Publish Display
-                    </button>
-                    <button type="button" class="btn btn-outline-secondary btn-lg">
-                        <i class="bi bi-pencil me-1"></i>Edit My Response
-                    </button>
-                </div>
-            </form>
-        </div>
+            <!-- Action Buttons -->
+            <div class="d-flex gap-3">
+                <button type="submit" class="btn btn-success btn-lg flex-grow-1" style="border-radius: 12px;">
+                    <i class="bi bi-check-lg me-2"></i>Publish Display (+10 points)
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-lg" style="border-radius: 12px;">
+                    <i class="bi bi-pencil me-1"></i>Edit
+                </button>
+            </div>
+        </form>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function selectPrivacy(element, value) {
+        // Remove selected from all options
+        document.querySelectorAll('.sol-privacy-option').forEach(opt => {
+            opt.classList.remove('selected');
+        });
+        // Add selected to clicked option
+        element.classList.add('selected');
+        // Check the radio
+        element.querySelector('input[type="radio"]').checked = true;
+    }
+
+    function addComment(e) {
+        e.preventDefault();
+        const comment = document.getElementById('yourComment').value;
+        if (comment.trim()) {
+            // Replace form with comment display
+            const form = e.target;
+            form.innerHTML = `
+            <div class="sol-review-comment">
+                <p class="mb-0">"${comment}"</p>
+            </div>
+        `;
+        }
+    }
+</script>
 {% endblock %}

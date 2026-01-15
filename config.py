@@ -3,7 +3,7 @@ import os
 class Config:
     """Base configuration class."""
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'your-secret-key-here-change-in-production'
-    DATABASE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'database', 'mysavvygranny.db')
+    DATABASE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'database', 'JOMGather.db')
     
 class DevelopmentConfig(Config):
     """Development configuration."""

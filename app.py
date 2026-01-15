@@ -1,7 +1,6 @@
 """
-MySavvyGranny - Intergenerational Connection Platform
+JOMGather - Intergenerational Connection Platform
 Main Flask Application Entry Point
-kevin py best
 """
 
 from flask import Flask, render_template
@@ -10,7 +9,6 @@ from config import config
 # Import route blueprints
 from routes.auth import auth_bp
 from routes.profile import profile_bp
-from routes.pairing import pairing_bp
 from routes.activities import activities_bp
 from routes.messaging import messaging_bp
 from routes.community import community_bp
@@ -27,7 +25,6 @@ def create_app(config_name='default'):
     # Register blueprints
     app.register_blueprint(auth_bp, url_prefix='/auth')
     app.register_blueprint(profile_bp, url_prefix='/profile')
-    app.register_blueprint(pairing_bp, url_prefix='/pairing')
     app.register_blueprint(activities_bp, url_prefix='/activities')
     app.register_blueprint(messaging_bp, url_prefix='/messaging')
     app.register_blueprint(community_bp, url_prefix='/community')

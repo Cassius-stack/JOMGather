@@ -1,4 +1,4 @@
--- MySavvyGranny Database Schema
+-- JOMGather Database Schema
 -- SQLite Database
 
 -- Users table

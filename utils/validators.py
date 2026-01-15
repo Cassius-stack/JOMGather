@@ -1,5 +1,5 @@
 """
-Form validation helpers for MySavvyGranny
+Form validation helpers for JOMGather
 """
 
 import re

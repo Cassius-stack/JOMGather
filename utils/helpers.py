@@ -1,5 +1,5 @@
 """
-General helper functions for MySavvyGranny
+General helper functions for JOMGather
 """
 
 import sqlite3

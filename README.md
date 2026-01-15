@@ -70,7 +70,7 @@ JOMGather/
 - **AskAGrandfriend**: Forums for Youth and Senior
 - **BOOMERang**: Meet new elderlies and youths
 - **Cyber Challenge**: Defending against scams daily
-- **Skills Swap**: Learn and exchange skills
+- **Support Swap**: Learn and exchange skills
 - **Jukebox**: Explore both generations' music
 
 - **Rewards**: Redeem coins earnt for vouchers and items

@@ -1,9 +1,9 @@
 ================================================================================
-                    MYSAVVYGRANNY STARTUP GUIDE
+                    JOMGather STARTUP GUIDE
                     Complete Setup Instructions
 ================================================================================
 
-This guide covers EVERYTHING you need to run the MySavvyGranny project.
+This guide covers EVERYTHING you need to run the JOMGather project.
 Follow these steps EXACTLY in order.
 
 ================================================================================
@@ -52,11 +52,11 @@ STEP 4: Clone the Repository
 
 3. Clone the repository:
 
-    git clone https://github.com/Cassius-stack/MySavvyGranny.git
+    git clone https://github.com/Cassius-stack/JOMGather.git
 
 4. Enter the project folder:
 
-    cd MySavvyGranny
+    cd JOMGather
 
 
 STEP 5: Create Virtual Environment (Recommended)
@@ -94,7 +94,7 @@ QUICK START (3 commands):
 
 2. Navigate to project folder:
 
-    cd "C:\School-Study\Semester 2\Web Development Project\Project\MySavvyGranny"
+    cd "C:\School-Study\Semester 2\Web Development Project\Project\JOMGather"
 
 3. Activate virtual environment (if using one):
 
@@ -207,8 +207,8 @@ SOLUTION: Another process is using port 5000
 
 PROBLEM: "TemplateNotFound" error
 SOLUTION: You're running from the wrong folder
-- Make sure you're in the MySavvyGranny folder
-- Run: cd "path\to\MySavvyGranny" first
+- Make sure you're in the JOMGather folder
+- Run: cd "path\to\JOMGather" first
 
 PROBLEM: Virtual environment won't activate
 SOLUTION: PowerShell execution policy issue
@@ -228,7 +228,7 @@ PART 5: DAILY WORKFLOW FOR TEAM MEMBERS
 BEFORE STARTING WORK:
 ---------------------
 1. Open PowerShell
-2. cd "path\to\MySavvyGranny"
+2. cd "path\to\JOMGather"
 3. git pull                          # Get latest changes from team
 4. .\venv\Scripts\activate           # If using virtual environment
 5. py app.py                         # Start server
@@ -242,7 +242,7 @@ WHEN DONE WORKING:
 ------------------
 1. Save all your files
 2. Open a NEW PowerShell window (keep server running in the other one)
-3. cd "path\to\MySavvyGranny"
+3. cd "path\to\JOMGather"
 4. git add .                         # Stage your changes
 5. git commit -m "Describe what you did"
 6. git push                          # Upload to GitHub
@@ -255,7 +255,7 @@ PART 6: QUICK REFERENCE CARD
 +----------------------------------+----------------------------------------+
 | What you want to do              | Command                                |
 +----------------------------------+----------------------------------------+
-| Go to project folder             | cd "path\to\MySavvyGranny"             |
+| Go to project folder             | cd "path\to\JOMGather"             |
 | Activate virtual environment     | .\venv\Scripts\activate                |
 | Install dependencies             | pip install -r requirements.txt        |
 | Start the server                 | py app.py                              |
@@ -274,7 +274,7 @@ PART 6: QUICK REFERENCE CARD
 SUPER QUICK START (COPY-PASTE THIS)
 ================================================================================
 
-cd "C:\School-Study\Semester 2\Web Development Project\Project\MySavvyGranny"
+cd "C:\School-Study\Semester 2\Web Development Project\Project\JOMGather"
 .\venv\Scripts\activate
 py app.py
 

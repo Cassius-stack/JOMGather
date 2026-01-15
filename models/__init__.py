@@ -1,1 +1,1 @@
-"""Models package - Python classes for MySavvyGranny."""
+"""Models package - Python classes for JOMGather."""

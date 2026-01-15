@@ -3,7 +3,7 @@ User model - Base class for Youth and Senior users
 """
 
 class User:
-    """Base User class for MySavvyGranny platform."""
+    """Base User class for JOMGather platform."""
     
     def __init__(self, user_id=None, username=None, email=None, password_hash=None, 
                  user_type=None, created_at=None):
