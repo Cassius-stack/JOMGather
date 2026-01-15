@@ -11,7 +11,7 @@ from routes.auth import auth_bp
 from routes.profile import profile_bp
 from routes.activities import activities_bp
 from routes.messaging import messaging_bp
-from routes.community import community_bp
+from routes.social import social_bp
 from routes.support_swap import support_swap_bp
 from routes.rewards import rewards_bp
 from routes.slice_of_life import slice_of_life_bp
@@ -26,7 +26,7 @@ def create_app(config_name='default'):
     app.register_blueprint(profile_bp, url_prefix='/profile')
     app.register_blueprint(activities_bp, url_prefix='/activities')
     app.register_blueprint(messaging_bp, url_prefix='/messaging')
-    app.register_blueprint(community_bp, url_prefix='/community')
+    app.register_blueprint(social_bp, url_prefix='/social')
     app.register_blueprint(support_swap_bp, url_prefix='/support-swap')
     app.register_blueprint(rewards_bp, url_prefix='/rewards')
     app.register_blueprint(slice_of_life_bp, url_prefix='/slice-of-life')

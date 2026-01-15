@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}Social - JomGather{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Social Hub</h1>
+        <a href="{{ url_for('social.create_group') }}" class="btn btn-primary">
+            <i class="bi bi-plus-circle me-2"></i>Create Group
+        </a>
+    </div>
+
+    <div class="row g-4">
+        <!-- Ask A Grandfriend Card -->
+        <div class="col-md-6 col-lg-4">
+            <a href="{{ url_for('social.ask_grandfriend') }}" class="text-decoration-none">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center py-5"
+                        style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 0.5rem;">
+                        <i class="bi bi-chat-heart text-white" style="font-size: 3rem;"></i>
+                        <h4 class="text-white mt-3">Ask A Grandfriend</h4>
+                        <p class="text-white opacity-75">Get wisdom from experienced elders</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <!-- Sample Social Groups -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">🎨 Arts & Crafts Club</h5>
+                    <p class="card-text text-muted">Share your creative projects with others</p>
+                    <span class="badge bg-primary">156 members</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">🍳 Recipe Exchange</h5>
+                    <p class="card-text text-muted">Learn traditional recipes from grandparents</p>
+                    <span class="badge bg-primary">89 members</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">📚 Book Buddies</h5>
+                    <p class="card-text text-muted">Cross-generational reading club</p>
+                    <span class="badge bg-primary">67 members</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

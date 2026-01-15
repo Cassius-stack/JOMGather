@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}Ask A Grandfriend - JomGather{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1><i class="bi bi-chat-heart me-2"></i>Ask A Grandfriend</h1>
+            <p class="text-muted">Got a question? Our wise elders are here to help!</p>
+        </div>
+        <a href="{{ url_for('social.post_question') }}" class="btn btn-primary">
+            <i class="bi bi-plus-circle me-2"></i>Post Question
+        </a>
+    </div>
+
+    <!-- Sample Questions -->
+    <div class="card border-0 shadow-sm mb-3">
+        <div class="card-body">
+            <div class="d-flex">
+                <img src="https://i.pravatar.cc/50?img=44" alt="User" class="rounded-circle me-3"
+                    style="width: 50px; height: 50px;">
+                <div class="flex-grow-1">
+                    <h5 class="mb-1">How do I learn to cook traditional Hainanese chicken rice?</h5>
+                    <p class="text-muted small">Asked by Sarah • 2 hours ago</p>
+                    <div class="d-flex align-items-center gap-3 mt-2">
+                        <span class="badge bg-success"><i class="bi bi-chat-dots me-1"></i>5 Answers</span>
+                        <span class="text-muted small"><i class="bi bi-heart me-1"></i>12 Likes</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm mb-3">
+        <div class="card-body">
+            <div class="d-flex">
+                <img src="https://i.pravatar.cc/50?img=33" alt="User" class="rounded-circle me-3"
+                    style="width: 50px; height: 50px;">
+                <div class="flex-grow-1">
+                    <h5 class="mb-1">What was Singapore like in the 1970s?</h5>
+                    <p class="text-muted small">Asked by Marcus • 1 day ago</p>
+                    <div class="d-flex align-items-center gap-3 mt-2">
+                        <span class="badge bg-success"><i class="bi bi-chat-dots me-1"></i>8 Answers</span>
+                        <span class="text-muted small"><i class="bi bi-heart me-1"></i>24 Likes</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
