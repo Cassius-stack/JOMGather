@@ -16,7 +16,7 @@ JOMGather (JoG) - Intergenerational Connection Platform
 
 ### Zongrong
 - **Profile Management** - User profiles, settings, edit profile
-- **Skills Swap** - Skill exchange marketplace between generations
+- **Support Swap** - Skill exchange marketplace between generations
 
 ### Deon
 - **Login Page** - Authentication (login, register, onboarding)
@@ -107,7 +107,7 @@ User profile system.
 
 ---
 
-### 6. Skills Swap (Zongrong)
+### 6. Support Swap (Zongrong)
 Skill exchange marketplace between generations.
 
 **Features:**
