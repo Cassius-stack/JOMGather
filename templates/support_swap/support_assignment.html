@@ -1,11 +1,38 @@
 {% extends "base.html" %}
 
-{% block title %}Skill Assignment - JOMGather{% endblock %}
+{% block title %}Post Request - Support Swap{% endblock %}
 
 {% block content %}
-<!-- TODO: Akil to implement skill assignment page -->
-<div class="container">
-    <h1>Skill Assignment</h1>
-    <p class="text-muted">This page is awaiting implementation by Akil.</p>
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0 fs-5">Post a New Request</h4>
+            </div>
+            <div class="card-body p-4">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="title" class="form-label fw-bold">Topic / Title</label>
+                        <input type="text" class="form-control" id="title" name="title" placeholder="e.g., Teach me how to use Zoom" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="desc" class="form-label fw-bold">Description</label>
+                        <textarea class="form-control" id="desc" name="desc" rows="4" placeholder="Describe the help you need..." required></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="type" class="form-label fw-bold">Request Type</label>
+                        <select class="form-control" id="type" name="type">
+                            <option value="Elderly">I need Assistance (Elderly)</option>
+                            <option value="Youth">I want to Learn (Youth)</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn btn-success w-100">Submit Request</button>
+                </form>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}

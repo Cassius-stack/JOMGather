@@ -1,11 +1,58 @@
 {% extends "base.html" %}
 
-{% block title %}Skill Library - JOMGather{% endblock %}
+{% block title %}Skills Market - Support Swap{% endblock %}
 
 {% block content %}
-<!-- TODO: Akil to implement skill library page -->
-<div class="container">
-    <h1>Skill Library</h1>
-    <p class="text-muted">This page is awaiting implementation by Akil.</p>
+<div class="row justify-content-center">
+    <div class="col-md-9">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h3>Available Requests</h3>
+            <span class="badge bg-secondary">North Region</span>
+        </div>
+
+        {% if requests %}
+            {% for req in requests %}
+                <!-- Dynamic Class based on Match status -->
+                <div class="card mb-3 shadow-sm border-start border-5 {{ 'border-success' if req.is_match else 'border-light opacity-75' }}">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h5 class="card-title text-primary mb-0">{{ req.title }}</h5>
+                            
+                            <!-- Badge Logic -->
+                            {% if req.is_match %}
+                                <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>MATCH FOUND</span>
+                            {% else %}
+                                <span class="badge bg-secondary">MISSING SKILL</span>
+                            {% endif %}
+                        </div>
+
+                        <div class="text-muted small mb-3">
+                            <i class="bi bi-person me-1"></i> {{ req.requester }} &bull; 
+                            <i class="bi bi-geo-alt me-1"></i> {{ req.location }}
+                        </div>
+
+                        <p class="card-text">{{ req.description }}</p>
+
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <span class="badge bg-light text-dark border">
+                                <i class="bi bi-tools me-1"></i> Needed: {{ req.required_skill }}
+                            </span>
+
+                            <!-- Action Form -->
+                            <form action="{{ url_for('accept_request', req_id=req.id) }}" method="POST">
+                                <button type="submit" class="btn btn-sm {{ 'btn-primary' if req.is_match else 'btn-secondary disabled' }}" {{ 'disabled' if not req.is_match }}>
+                                    {{ 'Accept Request' if req.is_match else 'Requires Skill: ' + req.required_skill }}
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="alert alert-info text-center">
+                No requests available right now. Check back later or post your own!
+            </div>
+        {% endif %}
+    </div>
 </div>
 {% endblock %}

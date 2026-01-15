@@ -1,11 +1,52 @@
 {% extends "base.html" %}
 
-{% block title %}Skill Match - JOMGather{% endblock %}
+{% block title %}History - Support Swap{% endblock %}
 
 {% block content %}
-<!-- TODO: Akil to implement skill match page -->
-<div class="container">
-    <h1>Skill Match</h1>
-    <p class="text-muted">This page is awaiting implementation by Akil.</p>
+<div class="row justify-content-center">
+    <div class="col-md-9">
+        
+        <h3 class="mb-4">My Matches (Accepted)</h3>
+        {% if matches %}
+            {% for match in matches %}
+                <div class="card shadow-sm mb-3 border-start border-5 border-success">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <h5 class="card-title text-primary">{{ match.title }}</h5>
+                            <span class="badge bg-success">ACTIVE MATCH</span>
+                        </div>
+                        <p class="text-muted small mb-2">Location: {{ match.location }}</p>
+                        
+                        <div class="bg-light p-3 rounded border mt-2">
+                            <label class="form-label fw-bold small text-secondary">Slice of Life (Feedback):</label>
+                            <div class="input-group input-group-sm">
+                                <input type="text" class="form-control" placeholder="What did you learn today?">
+                                <button class="btn btn-success" type="button">Submit</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p class="text-muted">You haven't accepted any requests yet.</p>
+        {% endif %}
+
+        <hr class="my-5">
+
+        <h3 class="mb-4">My Posted Requests</h3>
+        {% if my_posts %}
+            {% for post in my_posts %}
+                <div class="card shadow-sm mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ post.title }}</h5>
+                        <span class="badge bg-warning text-dark">PENDING</span>
+                        <p class="text-muted small mt-2">Posted on: Today</p>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p class="text-muted">You haven't posted any requests yet.</p>
+        {% endif %}
+    </div>
 </div>
 {% endblock %}
