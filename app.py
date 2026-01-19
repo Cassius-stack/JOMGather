@@ -36,6 +36,11 @@ def create_app(config_name='default'):
     def index():
         return render_template('index.html')
     
+    # Skeleton template preview (for development only)
+    @app.route('/skeleton')
+    def skeleton():
+        return render_template('skeleton.html')
+    
     return app
 
 # Create the application instance

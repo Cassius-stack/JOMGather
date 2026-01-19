@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+
+{# ============================================================================
+SKELETON TEMPLATE - Copy this file as a starting point for new pages
+============================================================================
+
+HOW TO USE:
+1. Copy this file to your feature folder (e.g., templates/your_feature/)
+2. Rename it to match your page (e.g., your_page.html)
+3. Update the title block with your page name
+4. Replace the sample content in the content block
+5. Add any page-specific CSS in the head block (if needed)
+6. Add any page-specific JavaScript in the scripts block (if needed)
+
+AVAILABLE BLOCKS:
+- title: Page title (appears in browser tab)
+- head: Additional CSS or meta tags
+- content: Main page content
+- scripts: Additional JavaScript
+============================================================================ #}
+
+{% block title %}Your Page Title - JomGather{% endblock %}
+
+{# Optional: Add page-specific CSS here #}
+{% block head %}
+<style>
+    /* Add any page-specific styles here */
+    /* Example:
+    .custom-class {
+        color: var(--primary-color);
+    }
+    */
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+
+    {# ===== PAGE HEADER ===== #}
+    {# Use this pattern for a header with title and optional action button #}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Page Title</h1>
+        <!-- Optional: Add action button -->
+        <a href="#" class="btn btn-primary">
+            <i class="bi bi-plus-circle me-2"></i>Action Button
+        </a>
+    </div>
+
+    {# ===== SAMPLE: CARD GRID LAYOUT ===== #}
+    {# Use Bootstrap's row/col system for card-based layouts #}
+    <div class="row g-4">
+        <!-- Card Example 1 -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">Card Title</h5>
+                    <p class="card-text text-muted">Card description goes here.</p>
+                    <span class="badge bg-primary">Badge</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card Example 2 - Gradient Background -->
+        <div class="col-md-6 col-lg-4">
+            <a href="#" class="text-decoration-none">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center py-5"
+                        style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 0.5rem;">
+                        <i class="bi bi-star text-white" style="font-size: 3rem;"></i>
+                        <h4 class="text-white mt-3">Feature Title</h4>
+                        <p class="text-white opacity-75">Feature description</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    {# ===== SAMPLE: FORM LAYOUT ===== #}
+    {# Uncomment this section if your page needs a form
+    <div class="row justify-content-center mt-4">
+        <div class="col-md-8 col-lg-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <h4 class="mb-4">Form Title</h4>
+                    <form method="POST" action="#">
+                        <div class="mb-3">
+                            <label for="inputField" class="form-label">Field Label</label>
+                            <input type="text" class="form-control" id="inputField" name="input_field" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="textareaField" class="form-label">Textarea Label</label>
+                            <textarea class="form-control" id="textareaField" name="textarea_field" rows="3"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="selectField" class="form-label">Select Label</label>
+                            <select class="form-select" id="selectField" name="select_field">
+                                <option value="">Choose...</option>
+                                <option value="1">Option 1</option>
+                                <option value="2">Option 2</option>
+                            </select>
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">Submit</button>
+                            <a href="#" class="btn btn-outline-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    #}
+
+    {# ===== SAMPLE: LIST/TABLE LAYOUT ===== #}
+    {# Uncomment this section if your page needs a table
+    <div class="card border-0 shadow-sm mt-4">
+        <div class="card-body">
+            <h5 class="card-title mb-3">Table Title</h5>
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Column 1</th>
+                            <th>Column 2</th>
+                            <th>Column 3</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Data 1</td>
+                            <td>Data 2</td>
+                            <td>Data 3</td>
+                            <td>
+                                <a href="#" class="btn btn-sm btn-outline-primary">Edit</a>
+                                <button class="btn btn-sm btn-outline-danger">Delete</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    #}
+
+</div>
+{% endblock %}
+
+{# Optional: Add page-specific JavaScript here #}
+{% block scripts %}
+<script>
+    // Add any page-specific JavaScript here
+    // Example:
+    // document.addEventListener('DOMContentLoaded', function() {
+    //     console.log('Page loaded!');
+    // });
+</script>
+{% endblock %}
