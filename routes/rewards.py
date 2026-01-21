@@ -7,7 +7,7 @@ from models.reward import get_user_coins
 
 rewards_bp = Blueprint('rewards', __name__)
 
-@rewards_bp.route('/redeem')
+@rewards_bp.route('/')
 def redeem():
     """View redeem page."""
     user_id = 1  # TODO: Get from session after login
