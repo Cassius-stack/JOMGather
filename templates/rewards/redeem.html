@@ -10,7 +10,7 @@
         <img src="{{ url_for('static', filename='images/credit.svg') }}" class="credit-icon">
         <div class="balance-info">
             <span class="label">Your coins</span>
-            <span class="value">5,000</span>
+            <span class="value">{{ coins | default('0') }}</span>
         </div>
     </div>
     <h2 class="section-title">Available Rewards</h2>
@@ -33,10 +33,23 @@
                 <img src="{{ url_for('static', filename='images/giftbox.svg') }}" class="reward-image">
             </div>
             <div class="reward-info">
-                <h3>Welcome Gift</h3>
+                <h3>Test Item 1</h3>
                 <div class="price">
                     <img src="{{ url_for('static', filename='images/credit.svg') }}" class="credit-icon-small">
-                    <span>200</span>
+                    <span>222</span>
+                </div>
+                <button class="btn-redeem">Redeem</button>
+            </div>
+        </div>
+        <div class="reward-card">
+            <div class="card-image">
+                <img src="{{ url_for('static', filename='images/bulb.svg') }}" class="reward-image">
+            </div>
+            <div class="reward-info">
+                <h3>Test Item 2</h3>
+                <div class="price">
+                    <img src="{{ url_for('static', filename='images/credit.svg') }}" class="credit-icon-small">
+                    <span>333</span>
                 </div>
                 <button class="btn-redeem">Redeem</button>
             </div>
@@ -46,49 +59,36 @@
                 <img src="{{ url_for('static', filename='images/giftbox.svg') }}" class="reward-image">
             </div>
             <div class="reward-info">
-                <h3>Welcome Gift</h3>
+                <h3>Test Item 3</h3>
                 <div class="price">
                     <img src="{{ url_for('static', filename='images/credit.svg') }}" class="credit-icon-small">
-                    <span>200</span>
+                    <span>444</span>
                 </div>
                 <button class="btn-redeem">Redeem</button>
             </div>
         </div>
         <div class="reward-card">
             <div class="card-image">
-                <img src="{{ url_for('static', filename='images/giftbox.svg') }}" class="reward-image">
+                <img src="{{ url_for('static', filename='images/bulb.svg') }}" class="reward-image">
             </div>
             <div class="reward-info">
-                <h3>Welcome Gift</h3>
+                <h3>Test Item 4</h3>
                 <div class="price">
                     <img src="{{ url_for('static', filename='images/credit.svg') }}" class="credit-icon-small">
-                    <span>200</span>
+                    <span>555</span>
                 </div>
                 <button class="btn-redeem">Redeem</button>
             </div>
         </div>
         <div class="reward-card">
             <div class="card-image">
-                <img src="{{ url_for('static', filename='images/giftbox.svg') }}" class="reward-image">
+                <img src="{{ url_for('static', filename='images/bulb.svg') }}" class="reward-image">
             </div>
             <div class="reward-info">
-                <h3>Welcome Gift</h3>
+                <h3>Test Item 5</h3>
                 <div class="price">
                     <img src="{{ url_for('static', filename='images/credit.svg') }}" class="credit-icon-small">
-                    <span>200</span>
-                </div>
-                <button class="btn-redeem">Redeem</button>
-            </div>
-        </div>
-        <div class="reward-card">
-            <div class="card-image">
-                <img src="{{ url_for('static', filename='images/giftbox.svg') }}" class="reward-image">
-            </div>
-            <div class="reward-info">
-                <h3>Welcome Gift</h3>
-                <div class="price">
-                    <img src="{{ url_for('static', filename='images/credit.svg') }}" class="credit-icon-small">
-                    <span>200</span>
+                    <span>666</span>
                 </div>
                 <button class="btn-redeem">Redeem</button>
             </div>
