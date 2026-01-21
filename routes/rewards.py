@@ -1,16 +1,16 @@
 """
-Rewards routes - Leaderboard, Points, Vouchers
+Rewards routes - Redeem, Points, Vouchers
 """
 
 from flask import Blueprint, render_template, request, redirect, url_for
 
 rewards_bp = Blueprint('rewards', __name__)
 
-@rewards_bp.route('/leaderboard')
-def leaderboard():
-    """View the leaderboard."""
-    # TODO: Fetch top users from database
-    return render_template('rewards/leaderboard.html')
+@rewards_bp.route('/redeem')
+def redeem():
+    """View redeem page."""
+    # TODO: Fetch user balance and vouchers
+    return render_template('rewards/redeem.html')
 
 @rewards_bp.route('/my-points')
 def my_points():

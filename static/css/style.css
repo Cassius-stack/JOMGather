@@ -777,3 +777,150 @@ body {
     color: var(--text-muted);
     margin-top: 0.5rem;
 }
+
+/* REWARDS PAGE */
+.main-container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.section-title {
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 15px;
+    margin-top: 30px;
+}
+
+.balance-card {
+    background-color: white;
+    border-radius: 12px;
+    padding: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border: 1px solid #ddd;
+    margin-bottom: 30px;
+}
+
+.balance-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.credit-icon {
+    width: 90px;
+    height: 90px;
+    margin-right: 20px;
+    object-fit: contain;
+}
+
+.credit-icon-small {
+    width: 24px;
+    height: 24px;
+    margin-right: 8px;
+    object-fit: contain;
+}
+
+.balance-info .label {
+    font-size: 18px;
+    font-weight: bold;
+    color: #000;
+}
+
+.balance-info .value {
+    font-size: 48px;
+    font-weight: bold;
+    color: #0d6efd;
+    /* Bootstrap Primary Blue */
+    line-height: 1;
+}
+
+/*Rewards Grid*/
+.rewards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+/* Individual Reward Card */
+.reward-card {
+    background-color: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    padding: 15px;
+    display: flex;
+    align-items: center;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+.card-image {
+    width: 100px;
+    height: 100px;
+    flex-shrink: 0;
+    margin-right: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.card-image img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.reward-info {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.reward-info h3 {
+    margin: 0 0 5px 0;
+    font-size: 16px;
+    font-weight: bold;
+}
+
+.reward-info .price {
+    font-size: 18px;
+    color: #0d6efd;
+    font-weight: bold;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+}
+
+/* Buttons */
+.btn-redeem {
+    background-color: #0d6efd;
+    /* Blue */
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 20px;
+    /* Fully rounded pill shape */
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    width: 100%;
+    transition: background-color 0.2s;
+}
+
+.btn-redeem:hover {
+    background-color: #0b5ed7;
+    /* Darker blue on hover */
+}
+
+/* Disabled Button State */
+.btn-redeem.disabled {
+    background-color: #585858;
+    /* Dark Grey */
+    cursor: not-allowed;
+    opacity: 0.8;
+}
+
+.btn-redeem.disabled:hover {
+    background-color: #585858;
+}

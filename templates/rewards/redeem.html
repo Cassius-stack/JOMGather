@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block title %}Rewards - JOMGather{% endblock %}
+
+{% block content %}
+
+<div class="main-container">
+    <h2 class="section-title">Balance</h2>
+    <div class="balance-card">
+        <img src="{{ url_for('static', filename='images/credit.svg') }}" class="credit-icon">
+        <div class="balance-info">
+            <span class="label">Your coins</span>
+            <span class="value">5,000</span>
+        </div>
+    </div>
+    <h2 class="section-title">Available Rewards</h2>
+    <div class="rewards-grid">
+        <div class="reward-card">
+            <div class="card-image">
+                <img src="{{ url_for('static', filename='images/giftbox.svg') }}" class="reward-image">
+            </div>
+            <div class="reward-info">
+                <h3>Welcome Gift</h3>
+                <div class="price">
+                    <img src="{{ url_for('static', filename='images/credit.svg') }}" class="credit-icon-small">
+                    <span>200</span>
+                </div>
+                <button class="btn-redeem">Redeem</button>
+            </div>
+        </div>
+        <div class="reward-card">
+            <div class="card-image">
+                <img src="{{ url_for('static', filename='images/giftbox.svg') }}" class="reward-image">
+            </div>
+            <div class="reward-info">
+                <h3>Welcome Gift</h3>
+                <div class="price">
+                    <img src="{{ url_for('static', filename='images/credit.svg') }}" class="credit-icon-small">
+                    <span>200</span>
+                </div>
+                <button class="btn-redeem">Redeem</button>
+            </div>
+        </div>
+        <div class="reward-card">
+            <div class="card-image">
+                <img src="{{ url_for('static', filename='images/giftbox.svg') }}" class="reward-image">
+            </div>
+            <div class="reward-info">
+                <h3>Welcome Gift</h3>
+                <div class="price">
+                    <img src="{{ url_for('static', filename='images/credit.svg') }}" class="credit-icon-small">
+                    <span>200</span>
+                </div>
+                <button class="btn-redeem">Redeem</button>
+            </div>
+        </div>
+        <div class="reward-card">
+            <div class="card-image">
+                <img src="{{ url_for('static', filename='images/giftbox.svg') }}" class="reward-image">
+            </div>
+            <div class="reward-info">
+                <h3>Welcome Gift</h3>
+                <div class="price">
+                    <img src="{{ url_for('static', filename='images/credit.svg') }}" class="credit-icon-small">
+                    <span>200</span>
+                </div>
+                <button class="btn-redeem">Redeem</button>
+            </div>
+        </div>
+        <div class="reward-card">
+            <div class="card-image">
+                <img src="{{ url_for('static', filename='images/giftbox.svg') }}" class="reward-image">
+            </div>
+            <div class="reward-info">
+                <h3>Welcome Gift</h3>
+                <div class="price">
+                    <img src="{{ url_for('static', filename='images/credit.svg') }}" class="credit-icon-small">
+                    <span>200</span>
+                </div>
+                <button class="btn-redeem">Redeem</button>
+            </div>
+        </div>
+        <div class="reward-card">
+            <div class="card-image">
+                <img src="{{ url_for('static', filename='images/giftbox.svg') }}" class="reward-image">
+            </div>
+            <div class="reward-info">
+                <h3>Welcome Gift</h3>
+                <div class="price">
+                    <img src="{{ url_for('static', filename='images/credit.svg') }}" class="credit-icon-small">
+                    <span>200</span>
+                </div>
+                <button class="btn-redeem">Redeem</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
