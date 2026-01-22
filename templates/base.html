@@ -44,10 +44,10 @@
                         <a class="nav-link" href="{{ url_for('activities.activity_list') }}">Activity</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('community.communities') }}">Social</a>
+                        <a class="nav-link" href="{{ url_for('social.social_hub') }}">Social</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('rewards.leaderboard') }}">Rewards</a>
+                        <a class="nav-link" href="{{ url_for('rewards.redeem') }}">Rewards</a>
                     </li>
                 </ul>
             </div>
@@ -83,6 +83,9 @@
     <footer class="footer-custom">
         <p class="mb-0">&copy; Copyright 2026 by JomGather. All rights reserved.</p>
     </footer>
+
+    <!-- Socket.IO Client (for real-time chat) -->
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>

@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}Skills Market - Support Swap{% endblock %}
+
+{% block content %}
+<nav class="navbar navbar-expand-lg skillnav">
+    <div class="container">
+        <div class="navbar-nav">
+            <a href="{{ url_for('activities.activity_list') }}" class="nav-link">Back to activity</a>
+        </div>
+        <a class="navbar-brand fw-bold ms-3" href="#">
+            <i class="bi bi-people-fill me-2"></i>Support Swap
+            <small class="fw-normal">(North Region)</small>
+        </a>
+        <!-- Toggler for mobile -->
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+            <div class="navbar-nav nav-pills">
+                <a href="{{ url_for('support_swap.ss_profile') }}" class="nav-link">My Profile</a>
+                <a href="{{ url_for('support_swap.ss_market') }}" class="nav-link"><span class="underlined">Skills
+                        Market</span></a>
+                <a href="{{ url_for('support_swap.ss_post') }}" class="nav-link">+ Post Request</a>
+                <a href="{{ url_for('support_swap.ss_match') }}" class="nav-link">Matchings</a>
+            </div>
+        </div>
+    </div>
+</nav>
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3>Available Requests</h3>
+        <span class="badge bg-secondary">North Region</span>
+    </div>
+    <p class="text-muted mb-4">Requests near Yishun/Woodlands Community Centres. The "Accept" button enables only if
+        you
+        have the required skill.</p>
+
+    <div id="marketFeed">
+        <!-- Market items injected here -->
+    </div>
+</div>
+</main>
+<footer></footer>
+{% endblock %}

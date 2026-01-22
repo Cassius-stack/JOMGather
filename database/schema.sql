@@ -182,12 +182,10 @@ CREATE TABLE IF NOT EXISTS support_requests (
     FOREIGN KEY (student_id) REFERENCES users(user_id)
 );
 
--- Points table
-CREATE TABLE IF NOT EXISTS points (
+-- Coins table
+CREATE TABLE IF NOT EXISTS coins (
     user_id INTEGER PRIMARY KEY,
-    total_points INTEGER DEFAULT 0,
-    weekly_points INTEGER DEFAULT 0,
-    lifetime_points INTEGER DEFAULT 0,
+    total_coins INTEGER DEFAULT 0,
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
@@ -208,16 +206,6 @@ CREATE TABLE IF NOT EXISTS user_badges (
     PRIMARY KEY (user_id, badge_id),
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
     FOREIGN KEY (badge_id) REFERENCES badges(badge_id) ON DELETE CASCADE
-);
-
--- Vouchers table
-CREATE TABLE IF NOT EXISTS vouchers (
-    voucher_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name VARCHAR(100) NOT NULL,
-    description TEXT,
-    points_required INTEGER NOT NULL,
-    quantity_available INTEGER,
-    expiry_date DATE
 );
 
 -- Insert default interests
