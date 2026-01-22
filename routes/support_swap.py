@@ -19,6 +19,20 @@ def ss_activity():
     # TODO: Fetch support swaps from database
     return render_template('support_swap/ss_activity.html')
 
+@support_swap_bp.route('/ss_market')
+def ss_market():
+    """Skills Market - Browse available skills."""
+    # TODO: Fetch skills from database
+    return render_template('support_swap/ss_market.html')
+
+@support_swap_bp.route('/ss_post', methods=['GET', 'POST'])
+def ss_post():
+    """Post a support request."""
+    if request.method == 'POST':
+        # TODO: Save request to database
+        pass
+    return render_template('support_swap/ss_post.html')
+
 @support_swap_bp.route('/ss_match', methods=['GET', 'POST'])
 def ss_match():
     """View support matches and handle match requests."""

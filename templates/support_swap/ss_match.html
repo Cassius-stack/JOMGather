@@ -7,7 +7,7 @@
     <div class="container">
 
         <div class="navbar-nav">
-            <a href="#" class="nav-link">Back to activity</a>
+            <a href="{{ url_for('activities.activity_list') }}" class="nav-link">Back to activity</a>
         </div>
 
         <a class="navbar-brand fw-bold ms-3" href="#">
@@ -21,10 +21,11 @@
 
         <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
             <div class="navbar-nav nav-pills">
-                <a href="Profile_SS.html" class="nav-link">My Profile</a>
-                <a href="Skills Market.html" class="nav-link">Skills Market</a>
-                <a href="Post_Request.html" class="nav-link">+ Post Request</a>
-                <a href="History_Match.html" class="nav-link"><span class="underlined">Matchings</span></a>
+                <a href="{{ url_for('support_swap.ss_profile') }}" class="nav-link">My Profile</a>
+                <a href="{{ url_for('support_swap.ss_market') }}" class="nav-link">Skills Market</a>
+                <a href="{{ url_for('support_swap.ss_post') }}" class="nav-link">+ Post Request</a>
+                <a href="{{ url_for('support_swap.ss_match') }}" class="nav-link"><span
+                        class="underlined">Matchings</span></a>
             </div>
         </div>
 
