@@ -2,51 +2,304 @@
 
 {% block title %}Ask A Grandfriend - JomGather{% endblock %}
 
+{% block head %}
+<!-- Ask A Grandfriend Styles -->
+<link rel="stylesheet" href="{{ url_for('static', filename='css/askagrandfriend.css') }}">
+{% endblock %}
+
 {% block content %}
 <div class="container py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h1><i class="bi bi-chat-heart me-2"></i>Ask A Grandfriend</h1>
-            <p class="text-muted">Got a question? Our wise elders are here to help!</p>
-        </div>
-        <a href="{{ url_for('social.post_question') }}" class="btn btn-primary">
-            <i class="bi bi-plus-circle me-2"></i>Post Question
-        </a>
+    <!-- Back Link -->
+    <a href="{{ url_for('social.social_hub') }}" class="back-link">
+        <i class="bi bi-chevron-left"></i> Back
+    </a>
+
+    <!-- Page Header -->
+    <div class="page-header">
+        <h1 class="page-title">AskAGrandfriend</h1>
+        <img src="https://i.pravatar.cc/45?img=12" alt="Profile" class="profile-avatar">
     </div>
 
-    <!-- Sample Questions -->
-    <div class="card border-0 shadow-sm mb-3">
-        <div class="card-body">
-            <div class="d-flex">
-                <img src="https://i.pravatar.cc/50?img=44" alt="User" class="rounded-circle me-3"
-                    style="width: 50px; height: 50px;">
-                <div class="flex-grow-1">
-                    <h5 class="mb-1">How do I learn to cook traditional Hainanese chicken rice?</h5>
-                    <p class="text-muted small">Asked by Sarah • 2 hours ago</p>
-                    <div class="d-flex align-items-center gap-3 mt-2">
-                        <span class="badge bg-success"><i class="bi bi-chat-dots me-1"></i>5 Answers</span>
-                        <span class="text-muted small"><i class="bi bi-heart me-1"></i>12 Likes</span>
-                    </div>
+    <!-- Search Bar -->
+    <div class="search-bar">
+        <i class="bi bi-search text-muted"></i>
+        <input type="text" placeholder="Search category or post" id="searchInput">
+    </div>
+
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-lg-3 col-md-4 sidebar">
+            <!-- View By -->
+            <div class="sidebar-card">
+                <div class="sidebar-title">
+                    <i class="bi bi-eye"></i> View By
+                </div>
+                <div class="toggle-btn-group">
+                    <button class="toggle-btn" id="btnMyQuestions">My Questions</button>
+                    <button class="toggle-btn active" id="btnAllQuestions">All Questions</button>
+                </div>
+            </div>
+
+            <!-- See Post By -->
+            <div class="sidebar-card">
+                <div class="sidebar-title">
+                    <i class="bi bi-people"></i> See Post By
+                </div>
+                <div class="toggle-btn-group">
+                    <button class="toggle-btn active" id="btnGrandparents">Grandparents</button>
+                    <button class="toggle-btn" id="btnStudents">Students</button>
+                </div>
+            </div>
+
+            <!-- Categories -->
+            <div class="sidebar-card">
+                <div class="sidebar-title">
+                    <i class="bi bi-tag-fill"></i> Categories
+                </div>
+                <div class="category-list">
+                    <button class="category-btn active" data-category="all">All</button>
+                    <button class="category-btn" data-category="tech">Tech Help</button>
+                    <button class="category-btn" data-category="cooking">Cooking</button>
+                    <button class="category-btn" data-category="cultural">Cultural</button>
+                    <button class="category-btn" data-category="modern">Modern Living</button>
+                    <button class="category-btn" data-category="mentoring">Mentoring</button>
                 </div>
             </div>
         </div>
-    </div>
 
-    <div class="card border-0 shadow-sm mb-3">
-        <div class="card-body">
-            <div class="d-flex">
-                <img src="https://i.pravatar.cc/50?img=33" alt="User" class="rounded-circle me-3"
-                    style="width: 50px; height: 50px;">
-                <div class="flex-grow-1">
-                    <h5 class="mb-1">What was Singapore like in the 1970s?</h5>
-                    <p class="text-muted small">Asked by Marcus • 1 day ago</p>
-                    <div class="d-flex align-items-center gap-3 mt-2">
-                        <span class="badge bg-success"><i class="bi bi-chat-dots me-1"></i>8 Answers</span>
-                        <span class="text-muted small"><i class="bi bi-heart me-1"></i>24 Likes</span>
+        <!-- Main Content -->
+        <div class="col-lg-9 col-md-8">
+            <!-- Main Header -->
+            <div class="main-header">
+                <h2><span id="headerTitle">All Questions</span> (<span id="questionCount">{{ questions|length if
+                        questions else 0 }}</span>)</h2>
+                <button type="button" class="btn-ask" data-bs-toggle="modal" data-bs-target="#askQuestionModal">
+                    <i class="bi bi-plus-circle"></i> Ask A Question
+                </button>
+            </div>
+
+            <!-- Question Cards -->
+            <div id="questionsList">
+                {% if questions %}
+                {% for q in questions %}
+                <div class="question-card" data-category="{{ q.category }}"
+                    data-author="{% if q.author_name == 'Jeremy Khoo' %}you{% else %}other{% endif %}"
+                    data-author-type="{{ q.author_type }}">
+                    <div class="question-title">{{ q.title }}</div>
+                    <div class="question-meta">
+                        <span class="badge-category">
+                            {% if q.category == 'tech' %}
+                            <i class="bi bi-laptop me-1"></i> Tech Help
+                            {% elif q.category == 'cooking' %}
+                            <i class="bi bi-egg-fried me-1"></i> Cooking
+                            {% elif q.category == 'cultural' %}
+                            <i class="bi bi-globe me-1"></i> Cultural
+                            {% elif q.category == 'modern' %}
+                            <i class="bi bi-house me-1"></i> Modern Living
+                            {% elif q.category == 'mentoring' %}
+                            <i class="bi bi-mortarboard me-1"></i> Mentoring
+                            {% else %}
+                            <i class="bi bi-tag me-1"></i> {{ q.category|capitalize }}
+                            {% endif %}
+                        </span>
+                        {% if q.author_name == 'Jeremy Khoo' %}
+                        <span class="badge-posted-by-you">Posted By You</span>
+                        {% endif %}
+                    </div>
+                    <div class="question-author">
+                        Asked by <a href="#">{% if q.is_anonymous %}Anonymous{% else %}{{ q.author_name }}{% endif
+                            %}</a>
+                        on {{ q.created_at[:10] if q.created_at else 'Recently' }}
+                    </div>
+                    <div class="question-preview">
+                        {{ q.content if q.content else q.title[:100] }}{% if q.content and q.content|length > 100
+                        %}...{% endif %}
+                    </div>
+                    <div class="question-footer">
+                        <a href="#" class="see-replies-link">
+                            <i class="bi bi-chat-dots"></i> See Replies ({{ q.replies_count or 0 }})
+                        </a>
+                        {% if q.author_name == 'Jeremy Khoo' %}
+                        <form action="{{ url_for('social.delete_question_route', question_id=q.id) }}" method="POST"
+                            style="display: inline;"
+                            onsubmit="return confirm('Are you sure you want to delete this question?');">
+                            <button type="submit" class="btn-delete" title="Delete question">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </form>
+                        {% endif %}
                     </div>
                 </div>
+                {% endfor %}
+                {% else %}
+                <!-- No questions yet -->
+                <div class="text-center py-5">
+                    <i class="bi bi-chat-square-text" style="font-size: 3rem; color: #ccc;"></i>
+                    <p class="text-muted mt-3">No questions yet. Be the first to ask!</p>
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>
 </div>
+
+<!-- Ask A Question Modal -->
+<div class="modal fade" id="askQuestionModal" tabindex="-1" aria-labelledby="askQuestionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 20px; border: none;">
+            <div class="modal-header" style="border-bottom: none; padding: 2rem 2rem 1rem;">
+                <h4 class="modal-title" id="askQuestionModalLabel" style="color: #3949ab; font-weight: 800;">Ask a
+                    Student</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" style="padding: 0 2rem 2rem;">
+                <!-- Warning Notice -->
+                <div
+                    style="background: #fffde7; border-left: 4px solid #f44336; padding: 0.75rem 1rem; margin-bottom: 1.5rem; border-radius: 0 8px 8px 0;">
+                    <span style="color: #666;">Please do not share personal account numbers or private
+                        information</span>
+                </div>
+
+                <form id="askQuestionForm" action="{{ url_for('social.post_question') }}" method="POST">
+                    <!-- Question Input -->
+                    <div class="mb-4">
+                        <label class="form-label" style="font-weight: 700; color: #333;">Your Question</label>
+                        <textarea name="title" id="questionTitle" class="form-control" rows="4"
+                            placeholder="Type your question here!" required
+                            style="border-radius: 12px; border: 1px solid #e0e0e0; resize: none;"></textarea>
+                    </div>
+
+                    <!-- Category Dropdown -->
+                    <div class="mb-4">
+                        <label class="form-label" style="font-weight: 700; color: #333;">Category</label>
+                        <select name="category" id="questionCategory" class="form-select"
+                            style="border-radius: 12px; border: 1px solid #e0e0e0; padding: 0.75rem 1rem;">
+                            <option value="" disabled selected>Select a category</option>
+                            <option value="tech">Tech Help</option>
+                            <option value="cooking">Cooking</option>
+                            <option value="cultural">Cultural</option>
+                            <option value="modern">Modern Living</option>
+                            <option value="mentoring">Mentoring</option>
+                        </select>
+                    </div>
+
+                    <!-- Anonymous Checkbox -->
+                    <div class="mb-4 text-center">
+                        <div class="form-check d-inline-flex align-items-center gap-2">
+                            <input type="checkbox" name="is_anonymous" id="isAnonymous" class="form-check-input"
+                                style="width: 20px; height: 20px;">
+                            <label for="isAnonymous" class="form-check-label" style="color: #666;">
+                                Post Anonymously (recommended for sensitive questions)
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Hidden fields -->
+                    <input type="hidden" name="author_name" value="Jeremy Khoo">
+                    <input type="hidden" name="author_type" value="grandparent">
+                    <input type="hidden" name="content" value="">
+
+                    <!-- Submit Button -->
+                    <div class="text-center">
+                        <button type="submit" class="btn-ask" style="padding: 0.75rem 3rem; font-size: 1.1rem;">
+                            Post Question
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Toggle between My Questions and All Questions
+    const btnMyQuestions = document.getElementById('btnMyQuestions');
+    const btnAllQuestions = document.getElementById('btnAllQuestions');
+    const questionCards = document.querySelectorAll('.question-card');
+    const questionCountEl = document.getElementById('questionCount');
+    const headerTitle = document.getElementById('headerTitle');
+
+    function updateQuestionCount() {
+        const visibleCards = document.querySelectorAll('.question-card:not([style*="display: none"])');
+        if (questionCountEl) {
+            questionCountEl.textContent = visibleCards.length;
+        }
+    }
+
+    btnMyQuestions.addEventListener('click', function () {
+        btnMyQuestions.classList.add('active');
+        btnAllQuestions.classList.remove('active');
+        if (headerTitle) headerTitle.textContent = 'My Questions';
+
+        questionCards.forEach(card => {
+            if (card.dataset.author === 'you') {
+                card.style.display = 'block';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+        updateQuestionCount();
+    });
+
+    btnAllQuestions.addEventListener('click', function () {
+        btnAllQuestions.classList.add('active');
+        btnMyQuestions.classList.remove('active');
+        if (headerTitle) headerTitle.textContent = 'All Questions';
+
+        questionCards.forEach(card => {
+            card.style.display = 'block';
+        });
+        updateQuestionCount();
+    });
+
+    // Category Filtering
+    const categoryBtns = document.querySelectorAll('.category-btn');
+    categoryBtns.forEach(btn => {
+        btn.addEventListener('click', function () {
+            categoryBtns.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+
+            const category = this.dataset.category;
+            questionCards.forEach(card => {
+                if (category === 'all' || card.dataset.category === category) {
+                    // Check if it should be visible based on My/All Questions toggle
+                    if (btnMyQuestions.classList.contains('active') && card.dataset.author !== 'you') {
+                        card.style.display = 'none';
+                    } else {
+                        card.style.display = 'block';
+                    }
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+            updateQuestionCount();
+        });
+    });
+
+    // Search functionality
+    const searchInput = document.getElementById('searchInput');
+    searchInput.addEventListener('input', function () {
+        const query = this.value.toLowerCase();
+        questionCards.forEach(card => {
+            const title = card.querySelector('.question-title').textContent.toLowerCase();
+            const preview = card.querySelector('.question-preview').textContent.toLowerCase();
+            if (title.includes(query) || preview.includes(query)) {
+                // Respect My/All Questions filter
+                if (btnMyQuestions.classList.contains('active') && card.dataset.author !== 'you') {
+                    card.style.display = 'none';
+                } else {
+                    card.style.display = 'block';
+                }
+            } else {
+                card.style.display = 'none';
+            }
+        });
+        updateQuestionCount();
+    });
+
+    // Initialize count
+    updateQuestionCount();
+</script>
 {% endblock %}
