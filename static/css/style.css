@@ -1,24 +1,44 @@
-/* JOMGather Custom Styles - Based on Figma Design */
+/* JOMGather Custom Styles - Senior-Centric Design */
 
-/* Color Variables */
+/* Color Variables - Navy Blue Theme (Senior-Friendly) */
 :root {
-    --primary-blue: #3B5BDB;
-    --primary-dark: #2B4ACB;
-    --gradient-start: #4263EB;
-    --gradient-end: #3B5BDB;
-    --light-blue-bg: #E8F4FC;
-    --card-blue: #4263EB;
-    --text-dark: #1A1A2E;
-    --text-muted: #6B7280;
-    --white: #FFFFFF;
-    --success-green: #10B981;
-    --warning-orange: #F59E0B;
+    /* Primary Colors - Navy from chat UI */
+    --primary-navy: #1e3a5f;
+    --primary-navy-dark: #152d4a;
+    --primary-navy-light: #2d5a87;
+
+    /* Legacy aliases for compatibility */
+    --primary-blue: #1e3a5f;
+    --primary-dark: #152d4a;
+    --gradient-start: #1e3a5f;
+    --gradient-end: #2d5a87;
+
+    /* Backgrounds */
+    --light-bg: #f5f7fa;
+    --light-blue-bg: #f5f7fa;
+    --card-bg: #ffffff;
+
+    /* Text - High Contrast for Seniors */
+    --text-dark: #1a1a2e;
+    --text-muted: #5a6270;
+    --white: #ffffff;
+
+    /* Status Colors */
+    --success-green: #22c55e;
+    --warning-orange: #f59e0b;
+    --error-red: #ef4444;
+
+    /* Accents */
+    --accent-gold: #fbbf24;
 }
 
-/* General Body */
+/* General Body - Larger Base Font for Seniors */
 body {
     font-family: 'Segoe UI', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    background-color: var(--light-blue-bg);
+    font-size: 16px;
+    /* Minimum 16px for seniors */
+    line-height: 1.6;
+    background-color: var(--light-bg);
     color: var(--text-dark);
 }
 

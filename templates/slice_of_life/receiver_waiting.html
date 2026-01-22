@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}Waiting for Response - Slice of Life{% endblock %}
+
+{% block content %}
+<div
+    style="background: linear-gradient(180deg, #e8f4fc 0%, #dbeafe 100%); min-height: 100vh; margin: -1rem -1rem 0; padding: 2rem;">
+    <div class="container">
+
+        <!-- Header -->
+        <div class="mb-4">
+            <a href="{{ url_for('index') }}" style="color: #1e3a5f; text-decoration: none; font-size: 1.1rem;">
+                <i class="bi bi-arrow-left me-2"></i>Back to Home
+            </a>
+        </div>
+
+        <!-- Title -->
+        <div class="mb-5">
+            <h1 style="font-size: 2.5rem; font-weight: 700; color: #1e3a5f; margin-bottom: 0.5rem;">
+                <i class="bi bi-hourglass-split me-2"></i>Waiting for Jeremy
+            </h1>
+            <p style="font-size: 1.25rem; color: #475569;">You'll be notified when the display is published</p>
+        </div>
+
+        <!-- Status Card -->
+        <div
+            style="background: white; border-radius: 24px; padding: 3rem; text-align: center; box-shadow: 0 8px 30px rgba(0,0,0,0.08); margin-bottom: 2rem;">
+            <div
+                style="width: 100px; height: 100px; background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 2rem;">
+                <i class="bi bi-clock" style="font-size: 3rem; color: #f59e0b;"></i>
+            </div>
+
+            <h2 style="font-size: 1.75rem; font-weight: 600; color: #1e3a5f; margin-bottom: 0.5rem;">
+                Waiting for other party to respond...
+            </h2>
+            <p style="font-size: 1.15rem; color: #6b7280; margin-bottom: 2rem;">
+                Jeremy will review your submission and add their comment. Once they publish, you'll receive a
+                notification.
+            </p>
+
+            <!-- Progress -->
+            <div style="max-width: 500px; margin: 0 auto;">
+                <div class="d-flex justify-content-between mb-2">
+                    <span style="font-size: 1rem; color: #22c55e; font-weight: 500;"><i
+                            class="bi bi-check-circle-fill me-1"></i> Your response sent</span>
+                    <span style="font-size: 1rem; color: #94a3b8;">Waiting for review...</span>
+                </div>
+                <div style="background: #e2e8f0; border-radius: 10px; height: 8px; overflow: hidden;">
+                    <div
+                        style="background: linear-gradient(90deg, #22c55e 0%, #16a34a 100%); width: 50%; height: 100%; border-radius: 10px;">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Your Submission Preview -->
+        <div style="background: white; border-radius: 24px; padding: 2rem; box-shadow: 0 8px 30px rgba(0,0,0,0.08);">
+            <h3 style="font-size: 1.35rem; font-weight: 600; color: #1e3a5f; margin-bottom: 1.5rem;">
+                <i class="bi bi-image me-2" style="color: #3b82f6;"></i>Your Submission
+            </h3>
+            <div class="row align-items-center">
+                <div class="col-md-4">
+                    <img src="https://images.unsplash.com/photo-1517457373958-b7bdd4587205?w=400&h=280&fit=crop"
+                        style="width: 100%; height: 180px; border-radius: 16px; object-fit: cover;">
+                </div>
+                <div class="col-md-8">
+                    <div style="background: #f8fafc; border-radius: 16px; padding: 1.5rem;">
+                        <p style="font-size: 1.1rem; color: #374151; margin: 0; line-height: 1.7;">
+                            "After work last time, I always go to the kopitiam near Toa Payoh.
+                            This photo is my usual seat - same corner for 30 years! Very shiok."
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

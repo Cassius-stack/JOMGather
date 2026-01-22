@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+
+{% block title %}Respond to Invite - Slice of Life{% endblock %}
+
+{% block content %}
+<div
+    style="background: linear-gradient(180deg, #e8f4fc 0%, #dbeafe 100%); min-height: 100vh; margin: -1rem -1rem 0; padding: 2rem;">
+    <div class="container">
+
+        <!-- Header -->
+        <div class="mb-4">
+            <a href="{{ url_for('index') }}" style="color: #1e3a5f; text-decoration: none; font-size: 1.1rem;">
+                <i class="bi bi-arrow-left me-2"></i>Back to Home
+            </a>
+        </div>
+
+        <!-- Invite Banner -->
+        <div
+            style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-radius: 20px; padding: 1.5rem 2rem; margin-bottom: 2rem; border-left: 5px solid #f59e0b;">
+            <div class="d-flex align-items-center gap-3">
+                <img src="https://i.pravatar.cc/60?img=12"
+                    style="width: 60px; height: 60px; border-radius: 50%; border: 3px solid white;">
+                <div>
+                    <p style="font-size: 1rem; color: #92400e; margin-bottom: 0.25rem;">You've been invited!</p>
+                    <h3 style="font-size: 1.5rem; font-weight: 600; color: #1e3a5f; margin: 0;">Jeremy wants to share a
+                        Slice of Life with you</h3>
+                </div>
+            </div>
+        </div>
+
+        <!-- Title -->
+        <div class="mb-4">
+            <h1 style="font-size: 2.25rem; font-weight: 700; color: #1e3a5f; margin-bottom: 0.5rem;">
+                <i class="bi bi-reply me-2"></i>Share Your Response
+            </h1>
+            <p style="font-size: 1.15rem; color: #475569;">Add your photo and comment on Jeremy's submission</p>
+        </div>
+
+        <!-- Prompt Card -->
+        <div
+            style="background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%); border-radius: 20px; padding: 1.5rem 2rem; color: white; margin-bottom: 2rem; text-align: center;">
+            <p
+                style="font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; opacity: 0.8; margin-bottom: 0.5rem;">
+                Today's Prompt</p>
+            <p style="font-size: 1.4rem; font-style: italic; margin: 0;">"What is your favourite thing to do after
+                school/work?"</p>
+        </div>
+
+        <!-- Jeremy's Submission (to comment on) -->
+        <div
+            style="background: white; border-radius: 24px; padding: 2rem; margin-bottom: 2rem; box-shadow: 0 8px 30px rgba(0,0,0,0.08);">
+            <h3 style="font-size: 1.35rem; font-weight: 600; color: #1e3a5f; margin-bottom: 1.5rem;">
+                <i class="bi bi-person me-2" style="color: #3b82f6;"></i>Jeremy's Submission
+            </h3>
+            <div class="row">
+                <div class="col-md-5">
+                    <img src="https://images.unsplash.com/photo-1472745942893-4b9f730c7668?w=400&h=280&fit=crop"
+                        style="width: 100%; height: 200px; border-radius: 16px; object-fit: cover;">
+                </div>
+                <div class="col-md-7">
+                    <div style="background: #f8fafc; border-radius: 16px; padding: 1.5rem; margin-bottom: 1rem;">
+                        <p style="font-size: 1.1rem; color: #374151; margin: 0; line-height: 1.7;">
+                            "After school, I love going to the playground near my HDB. This photo is from last week -
+                            I was just sitting on the swing, watching the sunset and decompressing from the day."
+                        </p>
+                    </div>
+
+                    <!-- Comment on Jeremy's -->
+                    <h5 style="font-size: 1.1rem; font-weight: 600; color: #1e3a5f; margin-bottom: 0.5rem;">
+                        <i class="bi bi-chat-dots me-2" style="color: #22c55e;"></i>Add Your Comment
+                    </h5>
+                    <textarea id="commentOnSender" placeholder="What do you think about Jeremy's photo?"
+                        style="width: 100%; border: 2px solid #e2e8f0; border-radius: 12px; padding: 1rem; font-size: 1rem; resize: none; height: 80px;"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- Your Response -->
+        <div
+            style="background: white; border-radius: 24px; padding: 2rem; margin-bottom: 2rem; box-shadow: 0 8px 30px rgba(0,0,0,0.08);">
+            <h3 style="font-size: 1.35rem; font-weight: 600; color: #1e3a5f; margin-bottom: 1.5rem;">
+                <i class="bi bi-image me-2" style="color: #f59e0b;"></i>Your Response
+            </h3>
+
+            <div class="row g-4">
+                <!-- Upload -->
+                <div class="col-md-6">
+                    <div id="uploadZone" onclick="document.getElementById('imageUpload').click()"
+                        style="border: 3px dashed #cbd5e1; border-radius: 16px; padding: 3rem 2rem; text-align: center; cursor: pointer; background: #f8fafc; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                        <div id="uploadPlaceholder">
+                            <i class="bi bi-cloud-arrow-up" style="font-size: 3rem; color: #1e3a5f;"></i>
+                            <p style="font-size: 1.1rem; color: #1e3a5f; margin: 1rem 0 0.5rem; font-weight: 500;">
+                                Upload your photo</p>
+                            <p style="font-size: 0.9rem; color: #94a3b8; margin: 0;">PNG, JPG up to 10MB</p>
+                        </div>
+                        <div id="uploadPreview" style="display: none;">
+                            <img id="previewImage" src=""
+                                style="max-height: 150px; border-radius: 12px; margin-bottom: 0.5rem;">
+                            <p style="color: #22c55e; font-size: 1rem; margin: 0;"><i
+                                    class="bi bi-check-circle me-2"></i>Image selected!</p>
+                        </div>
+                        <input type="file" id="imageUpload" accept="image/*" style="display: none;"
+                            onchange="previewUpload(this)">
+                    </div>
+                </div>
+
+                <!-- Thought -->
+                <div class="col-md-6">
+                    <textarea id="yourThought" placeholder="Share your story about your photo..."
+                        style="width: 100%; height: 100%; min-height: 200px; border: 2px solid #e2e8f0; border-radius: 16px; padding: 1.25rem; font-size: 1.05rem; resize: none;"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- Submit Button -->
+        <button onclick="submitResponse()" id="submitBtn" disabled
+            style="width: 100%; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white; border: none; border-radius: 16px; padding: 1.25rem; font-size: 1.3rem; font-weight: 600; cursor: pointer; opacity: 0.5; box-shadow: 0 4px 15px rgba(34, 197, 94, 0.3);">
+            <i class="bi bi-check-lg me-2"></i>Submit Response
+        </button>
+    </div>
+</div>
+
+<!-- Success Modal -->
+<div id="successModal"
+    style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+    <div
+        style="background: white; border-radius: 24px; padding: 3rem; max-width: 500px; text-align: center; margin: 2rem;">
+        <div
+            style="width: 80px; height: 80px; background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
+            <i class="bi bi-check-lg" style="font-size: 2.5rem; color: #22c55e;"></i>
+        </div>
+        <h2 style="font-size: 1.75rem; font-weight: 600; color: #1e3a5f; margin-bottom: 0.5rem;">Response Sent!</h2>
+        <p style="font-size: 1.1rem; color: #6b7280; margin-bottom: 2rem;">
+            Your response has been sent to Jeremy. You'll be notified when the display is published!
+        </p>
+        <a href="{{ url_for('slice_of_life.receiver_waiting') }}"
+            style="display: inline-block; background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%); color: white; border-radius: 16px; padding: 1rem 2rem; font-size: 1.1rem; font-weight: 600; text-decoration: none;">
+            <i class="bi bi-check-circle me-2"></i>Done
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let imageSelected = false;
+
+    function previewUpload(input) {
+        const preview = document.getElementById('uploadPreview');
+        const placeholder = document.getElementById('uploadPlaceholder');
+        const previewImage = document.getElementById('previewImage');
+        const uploadZone = document.getElementById('uploadZone');
+
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                previewImage.src = e.target.result;
+                preview.style.display = 'block';
+                placeholder.style.display = 'none';
+                uploadZone.style.borderColor = '#22c55e';
+                uploadZone.style.background = '#f0fdf4';
+                imageSelected = true;
+                checkFormValidity();
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    function checkFormValidity() {
+        const hasThought = document.getElementById('yourThought').value.trim().length > 10;
+        const hasComment = document.getElementById('commentOnSender').value.trim().length > 5;
+        const submitBtn = document.getElementById('submitBtn');
+
+        const isValid = imageSelected && hasThought && hasComment;
+        submitBtn.disabled = !isValid;
+        submitBtn.style.opacity = isValid ? '1' : '0.5';
+    }
+
+    document.getElementById('yourThought').addEventListener('input', checkFormValidity);
+    document.getElementById('commentOnSender').addEventListener('input', checkFormValidity);
+
+    function submitResponse() {
+        document.getElementById('successModal').style.display = 'flex';
+    }
+</script>
+{% endblock %}

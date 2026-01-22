@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block title %}Waiting Room - Slice of Life{% endblock %}
+
+{% block content %}
+<div
+    style="background: linear-gradient(180deg, #e8f4fc 0%, #dbeafe 100%); min-height: 100vh; margin: -1rem -1rem 0; padding: 2rem;">
+    <div class="container">
+
+        <!-- Header -->
+        <div class="mb-4">
+            <a href="{{ url_for('slice_of_life.prompt') }}"
+                style="color: #1e3a5f; text-decoration: none; font-size: 1.1rem;">
+                <i class="bi bi-arrow-left me-2"></i>Back to Prompts
+            </a>
+        </div>
+
+        <!-- Title -->
+        <div class="mb-5">
+            <h1 style="font-size: 2.5rem; font-weight: 700; color: #1e3a5f; margin-bottom: 0.5rem;">
+                <i class="bi bi-clock-history me-2"></i>Waiting Room
+            </h1>
+            <p style="font-size: 1.25rem; color: #475569;">Track your Slice of Life invites and enter review mode</p>
+        </div>
+
+        <!-- Your Submission Preview - BIGGER -->
+        <div
+            style="background: white; border-radius: 24px; padding: 2rem; margin-bottom: 2.5rem; box-shadow: 0 8px 30px rgba(0,0,0,0.08);">
+            <h3 style="font-size: 1.5rem; font-weight: 600; color: #1e3a5f; margin-bottom: 1.5rem;">
+                <i class="bi bi-image me-2" style="color: #3b82f6;"></i>Your Submission
+            </h3>
+            <div class="row align-items-center">
+                <div class="col-md-4">
+                    <img src="https://images.unsplash.com/photo-1472745942893-4b9f730c7668?w=400&h=280&fit=crop"
+                        style="width: 100%; height: 200px; border-radius: 16px; object-fit: cover; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+                </div>
+                <div class="col-md-8">
+                    <div style="background: #f8fafc; border-radius: 16px; padding: 1.5rem; height: 100%;">
+                        <p
+                            style="font-size: 1.15rem; color: #374151; margin: 0; line-height: 1.7; overflow-wrap: break-word;">
+                            "After school, I love going to the playground near my HDB. This photo is from last week -
+                            I was just sitting on the swing, watching the sunset and decompressing from the day.
+                            It's my peaceful escape where I can think about life and enjoy the simple moments."
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Invite Status -->
+        <h3 style="font-size: 1.75rem; font-weight: 600; color: #1e3a5f; margin-bottom: 1.5rem;">
+            <i class="bi bi-people me-2"></i>Invite Status
+        </h3>
+
+        <div class="row g-4">
+            {% set invites = [
+            {'name': 'Grandma Rose', 'img': 25, 'location': 'Bishan'},
+            {'name': 'Uncle Ben', 'img': 20, 'location': 'Tampines'},
+            {'name': 'Mdm Lim', 'img': 30, 'location': 'Jurong'}
+            ] %}
+
+            {% for person in invites %}
+            <div class="col-md-4">
+                <div
+                    style="background: white; border-radius: 24px; padding: 2rem; box-shadow: 0 8px 30px rgba(0,0,0,0.08);">
+                    <!-- Person Info -->
+                    <div class="text-center mb-4">
+                        <img src="https://i.pravatar.cc/100?img={{ person.img }}" alt="{{ person.name }}"
+                            style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 4px solid #e2e8f0; margin-bottom: 1rem;">
+                        <h4 style="font-size: 1.35rem; font-weight: 600; color: #1e3a5f; margin-bottom: 0.25rem;">{{
+                            person.name }}</h4>
+                        <p style="font-size: 1.05rem; color: #6b7280; margin: 0;">Senior • {{ person.location }}</p>
+                    </div>
+
+                    <!-- Status Badge -->
+                    <div class="text-center mb-4">
+                        <span
+                            style="display: inline-block; background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%); color: #16a34a; padding: 0.5rem 1.25rem; border-radius: 25px; font-size: 1.1rem; font-weight: 600;">
+                            <i class="bi bi-check-circle-fill me-2"></i>Responded!
+                        </span>
+                    </div>
+
+                    <!-- Review Button - GREEN when responded -->
+                    <a href="{{ url_for('slice_of_life.review', display_id=loop.index) }}"
+                        style="display: block; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white; text-align: center; border-radius: 16px; padding: 1rem 1.5rem; font-weight: 600; text-decoration: none; font-size: 1.15rem; box-shadow: 0 4px 15px rgba(34, 197, 94, 0.3);">
+                        <i class="bi bi-eye me-2"></i>Enter Review Mode
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}
