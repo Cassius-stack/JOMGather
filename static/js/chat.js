@@ -45,6 +45,8 @@ socket.on('connect', () => {
     // Join the current chat room
     socket.emit('join_chat', { user_id: CURRENT_USER_ID, contact_id: currentContactId });
 });
+// Track processed message IDs to avoid duplicates
+const processedMessageIds = new Set();
 
 /**
  * When we receive a new message (real-time!)
@@ -53,17 +55,31 @@ socket.on('connect', () => {
 socket.on('new_message', (data) => {
     console.log('[Socket.IO] New message received:', data);
 
+    // Prevent duplicate processing (message may arrive from both chat room and personal room)
+    if (processedMessageIds.has(data.id)) {
+        console.log('[Socket.IO] Skipping duplicate message:', data.id);
+        return;
+    }
+    processedMessageIds.add(data.id);
+
     // Determine if this is a sent or received message for us
     const messageType = data.sender_id === CURRENT_USER_ID ? 'sent' : 'received';
+    const otherUserId = data.sender_id === CURRENT_USER_ID ? data.receiver_id : data.sender_id;
 
-    // Add the message to the chat
-    appendMessage({
-        type: messageType,
-        text: data.text
-    });
+    // Only add to chat if it's for the current conversation
+    if (otherUserId === currentContactId) {
+        appendMessage({
+            type: messageType,
+            text: data.text
+        });
+    } else if (messageType === 'received') {
+        // Message from a different contact - increment unread count
+        unreadCounts[otherUserId] = (unreadCounts[otherUserId] || 0) + 1;
+        updateUnreadBadge(otherUserId);
+    }
 
-    // Update the contact preview
-    updateContactPreview(data.sender_id === CURRENT_USER_ID ? data.receiver_id : data.sender_id, data.text, messageType);
+    // Always update the contact preview
+    updateContactPreview(otherUserId, data.text, messageType);
 });
 
 /**
@@ -141,6 +157,40 @@ function updateContactPreview(contactId, text, type) {
             preview.textContent = `${prefix}${text.substring(0, 25)}${text.length > 25 ? '...' : ''}`;
         }
     }
+}
+
+/**
+ * Update the unread badge for a contact
+ * Shows count 1-9, or "9+" for 10+
+ */
+function updateUnreadBadge(contactId) {
+    const contactItem = document.querySelector(`[data-contact-id="${contactId}"]`);
+    if (!contactItem) return;
+
+    const count = unreadCounts[contactId] || 0;
+    let badge = contactItem.querySelector('.unread-badge');
+
+    if (count > 0) {
+        // Create badge if it doesn't exist
+        if (!badge) {
+            badge = document.createElement('span');
+            badge.className = 'unread-badge';
+            contactItem.appendChild(badge);
+        }
+        // Display count (max "9+")
+        badge.textContent = count > 9 ? '9+' : count;
+    } else if (badge) {
+        // Remove badge if count is 0
+        badge.remove();
+    }
+}
+
+/**
+ * Clear unread badge for a contact
+ */
+function clearUnreadBadge(contactId) {
+    unreadCounts[contactId] = 0;
+    updateUnreadBadge(contactId);
 }
 
 /**
@@ -307,6 +357,9 @@ function switchContact(contactId, contactName, contactStatus) {
 
     // Join the new room
     socket.emit('join_chat', { user_id: CURRENT_USER_ID, contact_id: contactId });
+
+    // Clear unread badge for this contact
+    clearUnreadBadge(contactId);
 
     // Update header
     chatContactName.textContent = contactName;

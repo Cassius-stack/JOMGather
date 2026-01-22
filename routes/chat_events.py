@@ -31,11 +31,16 @@ def register_chat_events(socketio):
     def handle_register_user(data):
         """
         Called when a user identifies themselves after connecting.
-        This is how we know which user this socket belongs to.
+        Join a personal room so they can receive notifications.
         """
         user_id = data.get('user_id')
         online_users[user_id] = True
-        print(f"[Socket.IO] User {user_id} registered")
+        
+        # Join personal room (e.g., "user_1") for receiving all notifications
+        personal_room = f"user_{user_id}"
+        join_room(personal_room)
+        
+        print(f"[Socket.IO] User {user_id} registered and joined {personal_room}")
         emit('user_online', {'user_id': user_id}, broadcast=True)
     
     @socketio.on('join_chat')
@@ -66,7 +71,8 @@ def register_chat_events(socketio):
         """
         Called when a user sends a message.
         1. Save to database
-        2. Broadcast to the room so both users see it instantly
+        2. Emit to the chat room (for active chat)
+        3. Emit to receiver's personal room (for notifications)
         """
         sender_id = data.get('sender_id')
         receiver_id = data.get('receiver_id')
@@ -85,18 +91,22 @@ def register_chat_events(socketio):
         conn.commit()
         conn.close()
         
-        # Get the room name
-        room = get_room_name(sender_id, receiver_id)
-        
-        # Broadcast the message to everyone in the room
-        emit('new_message', {
+        message_data = {
             'id': message_id,
             'sender_id': sender_id,
             'receiver_id': receiver_id,
             'text': content
-        }, room=room)
+        }
         
-        print(f"[Socket.IO] Message from {sender_id} to {receiver_id} in room {room}")
+        # Emit to the chat room (both users in the conversation)
+        room = get_room_name(sender_id, receiver_id)
+        emit('new_message', message_data, room=room)
+        
+        # Also emit to receiver's personal room (for notifications if they're in a different chat)
+        receiver_room = f"user_{receiver_id}"
+        emit('new_message', message_data, room=receiver_room)
+        
+        print(f"[Socket.IO] Message from {sender_id} to {receiver_id}")
     
     @socketio.on('typing')
     def handle_typing(data):
