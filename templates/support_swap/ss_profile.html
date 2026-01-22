@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}Post Request - Support Swap{% endblock %}
+
+{% block content %}
+<nav class="navbar navbar-expand-lg skillnav">
+    <div class="container">
+        <div class="navbar-nav">
+            <a href="#" class="nav-link">Back to activity</a>
+        </div>
+        <a class="navbar-brand fw-bold ms-3" href="#">
+            <i class="bi bi-people-fill me-2"></i>Support Swap
+            <small class="fw-normal">(North Region)</small>
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+            <div class="navbar-nav nav-pills">
+                <a href="Profile_SS.html" class="nav-link"> <span class="underlined">My Profile</span></a>
+                <a href="Skills Market.html" class="nav-link">Skills Market</a>
+                <a href="Post_Request.html" class="nav-link">+ Post Request</a>
+                <a href="History_Match.html" class="nav-link">Matchings</a>
+            </div>
+        </div>
+    </div>
+</nav>
+<main>
+    <div class="container">
+        <div class="text-center mb-4">
+            <h1>My Skills Profile</h1>
+            <p>View and manage your Skills and Experience</p>
+        </div>
+        <div class="card shadow-sm mb-4">
+            <h2 class="card-header"><i class="bi bi-plus-circle me-2"></i> Add a New Skill</h2>
+            <div class="card-body">
+                <form>
+                    <div class="mb-3">
+                        <label for="skillName" class="form-label">Skill Name</label>
+                        <input type="text" class="form-control" id="skillName" placeholder="Enter skill name">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Add Skill</button>
+                </form>
+            </div>
+        </div>
+        <div class="card shadow-sm mb-4">
+            <h2 class="card-header text-secondary">My Current Skills</h2>
+            <div id="skilllist" class="d-flex flex-wrap gap-2" style="min-height: 50px;">
+                <!-- Skills will be dynamically added here -->
+            </div>
+        </div>
+    </div>
+</main>
+<footer></footer>
+{% endblock %}

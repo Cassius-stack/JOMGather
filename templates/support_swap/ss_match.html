@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block title %}History - Support Swap{% endblock %}
+
+{% block content %}
+<nav class="navbar navbar-expand-lg skillnav">
+    <div class="container">
+
+        <div class="navbar-nav">
+            <a href="#" class="nav-link">Back to activity</a>
+        </div>
+
+        <a class="navbar-brand fw-bold ms-3" href="#">
+            <i class="bi bi-people-fill me-2"></i>Support Swap
+            <small class="fw-normal">(North Region)</small>
+        </a>
+
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+            <div class="navbar-nav nav-pills">
+                <a href="Profile_SS.html" class="nav-link">My Profile</a>
+                <a href="Skills Market.html" class="nav-link">Skills Market</a>
+                <a href="Post_Request.html" class="nav-link">+ Post Request</a>
+                <a href="History_Match.html" class="nav-link"><span class="underlined">Matchings</span></a>
+            </div>
+        </div>
+
+    </div>
+</nav>
+<main>
+    <div class="container px-3">
+        <h1>History & Matches</h1>
+        <p>Matched:</p>
+        <div class="card shadow-sm mb-3 border-start border-5 border-success">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <h5 class="card-title text-primary mb-0">Match: Speaking Cantonese</h5>
+                    <span class="badge bg-success">ACTIVE MATCH</span>
+                </div>
+
+                <div class="text-muted small mb-3">
+                    <i class="bi bi-person-circle me-1"></i> Partner: <strong>Uncle Chan (Elderly)</strong> &bull;
+                    <i class="bi bi-geo-alt-fill me-1"></i> Location: <strong>Yishun CC, Room 3</strong>
+                </div>
+
+                <!-- Feedback Loop -->
+                <div class="bg-light p-3 rounded border">
+                    <label class="form-label fw-bold small text-secondary">Slice of Life (Feedback):</label>
+                    <div class="input-group input-group-sm">
+                        <input type="text" class="form-control" placeholder="What did you learn today?">
+                        <button class="btn btn-success"
+                            onclick="alert('Points Awarded! Thank you for your feedback.')">Submit</button>
+                    </div>
+                </div>
+
+                <div class="text-end mt-3">
+                    <button class="btn btn-outline-danger btn-sm" onclick="this.closest('.card').remove()">Cancel
+                        Match</button>
+                </div>
+            </div>
+        </div>
+        <p>Done/Cancelled:</p>
+        <div class="card shadow-sm mb-3 border-start border-5 border-secondary px-3">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <h5 class="card-title text-primary mb-0">Match: Speaking Cantonese</h5>
+                    <span class="badge bg-secondary">COMPLETED MATCH</span>
+                </div>
+
+                <div class="text-muted small mb-3">
+                    <i class="bi bi-person-circle me-1"></i> Partner: <strong>Uncle Tan (Elderly)</strong> &bull;
+                    <i class="bi bi-geo-alt-fill me-1"></i> Location: <strong>Yishun CC, Room 3</strong>
+                </div>
+
+                <!-- Feedback Loop -->
+                <div class="bg-light p-3 rounded border">
+                    <label class="form-label fw-bold small text-secondary">Slice of Life (Feedback):</label>
+                    <div class="input-group input-group-sm">
+                        <p>I have learnt how to make the wheels on my bike run smootly after applying rubricants</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+</main>
+<footer></footer>
+{% endblock %}
