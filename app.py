@@ -3,7 +3,11 @@ JOMGather - Intergenerational Connection Platform
 Main Flask Application Entry Point
 """
 
+from dotenv import load_dotenv
+load_dotenv()  # Load .env file before anything else
+
 from flask import Flask, render_template
+from flask_socketio import SocketIO
 from config import config
 
 # Import route blueprints
@@ -16,10 +20,18 @@ from routes.support_swap import support_swap_bp
 from routes.rewards import rewards_bp
 from routes.slice_of_life import slice_of_life_bp
 
+# Create SocketIO instance (initialized later with app)
+socketio = SocketIO()
+
 def create_app(config_name='default'):
     """Application factory function."""
     app = Flask(__name__)
     app.config.from_object(config[config_name])
+    
+    # Initialize SocketIO with the app
+    # Using async_mode='threading' to avoid conflict with Supabase's httpx
+    # (eventlet monkey-patching breaks httpx)
+    socketio.init_app(app, cors_allowed_origins="*", async_mode='threading')
     
     # Register blueprints
     app.register_blueprint(auth_bp, url_prefix='/auth')
@@ -30,6 +42,10 @@ def create_app(config_name='default'):
     app.register_blueprint(support_swap_bp, url_prefix='/support-swap')
     app.register_blueprint(rewards_bp, url_prefix='/rewards')
     app.register_blueprint(slice_of_life_bp, url_prefix='/slice-of-life')
+    
+    # Import and register socket events
+    from routes.chat_events import register_chat_events
+    register_chat_events(socketio)
     
     # Home route
     @app.route('/')
@@ -47,4 +63,5 @@ def create_app(config_name='default'):
 app = create_app('development')
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    # Use socketio.run() instead of app.run() for WebSocket support
+    socketio.run(app, debug=True)

@@ -1,61 +1,69 @@
 {% extends "base.html" %}
-
-{% block title %}Social - JomGather{% endblock %}
-
-{% block content %}
-<div class="container py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>Social Hub</h1>
-        <a href="{{ url_for('social.create_group') }}" class="btn btn-primary">
-            <i class="bi bi-plus-circle me-2"></i>Create Group
-        </a>
-    </div>
-
-    <div class="row g-4">
-        <!-- Ask A Grandfriend Card -->
-        <div class="col-md-6 col-lg-4">
-            <a href="{{ url_for('social.ask_grandfriend') }}" class="text-decoration-none">
-                <div class="card h-100 border-0 shadow-sm">
-                    <div class="card-body text-center py-5"
-                        style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 0.5rem;">
-                        <i class="bi bi-chat-heart text-white" style="font-size: 3rem;"></i>
-                        <h4 class="text-white mt-3">Ask A Grandfriend</h4>
-                        <p class="text-white opacity-75">Get wisdom from experienced elders</p>
-                    </div>
-                </div>
-            </a>
+{% block title %}Social Hub - JomGather{% endblock %}
+{% block content%}
+<div class="chat-wrapper">
+    <nav class="sidebar">
+        <div class="nav-icon active">
+            <i class="bi bi-chat-fill"></i>
         </div>
-
-        <!-- Sample Social Groups -->
-        <div class="col-md-6 col-lg-4">
-            <div class="card h-100 border-0 shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title">🎨 Arts & Crafts Club</h5>
-                    <p class="card-text text-muted">Share your creative projects with others</p>
-                    <span class="badge bg-primary">156 members</span>
-                </div>
+        <div class="nav-icon">
+            <i class="bi bi-people-fill"></i>
+        </div>
+    </nav>
+    <aside class="inbox-pane">
+        <div class="inbox-header">
+            <h1>Inbox</h1>
+            <div class="search-bar">
+                <i class="bi bi-search"></i>
+                <input type="text" placeholder="Search for a contact..." id="contact-search">
             </div>
         </div>
 
-        <div class="col-md-6 col-lg-4">
-            <div class="card h-100 border-0 shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title">🍳 Recipe Exchange</h5>
-                    <p class="card-text text-muted">Learn traditional recipes from grandparents</p>
-                    <span class="badge bg-primary">89 members</span>
-                </div>
-            </div>
-        </div>
+        <ul class="contact-list" id="contact-list">
+            <!-- Contacts will be loaded dynamically by JavaScript -->
+            <li class="loading-contacts" style="padding: 20px; text-align: center; color: #888;">
+                Loading contacts...
+            </li>
+        </ul>
+    </aside>
 
-        <div class="col-md-6 col-lg-4">
-            <div class="card h-100 border-0 shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title">📚 Book Buddies</h5>
-                    <p class="card-text text-muted">Cross-generational reading club</p>
-                    <span class="badge bg-primary">67 members</span>
+    <main class="chat-window">
+        <header class="chat-header">
+            <div class="user-details">
+                <div class="avatar large">
+                    <i class="bi bi-person-fill"></i>
+                </div>
+                <div class="text">
+                    <span class="name" id="chat-contact-name">Select a contact</span>
+                    <span class="status" id="chat-contact-status">-</span>
                 </div>
             </div>
+            <div class="header-actions">
+                <i class="bi bi-telephone"></i>
+                <i class="bi bi-camera-video"></i>
+            </div>
+        </header>
+        <div class="chat-container" id="chat-messages">
+            <!-- Messages loaded dynamically -->
+            <div style="text-align: center; color: #888; margin-top: 50px;">
+                Select a contact to start chatting
+            </div>
         </div>
-    </div>
+        <footer class="input-area">
+            <input type="text" placeholder="Type your message..." id="message-input">
+            <div class="input-actions">
+                <i class="bi bi-emoji-smile"></i>
+                <i class="bi bi-paperclip"></i>
+            </div>
+            <button class="send-btn" id="send-btn">
+                <i class="bi bi-send"></i>
+            </button>
+        </footer>
+    </main>
+
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/chat.js') }}"></script>
 {% endblock %}
