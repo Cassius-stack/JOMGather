@@ -1,9 +1,11 @@
 """
-Social routes - Social features, Chat, AskAGrandfriend (Zongrong's feature)
+Social routes - Social features, Chat, AskAGrandfriend
+Now using Supabase for database
 """
 
 from flask import Blueprint, render_template, request, redirect, url_for, jsonify
-from utils.helpers import get_db_connection
+from utils.supabase_db import get_supabase, fetch_all, fetch_one, insert
+import traceback
 
 social_bp = Blueprint('social', __name__)
 
@@ -18,102 +20,124 @@ def social_hub():
     """Main social/chat hub."""
     return render_template('social/social_hub.html')
 
+# === DEBUG ENDPOINT ===
+@social_bp.route('/api/test')
+def test_supabase():
+    """Test Supabase connection."""
+    try:
+        from utils.supabase_db import get_supabase
+        supabase = get_supabase()
+        response = supabase.table('users').select('user_id, username').limit(3).execute()
+        return jsonify({'success': True, 'users': response.data})
+    except Exception as e:
+        import traceback
+        return jsonify({'error': str(e), 'trace': traceback.format_exc()}), 500
+
 # === CHAT API ENDPOINTS ===
 
 @social_bp.route('/api/contacts')
 def get_contacts():
     """Get list of all contacts for the current user."""
-    current_user_id = get_current_user_id()
-    conn = get_db_connection()
-    
-    # Get all users except current user, with their last message if any
-    contacts = conn.execute('''
-        SELECT u.user_id, u.username, 
-               (SELECT content FROM messages 
-                WHERE (sender_id = u.user_id AND receiver_id = ?)
-                   OR (sender_id = ? AND receiver_id = u.user_id)
-                ORDER BY sent_at DESC LIMIT 1) as last_message,
-               (SELECT sender_id FROM messages 
-                WHERE (sender_id = u.user_id AND receiver_id = ?)
-                   OR (sender_id = ? AND receiver_id = u.user_id)
-                ORDER BY sent_at DESC LIMIT 1) as last_sender_id,
-               (SELECT sent_at FROM messages 
-                WHERE (sender_id = u.user_id AND receiver_id = ?)
-                   OR (sender_id = ? AND receiver_id = u.user_id)
-                ORDER BY sent_at DESC LIMIT 1) as last_message_time
-        FROM users u
-        WHERE u.user_id != ?
-        ORDER BY last_message_time DESC NULLS LAST
-    ''', (current_user_id, current_user_id, current_user_id, current_user_id,
-          current_user_id, current_user_id, current_user_id)).fetchall()
-    
-    conn.close()
-    
-    result = []
-    for c in contacts:
-        preview = ''
-        if c['last_message']:
-            prefix = 'You: ' if c['last_sender_id'] == current_user_id else ''
-            preview = f"{prefix}{c['last_message'][:30]}"
-        result.append({
-            'id': c['user_id'],
-            'name': c['username'],
-            'lastMessage': preview,
-            'status': 'Active now'
-        })
-    
-    return jsonify(result)
+    try:
+        current_user_id = get_current_user_id()
+        supabase = get_supabase()
+        
+        # Get all users except current user
+        response = supabase.table('users').select('user_id, username').neq('user_id', current_user_id).execute()
+        users = response.data
+        
+        result = []
+        for user in users:
+            # Get last message with this user
+            try:
+                msg_response = supabase.table('messages').select('*').or_(
+                    f"and(sender_id.eq.{current_user_id},receiver_id.eq.{user['user_id']}),and(sender_id.eq.{user['user_id']},receiver_id.eq.{current_user_id})"
+                ).order('sent_at', desc=True).limit(1).execute()
+                
+                last_message = msg_response.data[0] if msg_response.data else None
+            except Exception as e:
+                print(f"Error getting messages for user {user['user_id']}: {e}")
+                last_message = None
+            
+            preview = ''
+            if last_message:
+                prefix = 'You: ' if last_message['sender_id'] == current_user_id else ''
+                content = last_message.get('content', '')
+                preview = f"{prefix}{content[:30]}" if content else ''
+            
+            result.append({
+                'id': user['user_id'],
+                'name': user['username'],
+                'lastMessage': preview,
+                'status': 'Active now'
+            })
+        
+        return jsonify(result)
+    except Exception as e:
+        print(f"Error in get_contacts: {e}")
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
 
 @social_bp.route('/api/messages/<int:contact_id>')
 def get_messages(contact_id):
     """Get messages between current user and a contact."""
-    current_user_id = get_current_user_id()
-    conn = get_db_connection()
-    
-    messages = conn.execute('''
-        SELECT message_id, sender_id, receiver_id, content, sent_at, read
-        FROM messages
-        WHERE (sender_id = ? AND receiver_id = ?)
-           OR (sender_id = ? AND receiver_id = ?)
-        ORDER BY sent_at ASC
-    ''', (current_user_id, contact_id, contact_id, current_user_id)).fetchall()
-    
-    conn.close()
-    
-    return jsonify([{
-        'id': m['message_id'],
-        'type': 'sent' if m['sender_id'] == current_user_id else 'received',
-        'text': m['content'],
-        'time': m['sent_at']
-    } for m in messages])
+    try:
+        current_user_id = get_current_user_id()
+        supabase = get_supabase()
+        
+        # Get messages between the two users
+        response = supabase.table('messages').select('*').or_(
+            f"and(sender_id.eq.{current_user_id},receiver_id.eq.{contact_id}),and(sender_id.eq.{contact_id},receiver_id.eq.{current_user_id})"
+        ).order('sent_at').execute()
+        
+        messages = response.data
+        
+        return jsonify([{
+            'id': m['message_id'],
+            'type': 'sent' if m['sender_id'] == current_user_id else 'received',
+            'text': m['content'],
+            'time': m['sent_at']
+        } for m in messages])
+    except Exception as e:
+        print(f"Error in get_messages: {e}")
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
 
 @social_bp.route('/api/messages', methods=['POST'])
 def send_message():
     """Send a new message."""
-    current_user_id = get_current_user_id()
-    data = request.get_json()
-    receiver_id = data.get('receiverId')
-    content = data.get('content')
-    
-    if not receiver_id or not content:
-        return jsonify({'error': 'Missing receiverId or content'}), 400
-    
-    conn = get_db_connection()
-    cursor = conn.execute('''
-        INSERT INTO messages (sender_id, receiver_id, content)
-        VALUES (?, ?, ?)
-    ''', (current_user_id, receiver_id, content))
-    
-    message_id = cursor.lastrowid
-    conn.commit()
-    conn.close()
-    
-    return jsonify({
-        'id': message_id,
-        'type': 'sent',
-        'text': content,
-        'success': True
-    })
+    try:
+        current_user_id = get_current_user_id()
+        data = request.get_json()
+        receiver_id = data.get('receiverId')
+        content = data.get('content')
+        
+        if not receiver_id or not content:
+            return jsonify({'error': 'Missing receiverId or content'}), 400
+        
+        # Insert message using Supabase
+        new_message = insert('messages', {
+            'sender_id': current_user_id,
+            'receiver_id': receiver_id,
+            'content': content
+        })
+        
+        if new_message:
+            return jsonify({
+                'id': new_message['message_id'],
+                'type': 'sent',
+                'text': content,
+                'success': True
+            })
+        else:
+            return jsonify({'error': 'Failed to send message'}), 500
+    except Exception as e:
+        print(f"Error in send_message: {e}")
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
 
 # === OTHER SOCIAL ROUTES ===
 

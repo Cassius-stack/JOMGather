@@ -3,6 +3,9 @@ JOMGather - Intergenerational Connection Platform
 Main Flask Application Entry Point
 """
 
+from dotenv import load_dotenv
+load_dotenv()  # Load .env file before anything else
+
 from flask import Flask, render_template
 from flask_socketio import SocketIO
 from config import config
@@ -26,8 +29,9 @@ def create_app(config_name='default'):
     app.config.from_object(config[config_name])
     
     # Initialize SocketIO with the app
-    # cors_allowed_origins="*" allows connections from any origin (for development)
-    socketio.init_app(app, cors_allowed_origins="*")
+    # Using async_mode='threading' to avoid conflict with Supabase's httpx
+    # (eventlet monkey-patching breaks httpx)
+    socketio.init_app(app, cors_allowed_origins="*", async_mode='threading')
     
     # Register blueprints
     app.register_blueprint(auth_bp, url_prefix='/auth')
