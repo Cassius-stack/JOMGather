@@ -47,10 +47,72 @@ def create_app(config_name='default'):
     from routes.chat_events import register_chat_events
     register_chat_events(socketio)
     
+    # Track user activity
+    @app.before_request
+    def update_last_seen():
+        from flask import session
+        import datetime
+        from utils.supabase_db import get_supabase
+        
+        user_id = session.get('user_id')
+        if user_id:
+            try:
+                # Update last_seen (doing this every request might be heavy in production, but fine for prototype)
+                # Optimization: Could check if last_seen was > 5 mins ago in session
+                now = datetime.datetime.now().isoformat()
+                get_supabase().table('users').update({'last_seen': now}).eq('user_id', user_id).execute()
+            except Exception as e:
+                # Don't break the app if tracking fails
+                print(f"Error updating last_seen: {e}")
+
     # Home route
     @app.route('/')
     def index():
-        return render_template('index.html')
+        from flask import session
+        online_friends = []
+        recent_friends = []
+        if session.get('user_id'):
+            try:
+                # Get online friends list
+                from utils.supabase_db import get_supabase
+                import datetime
+                
+                supabase = get_supabase()
+                current_user_id = session.get('user_id')
+                
+                # Fetch accepted friendships
+                friends_ids = []
+                sent = supabase.table('friendships').select('user_id_2').eq('user_id_1', current_user_id).eq('status', 'accepted').execute()
+                for i in sent.data: friends_ids.append(i['user_id_2'])
+                    
+                received = supabase.table('friendships').select('user_id_1').eq('user_id_2', current_user_id).eq('status', 'accepted').execute()
+                for i in received.data: friends_ids.append(i['user_id_1'])
+                
+                if friends_ids:
+                    # Fetch all friends with last_seen
+                    response = supabase.table('users').select('user_id, username, last_seen').in_('user_id', friends_ids).execute()
+                    start_friends = response.data
+                    
+                    five_mins_ago = (datetime.datetime.now() - datetime.timedelta(minutes=5)).isoformat()
+                    
+                    for friend in start_friends:
+                        # Simple string comparison for ISO timestamps works if they are in same format/timezone
+                        if friend.get('last_seen') and friend['last_seen'] > five_mins_ago:
+                            online_friends.append(friend)
+                        else:
+                            pass # Will handle offline friends below
+                            
+                    # If no users are online, get the most recent ones
+                    if not online_friends and start_friends:
+                        # filter out online ones (already 0) -> just sort all by last_seen
+                        # Sort by last_seen descending, treating None as very old
+                        recent_friends = sorted(start_friends, key=lambda x: x.get('last_seen') or '', reverse=True)[:5]
+
+                    
+            except Exception as e:
+                print(f"Error fetching online friends: {e}")
+                
+        return render_template('index.html', online_friends=online_friends, recent_friends=recent_friends)
     
     # Skeleton template preview (for development only)
     @app.route('/skeleton')

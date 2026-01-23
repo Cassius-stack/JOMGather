@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}Search Results - JomGather{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header -->
+    <div class="mb-4">
+        <h2 class="fw-bold text-dark">Search Results for "{{ query }}"</h2>
+        <p class="text-muted">Found {{ users|length }} people and {{ activities|length }} activities</p>
+    </div>
+
+    <div class="row g-4">
+        <!-- Activities Section -->
+        <div class="col-md-6 order-md-2">
+            <h4 class="fw-bold mb-3 text-primary"><i class="bi bi-controller me-2"></i>Activities</h4>
+            {% if activities %}
+            <div class="list-group shadow-sm rounded-4 overflow-hidden border-0">
+                {% for activity in activities %}
+                <a href="{{ activity.url }}" class="list-group-item list-group-item-action p-3 border-0 border-bottom">
+                    <div class="d-flex align-items-center">
+                        <div class="me-3 rounded-circle bg-light d-flex align-items-center justify-content-center"
+                            style="width: 50px; height: 50px;">
+                            <i class="{{ activity.icon }} fs-4 text-{{ activity.color }}"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-1 fw-bold text-dark">{{ activity.name }}</h6>
+                            <p class="mb-0 small text-muted">{{ activity.description }}</p>
+                        </div>
+                        <i class="bi bi-chevron-right ms-auto text-muted"></i>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="alert alert-light text-center py-4 rounded-4">
+                <i class="bi bi-search fs-1 text-muted mb-3 d-block"></i>
+                <p class="mb-0 text-muted">No activities found matching "{{ query }}".</p>
+                <a href="{{ url_for('activities.activity_list') }}" class="btn btn-sm btn-outline-primary mt-3">Browse
+                    All</a>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- People Section -->
+        <div class="col-md-6 order-md-1">
+            <h4 class="fw-bold mb-3 text-primary"><i class="bi bi-people me-2"></i>People</h4>
+            {% if users %}
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body p-0">
+                    {% for user in users %}
+                    <div class="d-flex align-items-center p-3 border-bottom">
+                        <div class="me-3">
+                            <div
+                                style="width: 50px; height: 50px; background: #e0f2fe; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #1e3a5f; font-weight: 600;">
+                                {{ user.username[0] | upper }}
+                            </div>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h6 class="mb-0 fw-bold text-dark">{{ user.username }}</h6>
+                            <small class="text-muted text-capitalize">{{ user.user_type }}</small>
+                        </div>
+                        <div>
+                            {% if user.friendship_status == 'accepted' %}
+                            <span class="badge bg-success rounded-pill px-3 py-2">Friend</span>
+                            {% elif user.friendship_status == 'pending' %}
+                            <span class="badge bg-secondary rounded-pill px-3 py-2">Requested</span>
+                            {% else %}
+                            <!-- Simple Add Button (Uses existing JS logic ideally, but simplified here) -->
+                            <button class="btn btn-sm btn-outline-primary rounded-pill px-3" disabled>
+                                <i class="bi bi-person-plus me-1"></i> Add
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% else %}
+            <div class="alert alert-light text-center py-4 rounded-4">
+                <i class="bi bi-person-x fs-1 text-muted mb-3 d-block"></i>
+                <p class="mb-0 text-muted">No people found matching "{{ query }}".</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

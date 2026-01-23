@@ -119,12 +119,14 @@ CREATE TABLE IF NOT EXISTS sol_invites (
     sender_id INTEGER NOT NULL,
     recipient_id INTEGER NOT NULL,
     prompt_id INTEGER NOT NULL,
+    display_id INTEGER,
     status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'declined')),
     sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     responded_at TIMESTAMP,
     FOREIGN KEY (sender_id) REFERENCES users(user_id),
     FOREIGN KEY (recipient_id) REFERENCES users(user_id),
-    FOREIGN KEY (prompt_id) REFERENCES sol_prompts(prompt_id)
+    FOREIGN KEY (prompt_id) REFERENCES sol_prompts(prompt_id),
+    FOREIGN KEY (display_id) REFERENCES sol_displays(display_id)
 );
 
 -- Communities table

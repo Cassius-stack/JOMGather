@@ -26,30 +26,40 @@
             <p
                 style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; opacity: 0.8; margin-bottom: 0.25rem;">
                 Today's Prompt</p>
-            <p style="font-size: 1.25rem; font-style: italic; margin: 0;">"What is your favourite thing to do after
-                school/work?"</p>
+            <p style="font-size: 1.25rem; font-style: italic; margin: 0;">"{{ prompt.prompt_text }}"</p>
         </div>
 
         <!-- Side by Side Submissions -->
+        {% set my_sub = namespace(val=none) %}
+        {% set partner_sub = namespace(val=none) %}
+        {% for sub in submissions %}
+        {% if sub.user_id == current_user_id %}
+        {% set my_sub.val = sub %}
+        {% else %}
+        {% set partner_sub.val = sub %}
+        {% endif %}
+        {% endfor %}
+
         <div class="row g-4 mb-4">
             <!-- Your Submission -->
             <div class="col-md-6">
                 <div
                     style="background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.05); height: 100%;">
+                    {% if my_sub.val %}
                     <div style="background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%); padding: 1rem 1.5rem;">
                         <div class="d-flex align-items-center">
-                            <img src="https://i.pravatar.cc/50?img=12"
+                            <!-- Helper to get avatar from ID -->
+                            <img src="https://i.pravatar.cc/50?img={{ (my_sub.val.user_id * 5) % 70 }}"
                                 style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 3px solid white;">
                             <div style="margin-left: 1rem;">
                                 <strong style="font-size: 1.1rem; color: #1e3a5f;">You</strong>
                                 <span
-                                    style="display: inline-block; background: #22c55e; color: white; padding: 0.15rem 0.5rem; border-radius: 10px; font-size: 0.75rem; margin-left: 0.5rem;">Youth</span>
+                                    style="display: inline-block; background: #22c55e; color: white; padding: 0.15rem 0.5rem; border-radius: 10px; font-size: 0.75rem; margin-left: 0.5rem;">Me</span>
                             </div>
                         </div>
                     </div>
 
-                    <img src="https://images.unsplash.com/photo-1472745942893-4b9f730c7668?w=600&h=200&fit=crop"
-                        style="width: 100%; height: 180px; object-fit: cover;">
+                    <img src="{{ my_sub.val.image_url }}" style="width: 100%; height: 180px; object-fit: cover;">
 
                     <div style="padding: 1.5rem;">
                         <h5 style="font-size: 1rem; font-weight: 600; color: #1e3a5f; margin-bottom: 0.75rem;">
@@ -57,22 +67,28 @@
                         </h5>
                         <div style="background: #f8fafc; border-radius: 12px; padding: 1rem; margin-bottom: 1rem;">
                             <p style="font-size: 1rem; color: #374151; margin: 0; line-height: 1.6;">
-                                "After school, I love going to the playground near my HDB. This photo is from last week
-                                -
-                                I was just sitting on the swing, watching the sunset and decompressing from the day."
+                                "{{ my_sub.val.thought }}"
                             </p>
                         </div>
 
+                        <!-- Partner's Comment on MY submission -->
+                        {% if my_sub.val.comment %}
                         <h5 style="font-size: 1rem; font-weight: 600; color: #1e3a5f; margin-bottom: 0.5rem;">
-                            <i class="bi bi-reply me-2" style="color: #f59e0b;"></i>Grandma Rose's Comment
+                            <i class="bi bi-reply me-2" style="color: #f59e0b;"></i>Partner's Comment
                         </h5>
                         <div
                             style="background: #fef3c7; border-radius: 12px; padding: 1rem; border-left: 3px solid #f59e0b;">
                             <p style="font-size: 0.95rem; color: #92400e; margin: 0; font-style: italic;">
-                                "Wah, your playground looks so colourful! In my time, we just had wooden seesaws. 😊"
+                                "{{ my_sub.val.comment }}"
                             </p>
                         </div>
+                        {% endif %}
                     </div>
+                    {% else %}
+                    <div style="padding: 2rem; text-align: center;">
+                        <p class="text-muted">You haven't submitted yet.</p>
+                    </div>
+                    {% endif %}
                 </div>
             </div>
 
@@ -80,44 +96,61 @@
             <div class="col-md-6">
                 <div
                     style="background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.05); height: 100%;">
+                    {% if partner_sub.val %}
                     <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); padding: 1rem 1.5rem;">
                         <div class="d-flex align-items-center">
-                            <img src="https://i.pravatar.cc/50?img=25"
+                            <img src="https://i.pravatar.cc/50?img={{ (partner_sub.val.user_id * 5) % 70 }}"
                                 style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 3px solid white;">
                             <div style="margin-left: 1rem;">
-                                <strong style="font-size: 1.1rem; color: #1e3a5f;">Grandma Rose</strong>
+                                <strong style="font-size: 1.1rem; color: #1e3a5f;">Partner</strong>
                                 <span
-                                    style="display: inline-block; background: #f59e0b; color: white; padding: 0.15rem 0.5rem; border-radius: 10px; font-size: 0.75rem; margin-left: 0.5rem;">Senior</span>
+                                    style="display: inline-block; background: #f59e0b; color: white; padding: 0.15rem 0.5rem; border-radius: 10px; font-size: 0.75rem; margin-left: 0.5rem;">Partner</span>
                             </div>
                         </div>
                     </div>
 
-                    <img src="https://images.unsplash.com/photo-1517457373958-b7bdd4587205?w=600&h=200&fit=crop"
-                        style="width: 100%; height: 180px; object-fit: cover;">
+                    <img src="{{ partner_sub.val.image_url }}" style="width: 100%; height: 180px; object-fit: cover;">
 
                     <div style="padding: 1.5rem;">
                         <h5 style="font-size: 1rem; font-weight: 600; color: #1e3a5f; margin-bottom: 0.75rem;">
-                            <i class="bi bi-chat-text me-2" style="color: #f59e0b;"></i>Grandma Rose's Thought
+                            <i class="bi bi-chat-text me-2" style="color: #f59e0b;"></i>Partner's Thought
                         </h5>
                         <div style="background: #f8fafc; border-radius: 12px; padding: 1rem; margin-bottom: 1rem;">
                             <p style="font-size: 1rem; color: #374151; margin: 0; line-height: 1.6;">
-                                "After work last time, I always go to the kopitiam near Toa Payoh.
-                                This photo is my usual seat - same corner for 30 years! Very shiok."
+                                "{{ partner_sub.val.thought }}"
                             </p>
                         </div>
 
+                        <!-- My Comment on PARTNER'S submission -->
+                        {% if partner_sub.val.comment %}
+                        <h5 style="font-size: 1rem; font-weight: 600; color: #1e3a5f; margin-bottom: 0.5rem;">
+                            <i class="bi bi-reply me-2" style="color: #22c55e;"></i>Your Comment
+                        </h5>
+                        <div
+                            style="background: #dcfce7; border-radius: 12px; padding: 1rem; border-left: 3px solid #22c55e;">
+                            <p style="font-size: 0.95rem; color: #166534; margin: 0; font-style: italic;">
+                                "{{ partner_sub.val.comment }}"
+                            </p>
+                        </div>
+                        {% else %}
                         <h5 style="font-size: 1rem; font-weight: 600; color: #1e3a5f; margin-bottom: 0.5rem;">
                             <i class="bi bi-reply me-2" style="color: #22c55e;"></i>Add Your Comment
                         </h5>
-                        <form class="d-flex gap-2" onsubmit="addComment(event)">
-                            <input type="text" id="yourComment" placeholder="Write a comment..."
+                        <form method="POST" class="d-flex gap-2">
+                            <input type="text" name="comment" placeholder="Write a comment..."
                                 style="flex: 1; border: 2px solid #e2e8f0; border-radius: 12px; padding: 0.75rem 1rem; font-size: 1rem;">
                             <button type="submit"
                                 style="background: #1e3a5f; color: white; border: none; border-radius: 12px; padding: 0.75rem 1rem; cursor: pointer;">
                                 <i class="bi bi-send"></i>
                             </button>
                         </form>
+                        {% endif %}
                     </div>
+                    {% else %}
+                    <div style="padding: 2rem; text-align: center;">
+                        <p class="text-muted">Partner hasn't submitted yet.</p>
+                    </div>
+                    {% endif %}
                 </div>
             </div>
         </div>

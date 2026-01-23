@@ -49,6 +49,10 @@ body {
     line-height: 1.6;
     background-color: var(--light-bg);
     color: var(--text-dark);
+    /* Sticky Footer Setup */
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
 }
 
 /* Top Navigation */
@@ -64,12 +68,29 @@ body {
     color: var(--primary-blue) !important;
 }
 
+/* Navbar grouping pill container */
+.nav-pills-custom {
+    background: #f1f5f9;
+    padding: 0;
+    /* Padding removed per request */
+    border-radius: 60px;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 5px;
+}
+
 .nav-pills-custom .nav-link {
     color: var(--text-dark);
-    border-radius: 25px;
-    padding: 0.5rem 1.5rem;
-    font-weight: 500;
-    margin: 0 0.25rem;
+    border-radius: 50px !important;
+    padding: 0.6rem 2.6rem !important;
+    /* ~75% */
+    font-weight: 600 !important;
+    font-size: 0.95rem !important;
+    margin: 0 !important;
+    /* No margin to flush with edges */
+    min-width: 90px;
+    text-align: center;
 }
 
 .nav-pills-custom .nav-link.active {
@@ -144,6 +165,19 @@ body {
     border-radius: 20px;
     font-weight: 600;
     font-size: 0.9rem;
+}
+
+/* Search Dropdown Styles */
+.active-tab {
+    border-bottom: 3px solid var(--primary-blue);
+    color: var(--primary-blue) !important;
+    background-color: var(--light-bg);
+    border-radius: 0 !important;
+}
+
+.search-dropdown {
+    z-index: 1050;
+    border: none !important;
 }
 
 /* Friends Section */

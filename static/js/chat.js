@@ -10,15 +10,15 @@
 // Connect to the Socket.IO server
 const socket = io();
 
-// Get user ID from URL parameter (for testing: ?user=1 or ?user=2)
-// In production, this would come from the session
-const urlParams = new URLSearchParams(window.location.search);
-const CURRENT_USER_ID = parseInt(urlParams.get('user')) || 1;
+// CURRENT_USER_ID is injected globally in social_hub.html
+// Ensure it exists
+if (typeof CURRENT_USER_ID === 'undefined') {
+    console.error("Critical Error: CURRENT_USER_ID is missing. Redirecting to login...");
+    window.location.href = '/auth/login';
+}
 
-// Default contact based on who we're logged in as
-// User 1 (Jeremy) defaults to chatting with User 2 (Mdm Lim)
-// User 2 (Mdm Lim) defaults to chatting with User 1 (Jeremy)
-let currentContactId = CURRENT_USER_ID === 1 ? 2 : 1;
+// Default contact will be determined by loadContacts()
+let currentContactId = null;
 
 // Track unread message counts per contact
 const unreadCounts = {};
