@@ -2,10 +2,223 @@
 
 {% block title %}Activities - JOMGather{% endblock %}
 
+{% block head %}
+<!-- Custom Activity Styles -->
+<link rel="stylesheet" href="{{ url_for('static', filename='css/activities_custom.css') }}">
+<style>
+    /* Inline overrides if needed */
+    .btn-custom-primary {
+        background-color: white;
+        color: #333;
+        font-weight: 700;
+        border-radius: 30px;
+        padding: 0.5rem 2rem;
+        border: none;
+        transition: transform 0.2s;
+    }
+
+    .btn-custom-primary:hover {
+        transform: scale(1.05);
+        background-color: #f8f9fa;
+    }
+
+    .text-gold {
+        color: #FFD700;
+    }
+
+    .text-purple {
+        color: #8A2BE2;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<!-- TODO: Brandon to implement activities list page -->
-<div class="container">
-    <h1>Activities</h1>
-    <p class="text-muted">This page is awaiting implementation by Brandon.</p>
+<div class="container py-4">
+
+    <!-- Hero Section Carousel -->
+    <div id="heroCarousel" class="carousel slide hero-section" data-bs-ride="carousel">
+        <div class="carousel-indicators">
+            <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="0" class="active"
+                aria-current="true"></button>
+            <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="1"></button>
+            <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="2"></button>
+        </div>
+        <div class="carousel-inner">
+            <!-- Slide 1: Slice of Life -->
+            <div class="carousel-item active">
+                <div class="hero-slide"
+                    style="background-image: url('{{ url_for('static', filename='images/activities/SliceOfLife.png') }}');">
+                    <!-- Fallback if image missing, though style above sets bg. Using inline style with fallback for now -->
+                    <img src="{{ url_for('static', filename='images/activities/SliceOfLife.png') }}"
+                        onerror="this.src='https://placehold.co/1200x500?text=Slice+of+Life'" class="d-none"
+                        alt="Slice of Life hidden preload">
+                    <div class="hero-slide"
+                        style="background-image: url('{{ url_for('static', filename='images/activities/SliceOfLife.png') }}'), url('https://placehold.co/1200x500?text=Slice+of+Life');">
+                        <div class="hero-overlay">
+                            <h1 class="hero-title">Slice of Life</h1>
+                            <p class="hero-desc">"Slice of Life" transforms a single picture into a heartfelt connection
+                                by blending the unique perspectives of youth and elderly.</p>
+                            <div class="d-flex align-items-center gap-3">
+                                <a href="#" class="btn btn-custom-primary">Join Now</a>
+                                <div class="text-warning fw-bold"><i class="bi bi-trophy-fill"></i> Rewards: <span
+                                        class="text-gold">100P</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Slide 2: Cyber Challenge -->
+            <div class="carousel-item">
+                <div class="hero-slide"
+                    style="background-image: url('{{ url_for('static', filename='images/activities/TruthOrTrap.png') }}'), url('https://placehold.co/1200x500?text=Cyber+Challenge');">
+                    <div class="hero-overlay">
+                        <h1 class="hero-title">Cyber Challenge</h1>
+                        <p class="hero-desc">Test your digital savvy in this intergenerational cybersecurity quiz! Truth
+                            or Trap?</p>
+                        <div class="d-flex align-items-center gap-3">
+                            <a href="#" class="btn btn-custom-primary">Play Now</a>
+                            <div class="text-warning fw-bold"><i class="bi bi-trophy-fill"></i> Rewards: <span
+                                    class="text-gold">150P</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <button class="carousel-control-prev" type="button" data-bs-target="#heroCarousel" data-bs-slide="prev">
+            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Previous</span>
+        </button>
+        <button class="carousel-control-next" type="button" data-bs-target="#heroCarousel" data-bs-slide="next">
+            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Next</span>
+        </button>
+    </div>
+
+    <!-- Search & Stats Bar -->
+    <div class="search-stats-container">
+        <div class="search-input-wrapper">
+            <i class="bi bi-search text-muted"></i>
+            <input type="text" class="search-input" placeholder="Search activity...">
+        </div>
+        <div class="d-flex">
+            <div class="currency-badge text-purple">
+                <i class="bi bi-lightning-charge-fill me-2"></i> 20 V
+            </div>
+            <div class="currency-badge text-gold">
+                <i class="bi bi-coin me-2"></i> 5000
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Activities (Grid) -->
+    <h2 class="section-title">Top Activities</h2>
+    <div class="bento-grid">
+        <!-- Large Item: Slice of Life (Most Popular - 2 cols, 2 rows) -->
+        <div class="bento-item-large activity-card">
+            <img src="{{ url_for('static', filename='images/activities/SliceOfLife.png') }}"
+                onerror="this.src='https://placehold.co/600x400?text=Slice+of+Life'" class="activity-card-img"
+                alt="Slice of Life">
+            <div class="activity-card-overlay">
+                <span class="badge bg-warning text-dark mb-2">MOST POPULAR</span>
+                <h3 class="activity-name">Slice of Life VR</h3>
+                <p class="activity-subtitle">Grandparents & Children connect in shared virtual spaces.</p>
+            </div>
+        </div>
+
+        <!-- Medium Item: Ask A Grandfriend (2 cols, 1 row) -->
+        <div class="bento-item-medium activity-card">
+            <img src="{{ url_for('static', filename='images/activities/AskAGrandfriend.png') }}"
+                onerror="this.src='https://placehold.co/400x200?text=Ask+A+Grandfriend'" class="activity-card-img"
+                alt="Ask A Grandfriend">
+            <div class="activity-card-overlay">
+                <h4 class="activity-name">Ask a Grandfriend</h4>
+                <p class="activity-subtitle">Wisdom on demand. Connect online.</p>
+            </div>
+        </div>
+
+        <!-- Medium Item: Skills Swap (2 cols, 1 row) -->
+        <div class="bento-item-medium activity-card">
+            <img src="{{ url_for('static', filename='images/activities/SkillsSwap.png') }}"
+                onerror="this.src='https://placehold.co/400x200?text=Skills+Swap'" class="activity-card-img"
+                alt="Skills Swap Marketplace">
+            <div class="activity-card-overlay">
+                <h4 class="activity-name">Skills Swap</h4>
+                <p class="activity-subtitle">Teach a skill, learn a skill. Intergenerational exchange.</p>
+            </div>
+        </div>
+
+        <!-- Small Item: Boomerang (1 col, 1 row) -->
+        <div class="bento-item activity-card">
+            <img src="{{ url_for('static', filename='images/activities/BOOMerang.jpg') }}"
+                onerror="this.src='https://placehold.co/200x150?text=Boomerang'" class="activity-card-img"
+                alt="Boomerang">
+            <div class="activity-card-overlay">
+                <h4 class="activity-name">Boomerang</h4>
+            </div>
+        </div>
+
+        <!-- Small Item: Truth or Trap (1 col, 1 row) -->
+        <div class="bento-item activity-card">
+            <img src="{{ url_for('static', filename='images/activities/TruthOrTrap.png') }}"
+                onerror="this.src='https://placehold.co/200x150?text=Truth+or+Trap'" class="activity-card-img"
+                alt="Truth or Trap">
+            <div class="activity-card-overlay">
+                <h4 class="activity-name">Truth or Trap</h4>
+                <span class="badge bg-success">New!</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recently Played -->
+    <h2 class="section-title">Recently Played</h2>
+    <div class="horizontal-scroll-wrapper">
+        <div class="horizontal-scroll-container">
+            <div class="scroll-card">
+                <img src="{{ url_for('static', filename='images/activities/enerationalJukebox.png') }}"
+                    onerror="this.src='https://placehold.co/400x300?text=Intergenerational+Jukebox'"
+                    alt="Intergenerational Jukebox">
+                <div class="p-2 fw-bold text-center">Intergenerational Jukebox</div>
+            </div>
+            <div class="scroll-card">
+                <img src="{{ url_for('static', filename='images/activities/AskAGrandfriend.png') }}"
+                    onerror="this.src='https://placehold.co/400x300?text=Ask+A+Granfriend'" alt="Ask A Granfriend">
+                <div class="p-2 fw-bold text-center">Ask A Granfriend</div>
+            </div>
+            <!-- Mock Data -->
+            <div class="scroll-card">
+                <img src="{{ url_for('static', filename='images/activities/BOOMerang.jpg') }}"
+                    onerror="this.src='https://placehold.co/400x300?text=Boomerang'" alt="Boomerang">
+                <div class="p-2 fw-bold text-center">Boomerang</div>
+            </div>
+            <div class="scroll-card">
+                <img src="{{ url_for('static', filename='images/activities/SliceOfLife.png') }}"
+                    onerror="this.src='https://placehold.co/400x300?text=Slice+of+Life'" alt="Slice of Life">
+                <div class="p-2 fw-bold text-center">Slice of Life</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recommended For You -->
+    <h2 class="section-title">Recommended For You</h2>
+    <div class="horizontal-scroll-wrapper">
+        <div class="horizontal-scroll-container">
+            <div class="scroll-card">
+                <img src="{{ url_for('static', filename='images/activities/BOOMerang.jpg') }}"
+                    onerror="this.src='https://placehold.co/400x300?text=Boomerang'" alt="Boomerang">
+                <div class="p-2 fw-bold text-center">Boomerang</div>
+            </div>
+            <div class="scroll-card">
+                <img src="{{ url_for('static', filename='images/activities/TruthOrTrap.png') }}"
+                    onerror="this.src='https://placehold.co/400x300?text=Cyber+Challenge'" alt="Cyber Challenge">
+                <div class="p-2 fw-bold text-center">Cyber Challenge</div>
+            </div>
+            <div class="scroll-card">
+                <img src="{{ url_for('static', filename='images/activities/SkillsSwap.png') }}"
+                    onerror="this.src='https://placehold.co/400x300?text=Skills+Swap'" alt="Skills Swap">
+                <div class="p-2 fw-bold text-center">Skills Swap</div>
+            </div>
+        </div>
+    </div>
+
 </div>
 {% endblock %}

@@ -1,0 +1,263 @@
+/* Ask A Grandfriend Page Styles */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.page-title {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #1a1a2e;
+    margin: 0;
+}
+
+.back-link {
+    color: #5c6bc0;
+    text-decoration: none;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.back-link:hover {
+    color: #3949ab;
+}
+
+.search-bar {
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+
+.search-bar input {
+    border: none;
+    outline: none;
+    flex-grow: 1;
+    font-size: 1rem;
+    color: #555;
+}
+
+.sidebar-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.sidebar-title {
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.toggle-btn-group {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.toggle-btn {
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+    background: white;
+    color: #666;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 0.9rem;
+}
+
+.toggle-btn:hover {
+    background: #f5f5f5;
+}
+
+.toggle-btn.active {
+    background: #3949ab;
+    color: white;
+    border-color: #3949ab;
+}
+
+.category-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.category-btn {
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+    background: white;
+    color: #666;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: left;
+}
+
+.category-btn:hover {
+    background: #f5f5f5;
+}
+
+.category-btn.active {
+    background: #3949ab;
+    color: white;
+    border-color: #3949ab;
+}
+
+.main-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.main-header h2 {
+    font-weight: 700;
+    color: #1a1a2e;
+    margin: 0;
+}
+
+.btn-ask {
+    background: #3949ab;
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 10px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-ask:hover {
+    background: #303f9f;
+    color: white;
+}
+
+.question-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    border-left: 4px solid #3949ab;
+}
+
+.question-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin-bottom: 0.5rem;
+}
+
+.question-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.badge-category {
+    background: #e8eaf6;
+    color: #3949ab;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.badge-posted-by-you {
+    background: #e3f2fd;
+    color: #1565c0;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.question-author {
+    color: #888;
+    font-size: 0.85rem;
+}
+
+.question-author a {
+    color: #3949ab;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.question-preview {
+    color: #666;
+    font-size: 0.95rem;
+    margin-bottom: 0.75rem;
+    line-height: 1.5;
+}
+
+.question-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+}
+
+.see-replies-link {
+    color: #3949ab;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.see-replies-link:hover {
+    color: #303f9f;
+    text-decoration: underline;
+}
+
+.btn-delete {
+    background: transparent;
+    border: 1px solid #e0e0e0;
+    color: #999;
+    padding: 0.4rem 0.6rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-delete:hover {
+    background: #ffebee;
+    border-color: #f44336;
+    color: #f44336;
+}
+
+.profile-avatar {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .sidebar {
+        margin-bottom: 1.5rem;
+    }
+}
