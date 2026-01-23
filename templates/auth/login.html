@@ -4,8 +4,49 @@
 
 {% block content %}
 <!-- TODO: Team member to implement login page -->
-<div class="container">
-    <h1>Login</h1>
-    <p class="text-muted">This page is awaiting implementation.</p>
-</div>
-{% endblock %}
+<div class="bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 min-h-screen font-sans flex items-center justify-center
+p-4">
+
+    <!-- MAIN CONTAINER -->
+    <div class="bg-white/80 backdrop-blur-lg w-full max-w-md p-8 rounded-2xl shadow-2xl border border-white relative">
+
+        <!-- Header Icon -->
+        <div class="absolute -top-12 left-1/2 transform -translate-x-1/2">
+            <div class="h-24 w-24 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-lg text-white">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+            </div>
+        </div>
+
+        <div class="mt-10">
+
+            <!-- VIEW 1: LOGIN FORM -->
+            <div id="login-view" class="fade-in">
+                <h2 class="text-3xl font-extrabold text-gray-900 mb-2 text-center">Welcome Back</h2>
+                <p class="text-gray-500 mb-8 text-center">Please enter your details to sign in.</p>
+
+                <form onsubmit="event.preventDefault(); alert('Logged In!');">
+                    <div class="space-y-4">
+                        <input type="email" placeholder="Email"
+                            class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none transition">
+                        <input type="password" placeholder="Password"
+                            class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none transition">
+                        <button
+                            class="w-full py-3 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 transition shadow-lg">Sign
+                            In</button>
+                    </div>
+                </form>
+
+                <p class="mt-6 text-center text-sm text-gray-600">
+                    Don't have an account?
+                    <button onclick="switchView('register')" class="text-indigo-600 font-bold hover:underline">Create
+                        one</button>
+                </p>
+            </div>
+
+        </div>
+    </div>
+    {% endblock %}
