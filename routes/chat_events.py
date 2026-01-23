@@ -109,9 +109,130 @@ def register_chat_events(socketio):
             'user_id': user_id,
             'is_typing': data.get('is_typing', True)
         }, room=room, include_self=False)
+    
+    @socketio.on('edit_message')
+    def handle_edit_message(data):
+        """
+        Called when a user edits their message.
+        1. Verify ownership
+        2. Update in Supabase
+        3. Emit to the chat room AND personal rooms
+        """
+        message_id = data.get('message_id')
+        user_id = data.get('user_id')
+        new_content = data.get('new_content')
+        
+        if not message_id or not user_id or not new_content:
+            return
+        
+        # Convert to int (JavaScript sends as string)
+        try:
+            message_id = int(message_id)
+            user_id = int(user_id)
+        except (ValueError, TypeError):
+            print(f"[Socket.IO] Invalid message_id or user_id")
+            return
+        
+        # Import here to avoid circular imports
+        from utils.supabase_db import fetch_one, update
+        
+        # Verify the user owns this message
+        message = fetch_one('messages', message_id=message_id)
+        if not message or message.get('sender_id') != user_id:
+            print(f"[Socket.IO] Edit denied: user {user_id} doesn't own message {message_id}")
+            return
+        
+        # Update in database (only update content, not 'edited' flag to avoid column errors)
+        try:
+            update('messages', {'content': new_content}, message_id=message_id)
+        except Exception as e:
+            print(f"[Socket.IO] Error updating message: {e}")
+            return
+        
+        # Get receiver_id for room name
+        receiver_id = message.get('receiver_id')
+        room = get_room_name(user_id, receiver_id)
+        
+        edit_data = {
+            'message_id': message_id,
+            'new_content': new_content,
+            'sender_id': user_id,
+            'receiver_id': receiver_id
+        }
+        
+        # Emit to chat room (for users currently viewing this chat)
+        emit('message_edited', edit_data, room=room)
+        
+        # Also emit to both users' personal rooms (for inbox preview updates)
+        emit('message_edited', edit_data, room=f"user_{user_id}")
+        emit('message_edited', edit_data, room=f"user_{receiver_id}")
+        
+        print(f"[Socket.IO] Message {message_id} edited by user {user_id}")
+    
+    @socketio.on('delete_message')
+    def handle_delete_message(data):
+        """
+        Called when a user deletes their message.
+        1. Verify ownership
+        2. Delete from Supabase
+        3. Emit to the chat room AND personal rooms
+        """
+        message_id = data.get('message_id')
+        user_id = data.get('user_id')
+        
+        if not message_id or not user_id:
+            return
+        
+        # Convert to int (JavaScript sends as string)
+        try:
+            message_id = int(message_id)
+            user_id = int(user_id)
+        except (ValueError, TypeError):
+            print(f"[Socket.IO] Invalid message_id or user_id")
+            return
+        
+        # Import here to avoid circular imports
+        from utils.supabase_db import fetch_one, delete
+        
+        # Verify the user owns this message
+        message = fetch_one('messages', message_id=message_id)
+        if not message or message.get('sender_id') != user_id:
+            print(f"[Socket.IO] Delete denied: user {user_id} doesn't own message {message_id}")
+            return
+        
+        # Get receiver_id before deleting
+        receiver_id = message.get('receiver_id')
+        room = get_room_name(user_id, receiver_id)
+        
+        # Delete from database
+        try:
+            delete('messages', message_id=message_id)
+        except Exception as e:
+            print(f"[Socket.IO] Error deleting message: {e}")
+            return
+        
+        delete_data = {
+            'message_id': message_id,
+            'sender_id': user_id,
+            'receiver_id': receiver_id
+        }
+        
+        print(f"[Socket.IO] DELETE - Emitting to room: {room}")
+        print(f"[Socket.IO] DELETE - Emitting to user_{user_id} and user_{receiver_id}")
+        print(f"[Socket.IO] DELETE - Data: {delete_data}")
+        
+        # Emit to chat room
+        emit('message_deleted', delete_data, room=room)
+        
+        # Also emit to both users' personal rooms
+        emit('message_deleted', delete_data, room=f"user_{user_id}")
+        emit('message_deleted', delete_data, room=f"user_{receiver_id}")
+        
+        print(f"[Socket.IO] Message {message_id} deleted by user {user_id} - EMITS COMPLETE")
 
 
 def get_room_name(user1_id, user2_id):
     """Create a consistent room name for two users."""
     ids = sorted([int(user1_id), int(user2_id)])
     return f"chat_{ids[0]}_{ids[1]}"
+
