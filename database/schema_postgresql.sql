@@ -153,6 +153,8 @@ CREATE TABLE IF NOT EXISTS user_badges (
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
     FOREIGN KEY (badge_id) REFERENCES badges(badge_id) ON DELETE CASCADE
 );
+
+
 -- Insert default interests (PostgreSQL syntax)
 INSERT INTO interests (name)
 VALUES ('cooking'),
@@ -170,3 +172,70 @@ VALUES ('english'),
     ('mandarin'),
     ('malay'),
     ('tamil') ON CONFLICT (name) DO NOTHING;
+
+
+
+-- ASK a Grandfriend
+
+   author_name TEXT NOT NULL DEFAULT 'Anonymous',
+   author_type TEXT NOT NULL CHECK (author_type IN ('grandparent', 'student')) DEFAULT 'grandparent',
+   is_anonymous BOOLEAN DEFAULT FALSE,
+   likes_count INTEGER DEFAULT 0,
+   replies_count INTEGER DEFAULT 0,
+   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+-- Replies Table
+CREATE TABLE IF NOT EXISTS replies (
+   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+   question_id UUID NOT NULL REFERENCES questions(id) ON DELETE CASCADE,
+   content TEXT NOT NULL,
+   author_id UUID,
+   author_name TEXT NOT NULL DEFAULT 'Anonymous',
+   author_type TEXT NOT NULL CHECK (author_type IN ('grandparent', 'student')) DEFAULT 'student',
+   is_helpful BOOLEAN DEFAULT FALSE,
+   likes_count INTEGER DEFAULT 0,
+   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+-- Question Likes Table (to track who liked what)
+CREATE TABLE IF NOT EXISTS question_likes (
+   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+   question_id UUID NOT NULL REFERENCES questions(id) ON DELETE CASCADE,
+   user_id UUID NOT NULL,
+   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+   UNIQUE(question_id, user_id)
+);
+-- Reply Likes Table
+CREATE TABLE IF NOT EXISTS reply_likes (
+   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+   reply_id UUID NOT NULL REFERENCES replies(id) ON DELETE CASCADE,
+   user_id UUID NOT NULL,
+   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+   UNIQUE(reply_id, user_id)
+);
+-- Indexes for better performance
+CREATE INDEX IF NOT EXISTS idx_questions_category ON questions(category);
+CREATE INDEX IF NOT EXISTS idx_questions_author_type ON questions(author_type);
+CREATE INDEX IF NOT EXISTS idx_questions_created_at ON questions(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_replies_question_id ON replies(question_id);
+-- Enable Row Level Security (RLS) - Optional but recommended
+ALTER TABLE questions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE replies ENABLE ROW LEVEL SECURITY;
+-- Allow public read access
+CREATE POLICY "Public read access" ON questions FOR SELECT USING (true);
+CREATE POLICY "Public read access" ON replies FOR SELECT USING (true);
+-- Allow authenticated insert
+CREATE POLICY "Authenticated insert" ON questions FOR INSERT WITH CHECK (true);
+CREATE POLICY "Authenticated insert" ON replies FOR INSERT WITH CHECK (true);
+-- =====================================================
+-- Ask A Grandfriend Database Schema
+-- Run these SQL statements in your Supabase SQL Editor
+-- =====================================================
+-- Questions Table
+CREATE TABLE IF NOT EXISTS questions (
+   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+   title TEXT NOT NULL,
+   content TEXT,
+   category TEXT NOT NULL CHECK (category IN ('tech', 'cooking', 'cultural', 'modern', 'mentoring')),
+   author_id UUID,
+
