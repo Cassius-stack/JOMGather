@@ -7,8 +7,15 @@
 // SOCKET.IO CONNECTION
 // ============================================
 
-// Connect to the Socket.IO server
-const socket = io();
+// Connect to the Socket.IO server (explicitly use current host for cross-device support)
+const socket = io(window.location.origin, {
+    transports: ['websocket', 'polling'],
+    reconnection: true,
+    reconnectionAttempts: 5,
+    reconnectionDelay: 1000
+});
+
+console.log('[Socket.IO] Connecting to:', window.location.origin);
 
 // CURRENT_USER_ID is injected globally in social_hub.html
 // Ensure it exists
@@ -39,11 +46,22 @@ const sendBtn = document.getElementById('send-btn');
  * When we connect to the server
  */
 socket.on('connect', () => {
-    console.log('[Socket.IO] Connected to server as user', CURRENT_USER_ID);
+    console.log('[Socket.IO] ✅ Connected to server as user', CURRENT_USER_ID, 'Socket ID:', socket.id);
     // Register ourselves with the server
     socket.emit('register_user', { user_id: CURRENT_USER_ID });
     // Join the current chat room
     socket.emit('join_chat', { user_id: CURRENT_USER_ID, contact_id: currentContactId });
+});
+
+/**
+ * Connection error handling
+ */
+socket.on('connect_error', (error) => {
+    console.error('[Socket.IO] ❌ Connection error:', error);
+});
+
+socket.on('disconnect', (reason) => {
+    console.log('[Socket.IO] ⚠️ Disconnected:', reason);
 });
 // Track processed message IDs to avoid duplicates
 const processedMessageIds = new Set();
@@ -69,6 +87,7 @@ socket.on('new_message', (data) => {
     // Only add to chat if it's for the current conversation
     if (otherUserId === currentContactId) {
         appendMessage({
+            id: data.id,
             type: messageType,
             text: data.text
         });
@@ -126,6 +145,83 @@ socket.on('user_offline', (data) => {
     }
 });
 
+/**
+ * When a message is edited (real-time sync)
+ */
+socket.on('message_edited', (data) => {
+    console.log('[Socket.IO] Message edited:', data);
+
+    // Convert message_id to string for DOM selector (data attributes are strings)
+    const messageIdStr = String(data.message_id);
+
+    // Update the message bubble if currently viewing this chat
+    const messageDiv = document.querySelector(`[data-message-id="${messageIdStr}"]`);
+    if (messageDiv) {
+        const bubble = messageDiv.querySelector('.bubble');
+        const pElement = bubble.querySelector('p');
+        if (pElement) {
+            pElement.textContent = data.new_content;
+        }
+        // Add edited indicator if not present
+        if (!bubble.querySelector('.edited-indicator')) {
+            bubble.innerHTML += '<span class="edited-indicator">(edited)</span>';
+        }
+    }
+
+    // Update inbox preview - determine which contact to update
+    const otherUserId = data.sender_id === CURRENT_USER_ID ? data.receiver_id : data.sender_id;
+    const isSentByMe = data.sender_id === CURRENT_USER_ID;
+    updateContactPreview(otherUserId, data.new_content, isSentByMe ? 'sent' : 'received');
+});
+
+/**
+ * When a message is deleted (real-time sync)
+ */
+socket.on('message_deleted', (data) => {
+    console.log('[Socket.IO] Message deleted:', data);
+
+    // Convert message_id to string for DOM selector (data attributes are strings)
+    const messageIdStr = String(data.message_id);
+
+    // Remove the message bubble if currently viewing this chat
+    const messageDiv = document.querySelector(`[data-message-id="${messageIdStr}"]`);
+    if (messageDiv) {
+        messageDiv.style.transition = 'opacity 0.3s, transform 0.3s';
+        messageDiv.style.opacity = '0';
+        setTimeout(() => {
+            messageDiv.remove();
+
+            // After removal, update inbox preview with actual last message
+            updateInboxAfterDelete(data.sender_id, data.receiver_id);
+        }, 300);
+    } else {
+        // Message not visible (not viewing this chat), still update inbox
+        updateInboxAfterDelete(data.sender_id, data.receiver_id);
+    }
+});
+
+/**
+ * Update inbox preview after a message is deleted
+ */
+function updateInboxAfterDelete(senderId, receiverId) {
+    const otherUserId = senderId === CURRENT_USER_ID ? receiverId : senderId;
+
+    // Only update if viewing this contact's chat
+    if (otherUserId === currentContactId) {
+        const remainingMessages = document.querySelectorAll('#chat-messages .message');
+        if (remainingMessages.length > 0) {
+            const lastMessage = remainingMessages[remainingMessages.length - 1];
+            if (lastMessage) {
+                const text = lastMessage.querySelector('.bubble p')?.textContent || '';
+                const isSent = lastMessage.classList.contains('sent');
+                updateContactPreview(otherUserId, text, isSent ? 'sent' : 'received');
+            }
+        } else {
+            updateContactPreview(otherUserId, 'No messages yet', '');
+        }
+    }
+}
+
 // ============================================
 // HELPER FUNCTIONS
 // ============================================
@@ -134,14 +230,33 @@ socket.on('user_offline', (data) => {
  * Append a single message to the chat (for real-time updates)
  */
 function appendMessage(msg) {
-    const messageHtml = `
-        <div class="message ${msg.type}">
-            <div class="bubble">
-                <p>${msg.text}</p>
-            </div>
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message ${msg.type}`;
+    if (msg.id) messageDiv.dataset.messageId = msg.id;
+
+    // Add action buttons for sent messages
+    const actionsHtml = msg.type === 'sent' ? `
+        <div class="message-actions">
+            <button class="message-action-btn edit" title="Edit message" onclick="startEditMessage(this)">
+                <i class="bi bi-pencil"></i>
+            </button>
+            <button class="message-action-btn delete" title="Delete message" onclick="showDeleteModal(this)">
+                <i class="bi bi-trash"></i>
+            </button>
+        </div>
+    ` : '';
+
+    const editedIndicator = msg.edited ? '<span class="edited-indicator">(edited)</span>' : '';
+
+    messageDiv.innerHTML = `
+        ${actionsHtml}
+        <div class="bubble">
+            <p>${msg.text}</p>
+            ${editedIndicator}
         </div>
     `;
-    chatMessages.innerHTML += messageHtml;
+
+    chatMessages.appendChild(messageDiv);
     chatMessages.scrollTop = chatMessages.scrollHeight;
 }
 
@@ -249,10 +364,26 @@ function renderMessages(messages) {
                 </div>
             `;
         } else {
+            // Add action buttons for sent messages
+            const actionsHtml = msg.type === 'sent' ? `
+                <div class="message-actions">
+                    <button class="message-action-btn edit" title="Edit message" onclick="startEditMessage(this)">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                    <button class="message-action-btn delete" title="Delete message" onclick="showDeleteModal(this)">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            ` : '';
+
+            const editedIndicator = msg.edited ? '<span class="edited-indicator">(edited)</span>' : '';
+
             chatMessages.innerHTML += `
-                <div class="message ${msg.type}">
+                <div class="message ${msg.type}" data-message-id="${msg.id || ''}">
+                    ${actionsHtml}
                     <div class="bubble">
                         <p>${msg.text}</p>
+                        ${editedIndicator}
                     </div>
                 </div>
             `;
@@ -260,6 +391,175 @@ function renderMessages(messages) {
     });
 
     chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+// ============================================
+// EDIT & DELETE FUNCTIONS (CRUD)
+// ============================================
+
+/**
+ * Start editing a message - shows input field
+ */
+function startEditMessage(button) {
+    const messageDiv = button.closest('.message');
+    const bubble = messageDiv.querySelector('.bubble');
+    const currentText = bubble.querySelector('p').textContent;
+    const messageId = messageDiv.dataset.messageId;
+
+    // Hide the bubble and show edit input
+    bubble.style.display = 'none';
+    messageDiv.querySelector('.message-actions').style.display = 'none';
+
+    // Create edit UI
+    const editContainer = document.createElement('div');
+    editContainer.className = 'edit-container';
+    editContainer.innerHTML = `
+        <input type="text" class="edit-input" value="${currentText}">
+        <div class="edit-actions">
+            <button class="save-btn" onclick="saveEditMessage(this, '${messageId}')">Save</button>
+            <button class="cancel-btn" onclick="cancelEditMessage(this)">Cancel</button>
+        </div>
+    `;
+    messageDiv.appendChild(editContainer);
+
+    // Focus the input and select all text
+    const input = editContainer.querySelector('.edit-input');
+    input.focus();
+    input.select();
+
+    // Save on Enter, cancel on Escape
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            saveEditMessage(editContainer.querySelector('.save-btn'), messageId);
+        } else if (e.key === 'Escape') {
+            cancelEditMessage(editContainer.querySelector('.cancel-btn'));
+        }
+    });
+}
+
+/**
+ * Save the edited message
+ */
+function saveEditMessage(button, messageId) {
+    const messageDiv = button.closest('.message');
+    const editContainer = messageDiv.querySelector('.edit-container');
+    const newText = editContainer.querySelector('.edit-input').value.trim();
+
+    if (!newText) {
+        alert('Message cannot be empty');
+        return;
+    }
+
+    // Emit edit event via Socket.IO
+    socket.emit('edit_message', {
+        message_id: messageId,
+        user_id: CURRENT_USER_ID,
+        new_content: newText
+    });
+
+    // Update UI immediately (optimistic update)
+    const bubble = messageDiv.querySelector('.bubble');
+    bubble.querySelector('p').textContent = newText;
+
+    // Add edited indicator if not already there
+    if (!bubble.querySelector('.edited-indicator')) {
+        bubble.innerHTML += '<span class="edited-indicator">(edited)</span>';
+    }
+
+    // Remove edit container and show bubble
+    editContainer.remove();
+    bubble.style.display = '';
+    messageDiv.querySelector('.message-actions').style.display = '';
+}
+
+/**
+ * Cancel editing and restore original view
+ */
+function cancelEditMessage(button) {
+    const messageDiv = button.closest('.message');
+    const editContainer = messageDiv.querySelector('.edit-container');
+    const bubble = messageDiv.querySelector('.bubble');
+
+    editContainer.remove();
+    bubble.style.display = '';
+    messageDiv.querySelector('.message-actions').style.display = '';
+}
+
+/**
+ * Show delete confirmation modal
+ */
+function showDeleteModal(button) {
+    const messageDiv = button.closest('.message');
+    const messageId = messageDiv.dataset.messageId;
+    const messageText = messageDiv.querySelector('.bubble p').textContent;
+
+    // Create modal overlay
+    const overlay = document.createElement('div');
+    overlay.className = 'delete-modal-overlay';
+    overlay.innerHTML = `
+        <div class="delete-modal">
+            <h4>Delete Message?</h4>
+            <p>"${messageText.substring(0, 50)}${messageText.length > 50 ? '...' : ''}"</p>
+            <div class="delete-modal-actions">
+                <button class="confirm-delete">Delete</button>
+                <button class="cancel-delete">Cancel</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    // Handle confirm delete
+    overlay.querySelector('.confirm-delete').addEventListener('click', () => {
+        deleteMessage(messageId, messageDiv);
+        overlay.remove();
+    });
+
+    // Handle cancel
+    overlay.querySelector('.cancel-delete').addEventListener('click', () => {
+        overlay.remove();
+    });
+
+    // Close on overlay click
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+            overlay.remove();
+        }
+    });
+}
+
+/**
+ * Delete a message
+ */
+function deleteMessage(messageId, messageDiv) {
+    console.log('[DEBUG] deleteMessage called with:', {
+        messageId: messageId,
+        messageIdType: typeof messageId,
+        user_id: CURRENT_USER_ID
+    });
+
+    // Check if messageId is valid
+    if (!messageId) {
+        console.error('[DEBUG] No messageId provided!');
+        return;
+    }
+
+    // Emit delete event via Socket.IO
+    console.log('[DEBUG] Emitting delete_message event...');
+    socket.emit('delete_message', {
+        message_id: messageId,
+        user_id: CURRENT_USER_ID
+    });
+    console.log('[DEBUG] delete_message emitted');
+
+    // Remove from UI with fade animation
+    messageDiv.style.transition = 'opacity 0.3s, transform 0.3s';
+    messageDiv.style.opacity = '0';
+    messageDiv.style.transform = 'translateX(20px)';
+
+    setTimeout(() => {
+        messageDiv.remove();
+    }, 300);
 }
 
 /**

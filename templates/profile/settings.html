@@ -5,7 +5,49 @@
 {% block content %}
 <!-- TODO: Zongrong to implement settings page -->
 <div class="container">
-    <h1>Settings</h1>
-    <p class="text-muted">This page is awaiting implementation by Zongrong.</p>
+    <div class="card">
+        <h1 class="card-title">Settings</h1>
+        <div class="card-body">
+            <div class="setting-item">
+                <p class="card-text mb-0">
+                    <i class="fa fa-bell me-2 text-muted"></i>Push Notifications
+                </p>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" checked>
+                </div>
+            </div>
+            <div class="setting-item">
+                <p class="card-text mb-0">
+                    <i class="fa fa-envelope me-2 text-muted"></i>Email Notifications
+                </p>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox">
+                </div>
+            </div>
+            <div class="setting-item">
+                <p class="card-text mb-0">
+                    <i class="fa fa-lock me-2 text-muted"></i>Privacy
+                </p>
+                <i class="fa fa-chevron-right text-muted small"></i>
+            </div>
+            <div class="setting-item">
+                <p class="card-text mb-0">
+                    <i class="fa fa-globe me-2 text-muted"></i>Language
+                </p>
+                <span class="text-muted small">English <i class="fa fa-chevron-right ms-2"></i></span>
+            </div>
+            <div class="setting-item">
+                <p class="card-text mb-0">
+                    <i class="fa fa-clock me-2 text-muted"></i>Time Zone
+                </p>
+                <span class="text-muted small">GMT+8 <i class="fa fa-chevron-right ms-2"></i></span>
+            </div>
+            <button class="btn btn-danger w-100 mt-2">
+                <span style="text-decoration: underline;">
+                    <i class="fa fa-sign-out-alt me-2"></i>Logout
+                </span>
+            </button>
+        </div>
+    </div>
 </div>
 {% endblock %}

@@ -321,11 +321,50 @@ def join_group(group_id):
 @social_bp.route('/ask-grandfriend')
 def ask_grandfriend():
     """AskAGrandfriend forum."""
-    return render_template('social/ask_grandfriend.html')
+    questions = []
+    try:
+        supabase = get_supabase()
+        result = supabase.table('questions').select('*').order('created_at', desc=True).execute()
+        questions = result.data if result.data else []
+    except Exception as e:
+        print(f"Error fetching questions: {e}")
+    return render_template('social/ask_grandfriend.html', questions=questions)
 
 @social_bp.route('/ask-grandfriend/post', methods=['GET', 'POST'])
 def post_question():
     """Post a question to AskAGrandfriend."""
     if request.method == 'POST':
-        pass
+        title = request.form.get('title', '').strip()
+        content = request.form.get('content', '').strip()
+        category = request.form.get('category', 'tech')
+        is_anonymous = request.form.get('is_anonymous') == 'on'
+        author_name = request.form.get('author_name', 'Jeremy Khoo')
+        author_type = request.form.get('author_type', 'grandparent')
+        
+        if title:
+            try:
+                insert('questions', {
+                    'title': title,
+                    'content': content,
+                    'category': category,
+                    'author_name': 'Anonymous' if is_anonymous else author_name,
+                    'author_type': author_type,
+                    'is_anonymous': is_anonymous
+                })
+            except Exception as e:
+                print(f"Error posting question: {e}")
+        
+        return redirect(url_for('social.ask_grandfriend'))
+    
     return render_template('social/ask_grandfriend.html')
+
+
+@social_bp.route('/ask-grandfriend/delete/<question_id>', methods=['POST'])
+def delete_question_route(question_id):
+    """Delete a question."""
+    try:
+        supabase = get_supabase()
+        supabase.table('questions').delete().eq('id', question_id).execute()
+    except Exception as e:
+        print(f"Error deleting question: {e}")
+    return redirect(url_for('social.ask_grandfriend'))

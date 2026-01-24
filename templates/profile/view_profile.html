@@ -3,9 +3,29 @@
 {% block title %}View Profile - JOMGather{% endblock %}
 
 {% block content %}
-<!-- TODO: Zongrong to implement profile view page -->
 <div class="container">
-    <h1>View Profile</h1>
-    <p class="text-muted">This page is awaiting implementation by Zongrong.</p>
+    <div class="card">
+        <h1>Personal Information</h1>
+        <button class="btn btn-primary"><span style="text-decoration: underline;"><i
+                    class="fa fa-edit"></i>Edit</span></button>
+        <div class="card-body">
+            <p class="card-title">{{ user.username }}</p>
+            <p class="card-text">{{ user.email }}</p>
+            <p class="card-text">{{ user.first_name }}</p>
+            <p class="card-text">{{ user.last_name }}</p>
+        </div>
+    </div>
+    <div class="card">
+        <h1>Social Profile</h1>
+        <button class="btn btn-primary"><span style="text-decoration: underline;"><i
+                    class="fa fa-edit"></i>Edit</span></button>
+        <div class="card-body">
+            <p class="card-title">Skills:</p>
+            <p class="card-text">Interests:</p>
+            <p class="card-text">Region:</p>
+            <p class="card-text">Languages:</p>
+            <p class="card-text">Open to connecting:</p>
+        </div>
+    </div>
 </div>
 {% endblock %}

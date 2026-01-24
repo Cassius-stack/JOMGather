@@ -1,66 +1,68 @@
 {% extends "base.html" %}
 {% block title %}Social Hub - JomGather{% endblock %}
 {% block content%}
-<div class="chat-wrapper">
-    <nav class="sidebar">
-        <div class="nav-icon active">
-            <i class="bi bi-chat-fill"></i>
-        </div>
-        <div class="nav-icon">
-            <i class="bi bi-people-fill"></i>
-        </div>
-    </nav>
-    <aside class="inbox-pane">
-        <div class="inbox-header">
-            <h1>Inbox</h1>
-            <div class="search-bar">
-                <i class="bi bi-search"></i>
-                <input type="text" placeholder="Search for a contact..." id="contact-search">
+<div class="container py-4">
+    <div class="chat-wrapper">
+        <nav class="sidebar">
+            <div class="nav-icon active">
+                <i class="bi bi-chat-fill"></i>
             </div>
-        </div>
-
-        <ul class="contact-list" id="contact-list">
-            <!-- Contacts will be loaded dynamically by JavaScript -->
-            <li class="loading-contacts" style="padding: 20px; text-align: center; color: #888;">
-                Loading contacts...
-            </li>
-        </ul>
-    </aside>
-
-    <main class="chat-window">
-        <header class="chat-header">
-            <div class="user-details">
-                <div class="avatar large">
-                    <i class="bi bi-person-fill"></i>
-                </div>
-                <div class="text">
-                    <span class="name" id="chat-contact-name">Select a contact</span>
-                    <span class="status" id="chat-contact-status">-</span>
+            <div class="nav-icon">
+                <i class="bi bi-people-fill"></i>
+            </div>
+        </nav>
+        <aside class="inbox-pane">
+            <div class="inbox-header">
+                <h1>Inbox</h1>
+                <div class="search-bar">
+                    <i class="bi bi-search"></i>
+                    <input type="text" placeholder="Search for a contact..." id="contact-search">
                 </div>
             </div>
-            <div class="header-actions">
-                <i class="bi bi-telephone"></i>
-                <i class="bi bi-camera-video"></i>
-            </div>
-        </header>
-        <div class="chat-container" id="chat-messages">
-            <!-- Messages loaded dynamically -->
-            <div style="text-align: center; color: #888; margin-top: 50px;">
-                Select a contact to start chatting
-            </div>
-        </div>
-        <footer class="input-area">
-            <input type="text" placeholder="Type your message..." id="message-input">
-            <div class="input-actions">
-                <i class="bi bi-emoji-smile"></i>
-                <i class="bi bi-paperclip"></i>
-            </div>
-            <button class="send-btn" id="send-btn">
-                <i class="bi bi-send"></i>
-            </button>
-        </footer>
-    </main>
 
+            <ul class="contact-list" id="contact-list">
+                <!-- Contacts will be loaded dynamically by JavaScript -->
+                <li class="loading-contacts" style="padding: 20px; text-align: center; color: #888;">
+                    Loading contacts...
+                </li>
+            </ul>
+        </aside>
+
+        <main class="chat-window">
+            <header class="chat-header">
+                <div class="user-details">
+                    <div class="avatar large">
+                        <i class="bi bi-person-fill"></i>
+                    </div>
+                    <div class="text">
+                        <span class="name" id="chat-contact-name">Select a contact</span>
+                        <span class="status" id="chat-contact-status">-</span>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <i class="bi bi-telephone"></i>
+                    <i class="bi bi-camera-video"></i>
+                </div>
+            </header>
+            <div class="chat-container" id="chat-messages">
+                <!-- Messages loaded dynamically -->
+                <div style="text-align: center; color: #888; margin-top: 50px;">
+                    Select a contact to start chatting
+                </div>
+            </div>
+            <footer class="input-area">
+                <input type="text" placeholder="Type your message..." id="message-input">
+                <div class="input-actions">
+                    <i class="bi bi-emoji-smile"></i>
+                    <i class="bi bi-paperclip"></i>
+                </div>
+                <button class="send-btn" id="send-btn">
+                    <i class="bi bi-send"></i>
+                </button>
+            </footer>
+        </main>
+
+    </div>
 </div>
 {% endblock %}
 
