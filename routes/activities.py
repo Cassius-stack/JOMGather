@@ -41,26 +41,6 @@ def upload_photo():
     # TODO: Handle photo upload
     return redirect(url_for('activities.photo_streak'))
 
-<<<<<<< HEAD
-# === Helper Functions ===
-def search_activities_logic(query):
-    """Search for activities matching the query."""
-    activities = [
-        {'name': 'Slice of Life', 'description': 'Share daily photo stories', 'url': url_for('slice_of_life.prompt'), 'icon': 'bi-camera', 'color': 'primary'},
-        {'name': 'Support Swap', 'description': 'Exchange skills and help', 'url': url_for('support_swap.ss_profile'), 'icon': 'bi-lightbulb', 'color': 'warning'},
-        {'name': 'Jukebox', 'description': 'Share songs and playlists', 'url': url_for('social.social_hub'), 'icon': 'bi-music-note-beamed', 'color': 'info'},
-        {'name': 'Cyber Challenge', 'description': 'Digital literacy quiz', 'url': url_for('activities.puzzle_challenge'), 'icon': 'bi-shield-check', 'color': 'danger'},
-        {'name': 'BOOMERang', 'description': 'Quick video chat', 'url': url_for('messaging.boomerang'), 'icon': 'bi-camera-video', 'color': 'secondary'},
-        {'name': 'Puzzle Challenge', 'description': 'Cooperative brain games', 'url': url_for('activities.puzzle_challenge'), 'icon': 'bi-puzzle', 'color': 'success'},
-        {'name': 'TikTok Challenge', 'description': 'Viral video challenges', 'url': url_for('activities.tiktok_challenge'), 'icon': 'bi-tiktok', 'color': 'dark'}
-    ]
-    
-    if not query:
-        return []
-        
-    query = query.lower()
-    return [a for a in activities if query in a['name'].lower() or query in a['description'].lower()]
-=======
 
 @activities_bp.route('/boomerang')
 def boomerang():
@@ -78,4 +58,24 @@ def boomerang_meetup():
 def boomerang_loading():
     """BOOMERang - Loading/matching page."""
     return render_template('activities/Boomerang/LoadingPage.html')
->>>>>>> Brandon
+
+
+# === Helper Functions ===
+def search_activities_logic(query):
+    """Search for activities matching the query."""
+    activities = [
+        {'name': 'Slice of Life', 'description': 'Share daily photo stories', 'url': url_for('slice_of_life.prompt'), 'icon': 'bi-camera', 'color': 'primary'},
+        {'name': 'Support Swap', 'description': 'Exchange skills and help', 'url': url_for('support_swap.ss_profile'), 'icon': 'bi-lightbulb', 'color': 'warning'},
+        {'name': 'Jukebox', 'description': 'Share songs and playlists', 'url': url_for('social.social_hub'), 'icon': 'bi-music-note-beamed', 'color': 'info'},
+        {'name': 'Cyber Challenge', 'description': 'Digital literacy quiz', 'url': url_for('activities.puzzle_challenge'), 'icon': 'bi-shield-check', 'color': 'danger'},
+        {'name': 'BOOMERang', 'description': 'Quick video chat', 'url': url_for('activities.boomerang'), 'icon': 'bi-camera-video', 'color': 'secondary'},
+        {'name': 'Puzzle Challenge', 'description': 'Cooperative brain games', 'url': url_for('activities.puzzle_challenge'), 'icon': 'bi-puzzle', 'color': 'success'},
+        {'name': 'TikTok Challenge', 'description': 'Viral video challenges', 'url': url_for('activities.tiktok_challenge'), 'icon': 'bi-tiktok', 'color': 'dark'}
+    ]
+    
+    if not query:
+        return []
+        
+    query = query.lower()
+    return [a for a in activities if query in a['name'].lower() or query in a['description'].lower()]
+
