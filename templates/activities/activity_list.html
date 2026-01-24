@@ -6,7 +6,7 @@
 <!-- Custom Activity Styles -->
 <link rel="stylesheet" href="{{ url_for('static', filename='css/activities_custom.css') }}">
 <style>
-    /* Inline overrides if needed */
+    /* Base button styles */
     .btn-custom-primary {
         background-color: white;
         color: #333;
@@ -29,6 +29,219 @@
     .text-purple {
         color: #8A2BE2;
     }
+
+    /* Netflix-Style Hover Popup - Base */
+    .activity-card-wrapper {
+        position: relative;
+        cursor: pointer;
+    }
+
+    .hover-popup {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        background: linear-gradient(135deg, #1a1a2e 0%, #2d3748 100%);
+        border-radius: 16px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+        z-index: 1000;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+        pointer-events: none;
+        transform: scale(0.95);
+    }
+
+    .activity-card-wrapper:hover .hover-popup {
+        opacity: 1;
+        visibility: visible;
+        transform: scale(1.05);
+        pointer-events: auto;
+        transition-delay: 0.4s;
+    }
+
+    /* Bento grid cards - scale up more */
+    .bento-item-large .hover-popup {
+        min-width: 100%;
+    }
+
+    .bento-item-large .hover-popup .video-wrapper {
+        height: 280px;
+    }
+
+    .bento-item-large .hover-popup .hover-popup-title {
+        font-size: 1.5rem;
+    }
+
+    .bento-item-medium .hover-popup {
+        min-width: 100%;
+    }
+
+    .bento-item-medium .hover-popup .video-wrapper {
+        height: 180px;
+    }
+
+    .bento-item .hover-popup {
+        min-width: 280px;
+    }
+
+    .bento-item .hover-popup .video-wrapper {
+        height: 150px;
+    }
+
+    .bento-item .hover-popup .hover-popup-title {
+        font-size: 1.1rem;
+    }
+
+    /* Scroll cards - fixed popup that doesn't clip */
+    .scroll-card {
+        position: relative;
+        overflow: visible !important;
+    }
+
+    .scroll-card .hover-popup {
+        position: fixed;
+        top: auto;
+        left: auto;
+        width: 320px;
+        min-height: auto;
+        transform: scale(0.95);
+    }
+
+    .scroll-card:hover .hover-popup {
+        transform: scale(1);
+    }
+
+    .scroll-card .hover-popup .video-wrapper {
+        height: 160px;
+    }
+
+    .hover-popup-video {
+        width: 100%;
+        object-fit: cover;
+        display: block;
+    }
+
+    .hover-popup-thumbnail {
+        width: 100%;
+        object-fit: cover;
+        position: absolute;
+        top: 0;
+        left: 0;
+        transition: opacity 0.3s;
+    }
+
+    .hover-popup-content {
+        padding: 15px 20px 20px;
+    }
+
+    .hover-popup-brand {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 5px;
+    }
+
+    .hover-popup-brand img {
+        width: 24px;
+        height: 24px;
+    }
+
+    .hover-popup-brand span {
+        font-size: 0.85rem;
+        color: #8A2BE2;
+        font-weight: 600;
+    }
+
+    .hover-popup-title {
+        color: white;
+        font-size: 1.25rem;
+        font-weight: 700;
+        margin-bottom: 10px;
+    }
+
+    .hover-popup-desc {
+        color: #b0b0b0;
+        font-size: 0.85rem;
+        line-height: 1.5;
+        margin-bottom: 15px;
+    }
+
+    .hover-popup-actions {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .btn-play-now {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: white;
+        color: #1a1a2e;
+        border: none;
+        padding: 10px 24px;
+        border-radius: 30px;
+        font-weight: 700;
+        font-size: 0.95rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-decoration: none;
+    }
+
+    .btn-play-now:hover {
+        transform: scale(1.05);
+        background: #f0f0f0;
+        color: #1a1a2e;
+    }
+
+    .btn-play-now i {
+        font-size: 1.1rem;
+    }
+
+    .hover-popup-rewards {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        color: #FFD700;
+        font-weight: 600;
+        font-size: 0.95rem;
+    }
+
+    .hover-popup-rewards .coin {
+        width: 20px;
+        height: 20px;
+        background: #FFD700;
+        border-radius: 50%;
+        display: inline-block;
+    }
+
+    /* Ensure popups don't overflow container */
+    .bento-grid,
+    .horizontal-scroll-container {
+        overflow: visible;
+    }
+
+    .horizontal-scroll-wrapper {
+        overflow-x: auto;
+        overflow-y: visible;
+        padding-bottom: 200px;
+        margin-bottom: -200px;
+    }
+
+    /* Video wrapper */
+    .video-wrapper {
+        position: relative;
+        width: 100%;
+        height: 180px;
+        overflow: hidden;
+        border-radius: 16px 16px 0 0;
+    }
+
+    /* Scroll card wrapper for hover */
+    .scroll-card {
+        position: relative;
+    }
 </style>
 {% endblock %}
 
@@ -48,7 +261,6 @@
             <div class="carousel-item active">
                 <div class="hero-slide"
                     style="background-image: url('{{ url_for('static', filename='images/activities/SliceOfLife.png') }}');">
-                    <!-- Fallback if image missing, though style above sets bg. Using inline style with fallback for now -->
                     <img src="{{ url_for('static', filename='images/activities/SliceOfLife.png') }}"
                         onerror="this.src='https://placehold.co/1200x500?text=Slice+of+Life'" class="d-none"
                         alt="Slice of Life hidden preload">
@@ -113,58 +325,168 @@
     <!-- Top Activities (Grid) -->
     <h2 class="section-title">Top Activities</h2>
     <div class="bento-grid">
-        <!-- Large Item: Slice of Life (Most Popular - 2 cols, 2 rows) -->
-        <div class="bento-item-large activity-card">
-            <img src="{{ url_for('static', filename='images/activities/SliceOfLife.png') }}"
-                onerror="this.src='https://placehold.co/600x400?text=Slice+of+Life'" class="activity-card-img"
-                alt="Slice of Life">
-            <div class="activity-card-overlay">
-                <span class="badge bg-warning text-dark mb-2">MOST POPULAR</span>
-                <h3 class="activity-name">Slice of Life VR</h3>
-                <p class="activity-subtitle">Grandparents & Children connect in shared virtual spaces.</p>
+        <!-- Large Item: Slice of Life -->
+        <div class="bento-item-large activity-card-wrapper">
+            <div class="activity-card">
+                <img src="{{ url_for('static', filename='images/activities/SliceOfLife.png') }}"
+                    onerror="this.src='https://placehold.co/600x400?text=Slice+of+Life'" class="activity-card-img"
+                    alt="Slice of Life">
+                <div class="activity-card-overlay">
+                    <span class="badge bg-warning text-dark mb-2">MOST POPULAR</span>
+                    <h3 class="activity-name">Slice of Life VR</h3>
+                    <p class="activity-subtitle">Grandparents & Children connect in shared virtual spaces.</p>
+                </div>
+            </div>
+            <!-- Hover Popup -->
+            <div class="hover-popup">
+                <div class="video-wrapper">
+                    <video class="hover-popup-video" muted loop>
+                        <source src="{{ url_for('static', filename='videos/SliceOfLife.mp4') }}" type="video/mp4">
+                    </video>
+                    <img class="hover-popup-thumbnail"
+                        src="{{ url_for('static', filename='images/activities/SliceOfLife.png') }}" alt="">
+                </div>
+                <div class="hover-popup-content">
+                    <div class="hover-popup-brand">
+                        <span>🌟 JomGather</span>
+                    </div>
+                    <h4 class="hover-popup-title">Slice of Life VR</h4>
+                    <p class="hover-popup-desc">Transform a single picture into a heartfelt connection by blending
+                        unique perspectives of youth and elderly.</p>
+                    <div class="hover-popup-actions">
+                        <a href="#" class="btn-play-now"><i class="bi bi-play-circle-fill"></i> Play Now</a>
+                        <div class="hover-popup-rewards"><i class="bi bi-coin"></i> Rewards: 100</div>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- Medium Item: Ask A Grandfriend (2 cols, 1 row) -->
-        <div class="bento-item-medium activity-card">
-            <img src="{{ url_for('static', filename='images/activities/AskAGrandfriend.png') }}"
-                onerror="this.src='https://placehold.co/400x200?text=Ask+A+Grandfriend'" class="activity-card-img"
-                alt="Ask A Grandfriend">
-            <div class="activity-card-overlay">
-                <h4 class="activity-name">Ask a Grandfriend</h4>
-                <p class="activity-subtitle">Wisdom on demand. Connect online.</p>
+        <!-- Medium Item: Ask A Grandfriend -->
+        <div class="bento-item-medium activity-card-wrapper">
+            <div class="activity-card">
+                <img src="{{ url_for('static', filename='images/activities/AskAGrandfriend.png') }}"
+                    onerror="this.src='https://placehold.co/400x200?text=Ask+A+Grandfriend'" class="activity-card-img"
+                    alt="Ask A Grandfriend">
+                <div class="activity-card-overlay">
+                    <h4 class="activity-name">Ask a Grandfriend</h4>
+                    <p class="activity-subtitle">Wisdom on demand. Connect online.</p>
+                </div>
+            </div>
+            <div class="hover-popup">
+                <div class="video-wrapper">
+                    <video class="hover-popup-video" muted loop>
+                        <source src="{{ url_for('static', filename='videos/AskAGrandfriend.mp4') }}" type="video/mp4">
+                    </video>
+                    <img class="hover-popup-thumbnail"
+                        src="{{ url_for('static', filename='images/activities/AskAGrandfriend.png') }}" alt="">
+                </div>
+                <div class="hover-popup-content">
+                    <div class="hover-popup-brand"><span>🌟 JomGather</span></div>
+                    <h4 class="hover-popup-title">Ask a Grandfriend</h4>
+                    <p class="hover-popup-desc">Wisdom on demand! Get life advice, tech help, and stories from
+                        experienced grandparents.</p>
+                    <div class="hover-popup-actions">
+                        <a href="{{ url_for('social.ask_grandfriend') }}" class="btn-play-now"><i
+                                class="bi bi-play-circle-fill"></i> Play Now</a>
+                        <div class="hover-popup-rewards"><i class="bi bi-coin"></i> Rewards: 50</div>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- Medium Item: Skills Swap (2 cols, 1 row) -->
-        <div class="bento-item-medium activity-card">
-            <img src="{{ url_for('static', filename='images/activities/SkillsSwap.png') }}"
-                onerror="this.src='https://placehold.co/400x200?text=Skills+Swap'" class="activity-card-img"
-                alt="Skills Swap Marketplace">
-            <div class="activity-card-overlay">
-                <h4 class="activity-name">Skills Swap</h4>
-                <p class="activity-subtitle">Teach a skill, learn a skill. Intergenerational exchange.</p>
+        <!-- Medium Item: Skills Swap -->
+        <div class="bento-item-medium activity-card-wrapper">
+            <div class="activity-card">
+                <img src="{{ url_for('static', filename='images/activities/SkillsSwap.png') }}"
+                    onerror="this.src='https://placehold.co/400x200?text=Skills+Swap'" class="activity-card-img"
+                    alt="Skills Swap Marketplace">
+                <div class="activity-card-overlay">
+                    <h4 class="activity-name">Skills Swap</h4>
+                    <p class="activity-subtitle">Teach a skill, learn a skill. Intergenerational exchange.</p>
+                </div>
+            </div>
+            <div class="hover-popup">
+                <div class="video-wrapper">
+                    <video class="hover-popup-video" muted loop>
+                        <source src="{{ url_for('static', filename='videos/SkillsMarketplace.mp4') }}" type="video/mp4">
+                    </video>
+                    <img class="hover-popup-thumbnail"
+                        src="{{ url_for('static', filename='images/activities/SkillsSwap.png') }}" alt="">
+                </div>
+                <div class="hover-popup-content">
+                    <div class="hover-popup-brand"><span>🌟 JomGather</span></div>
+                    <h4 class="hover-popup-title">Skills Swap Marketplace</h4>
+                    <p class="hover-popup-desc">Teach what you know, learn what you love! Exchange skills across
+                        generations.</p>
+                    <div class="hover-popup-actions">
+                        <a href="#" class="btn-play-now"><i class="bi bi-play-circle-fill"></i> Play Now</a>
+                        <div class="hover-popup-rewards"><i class="bi bi-coin"></i> Rewards: 75</div>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- Small Item: Boomerang (1 col, 1 row) -->
-        <div class="bento-item activity-card">
-            <img src="{{ url_for('static', filename='images/activities/BOOMerang.jpg') }}"
-                onerror="this.src='https://placehold.co/200x150?text=Boomerang'" class="activity-card-img"
-                alt="Boomerang">
-            <div class="activity-card-overlay">
-                <h4 class="activity-name">Boomerang</h4>
+        <!-- Small Item: Boomerang -->
+        <div class="bento-item activity-card-wrapper">
+            <div class="activity-card">
+                <img src="{{ url_for('static', filename='images/activities/BOOMerang.jpg') }}"
+                    onerror="this.src='https://placehold.co/200x150?text=Boomerang'" class="activity-card-img"
+                    alt="Boomerang">
+                <div class="activity-card-overlay">
+                    <h4 class="activity-name">BOOMERang</h4>
+                </div>
+            </div>
+            <div class="hover-popup">
+                <div class="video-wrapper">
+                    <video class="hover-popup-video" muted loop>
+                        <source src="{{ url_for('static', filename='videos/BOOMErang.mp4') }}" type="video/mp4">
+                    </video>
+                    <img class="hover-popup-thumbnail"
+                        src="{{ url_for('static', filename='images/activities/BOOMerang.jpg') }}" alt="">
+                </div>
+                <div class="hover-popup-content">
+                    <div class="hover-popup-brand"><span>🌟 JomGather</span></div>
+                    <h4 class="hover-popup-title">BOOMERang</h4>
+                    <p class="hover-popup-desc">Random video calls connecting Boomers with Students for spontaneous
+                        intergenerational chats!</p>
+                    <div class="hover-popup-actions">
+                        <a href="{{ url_for('activities.boomerang') }}" class="btn-play-now"><i
+                                class="bi bi-play-circle-fill"></i> Play Now</a>
+                        <div class="hover-popup-rewards"><i class="bi bi-coin"></i> Rewards: 60</div>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- Small Item: Truth or Trap (1 col, 1 row) -->
-        <div class="bento-item activity-card">
-            <img src="{{ url_for('static', filename='images/activities/TruthOrTrap.png') }}"
-                onerror="this.src='https://placehold.co/200x150?text=Truth+or+Trap'" class="activity-card-img"
-                alt="Truth or Trap">
-            <div class="activity-card-overlay">
-                <h4 class="activity-name">Truth or Trap</h4>
-                <span class="badge bg-success">New!</span>
+        <!-- Small Item: Truth or Trap -->
+        <div class="bento-item activity-card-wrapper">
+            <div class="activity-card">
+                <img src="{{ url_for('static', filename='images/activities/TruthOrTrap.png') }}"
+                    onerror="this.src='https://placehold.co/200x150?text=Truth+or+Trap'" class="activity-card-img"
+                    alt="Truth or Trap">
+                <div class="activity-card-overlay">
+                    <h4 class="activity-name">Truth or Trap</h4>
+                    <span class="badge bg-success">New!</span>
+                </div>
+            </div>
+            <div class="hover-popup">
+                <div class="video-wrapper">
+                    <video class="hover-popup-video" muted loop>
+                        <source src="{{ url_for('static', filename='videos/Truth Or Trap.mp4') }}" type="video/mp4">
+                    </video>
+                    <img class="hover-popup-thumbnail"
+                        src="{{ url_for('static', filename='images/activities/TruthOrTrap.png') }}" alt="">
+                </div>
+                <div class="hover-popup-content">
+                    <div class="hover-popup-brand"><span>🌟 JomGather</span></div>
+                    <h4 class="hover-popup-title">Truth or Trap</h4>
+                    <p class="hover-popup-desc">Test your cybersecurity skills! Identify scams vs real scenarios in this
+                        daily challenge.</p>
+                    <div class="hover-popup-actions">
+                        <a href="#" class="btn-play-now"><i class="bi bi-play-circle-fill"></i> Play Now</a>
+                        <div class="hover-popup-rewards"><i class="bi bi-coin"></i> Rewards: 25</div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -173,27 +495,109 @@
     <h2 class="section-title">Recently Played</h2>
     <div class="horizontal-scroll-wrapper">
         <div class="horizontal-scroll-container">
-            <div class="scroll-card">
+            <!-- Intergenerational Jukebox -->
+            <div class="scroll-card activity-card-wrapper">
                 <img src="{{ url_for('static', filename='images/activities/enerationalJukebox.png') }}"
                     onerror="this.src='https://placehold.co/400x300?text=Intergenerational+Jukebox'"
                     alt="Intergenerational Jukebox">
                 <div class="p-2 fw-bold text-center">Intergenerational Jukebox</div>
+                <div class="hover-popup">
+                    <div class="video-wrapper">
+                        <video class="hover-popup-video" muted loop>
+                            <source src="{{ url_for('static', filename='videos/Intergenerational.mp4') }}"
+                                type="video/mp4">
+                        </video>
+                        <img class="hover-popup-thumbnail"
+                            src="{{ url_for('static', filename='images/activities/enerationalJukebox.png') }}" alt="">
+                    </div>
+                    <div class="hover-popup-content">
+                        <div class="hover-popup-brand"><span>🌟 JomGather</span></div>
+                        <h4 class="hover-popup-title">Intergenerational Jukebox</h4>
+                        <p class="hover-popup-desc">Share music across generations! Discover songs from different eras.
+                        </p>
+                        <div class="hover-popup-actions">
+                            <a href="#" class="btn-play-now"><i class="bi bi-play-circle-fill"></i> Play Now</a>
+                            <div class="hover-popup-rewards"><i class="bi bi-coin"></i> Rewards: 40</div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="scroll-card">
+            <!-- Ask A Grandfriend -->
+            <div class="scroll-card activity-card-wrapper">
                 <img src="{{ url_for('static', filename='images/activities/AskAGrandfriend.png') }}"
                     onerror="this.src='https://placehold.co/400x300?text=Ask+A+Granfriend'" alt="Ask A Granfriend">
                 <div class="p-2 fw-bold text-center">Ask A Granfriend</div>
+                <div class="hover-popup">
+                    <div class="video-wrapper">
+                        <video class="hover-popup-video" muted loop>
+                            <source src="{{ url_for('static', filename='videos/AskAGrandfriend.mp4') }}"
+                                type="video/mp4">
+                        </video>
+                        <img class="hover-popup-thumbnail"
+                            src="{{ url_for('static', filename='images/activities/AskAGrandfriend.png') }}" alt="">
+                    </div>
+                    <div class="hover-popup-content">
+                        <div class="hover-popup-brand"><span>🌟 JomGather</span></div>
+                        <h4 class="hover-popup-title">Ask a Grandfriend</h4>
+                        <p class="hover-popup-desc">Wisdom on demand! Get life advice, tech help, and stories from
+                            grandparents.</p>
+                        <div class="hover-popup-actions">
+                            <a href="{{ url_for('social.ask_grandfriend') }}" class="btn-play-now"><i
+                                    class="bi bi-play-circle-fill"></i> Play Now</a>
+                            <div class="hover-popup-rewards"><i class="bi bi-coin"></i> Rewards: 50</div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <!-- Mock Data -->
-            <div class="scroll-card">
+            <!-- Boomerang -->
+            <div class="scroll-card activity-card-wrapper">
                 <img src="{{ url_for('static', filename='images/activities/BOOMerang.jpg') }}"
                     onerror="this.src='https://placehold.co/400x300?text=Boomerang'" alt="Boomerang">
-                <div class="p-2 fw-bold text-center">Boomerang</div>
+                <div class="p-2 fw-bold text-center">BOOMERang</div>
+                <div class="hover-popup">
+                    <div class="video-wrapper">
+                        <video class="hover-popup-video" muted loop>
+                            <source src="{{ url_for('static', filename='videos/BOOMErang.mp4') }}" type="video/mp4">
+                        </video>
+                        <img class="hover-popup-thumbnail"
+                            src="{{ url_for('static', filename='images/activities/BOOMerang.jpg') }}" alt="">
+                    </div>
+                    <div class="hover-popup-content">
+                        <div class="hover-popup-brand"><span>🌟 JomGather</span></div>
+                        <h4 class="hover-popup-title">BOOMERang</h4>
+                        <p class="hover-popup-desc">Random video calls connecting Boomers with Students!</p>
+                        <div class="hover-popup-actions">
+                            <a href="{{ url_for('activities.boomerang') }}" class="btn-play-now"><i
+                                    class="bi bi-play-circle-fill"></i> Play Now</a>
+                            <div class="hover-popup-rewards"><i class="bi bi-coin"></i> Rewards: 60</div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="scroll-card">
+            <!-- Slice of Life -->
+            <div class="scroll-card activity-card-wrapper">
                 <img src="{{ url_for('static', filename='images/activities/SliceOfLife.png') }}"
                     onerror="this.src='https://placehold.co/400x300?text=Slice+of+Life'" alt="Slice of Life">
                 <div class="p-2 fw-bold text-center">Slice of Life</div>
+                <div class="hover-popup">
+                    <div class="video-wrapper">
+                        <video class="hover-popup-video" muted loop>
+                            <source src="{{ url_for('static', filename='videos/SliceOfLife.mp4') }}" type="video/mp4">
+                        </video>
+                        <img class="hover-popup-thumbnail"
+                            src="{{ url_for('static', filename='images/activities/SliceOfLife.png') }}" alt="">
+                    </div>
+                    <div class="hover-popup-content">
+                        <div class="hover-popup-brand"><span>🌟 JomGather</span></div>
+                        <h4 class="hover-popup-title">Slice of Life VR</h4>
+                        <p class="hover-popup-desc">Transform pictures into heartfelt connections across generations.
+                        </p>
+                        <div class="hover-popup-actions">
+                            <a href="#" class="btn-play-now"><i class="bi bi-play-circle-fill"></i> Play Now</a>
+                            <div class="hover-popup-rewards"><i class="bi bi-coin"></i> Rewards: 100</div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -202,23 +606,117 @@
     <h2 class="section-title">Recommended For You</h2>
     <div class="horizontal-scroll-wrapper">
         <div class="horizontal-scroll-container">
-            <div class="scroll-card">
+            <!-- Boomerang -->
+            <div class="scroll-card activity-card-wrapper">
                 <img src="{{ url_for('static', filename='images/activities/BOOMerang.jpg') }}"
                     onerror="this.src='https://placehold.co/400x300?text=Boomerang'" alt="Boomerang">
-                <div class="p-2 fw-bold text-center">Boomerang</div>
+                <div class="p-2 fw-bold text-center">BOOMERang</div>
+                <div class="hover-popup">
+                    <div class="video-wrapper">
+                        <video class="hover-popup-video" muted loop>
+                            <source src="{{ url_for('static', filename='videos/BOOMErang.mp4') }}" type="video/mp4">
+                        </video>
+                        <img class="hover-popup-thumbnail"
+                            src="{{ url_for('static', filename='images/activities/BOOMerang.jpg') }}" alt="">
+                    </div>
+                    <div class="hover-popup-content">
+                        <div class="hover-popup-brand"><span>🌟 JomGather</span></div>
+                        <h4 class="hover-popup-title">BOOMERang</h4>
+                        <p class="hover-popup-desc">Random video calls connecting Boomers with Students!</p>
+                        <div class="hover-popup-actions">
+                            <a href="{{ url_for('activities.boomerang') }}" class="btn-play-now"><i
+                                    class="bi bi-play-circle-fill"></i> Play Now</a>
+                            <div class="hover-popup-rewards"><i class="bi bi-coin"></i> Rewards: 60</div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="scroll-card">
+            <!-- Truth or Trap -->
+            <div class="scroll-card activity-card-wrapper">
                 <img src="{{ url_for('static', filename='images/activities/TruthOrTrap.png') }}"
                     onerror="this.src='https://placehold.co/400x300?text=Cyber+Challenge'" alt="Cyber Challenge">
-                <div class="p-2 fw-bold text-center">Cyber Challenge</div>
+                <div class="p-2 fw-bold text-center">Truth or Trap</div>
+                <div class="hover-popup">
+                    <div class="video-wrapper">
+                        <video class="hover-popup-video" muted loop>
+                            <source src="{{ url_for('static', filename='videos/Truth Or Trap.mp4') }}" type="video/mp4">
+                        </video>
+                        <img class="hover-popup-thumbnail"
+                            src="{{ url_for('static', filename='images/activities/TruthOrTrap.png') }}" alt="">
+                    </div>
+                    <div class="hover-popup-content">
+                        <div class="hover-popup-brand"><span>🌟 JomGather</span></div>
+                        <h4 class="hover-popup-title">Truth or Trap</h4>
+                        <p class="hover-popup-desc">Test your cybersecurity skills! Identify scams vs real scenarios.
+                        </p>
+                        <div class="hover-popup-actions">
+                            <a href="#" class="btn-play-now"><i class="bi bi-play-circle-fill"></i> Play Now</a>
+                            <div class="hover-popup-rewards"><i class="bi bi-coin"></i> Rewards: 25</div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="scroll-card">
+            <!-- Skills Swap -->
+            <div class="scroll-card activity-card-wrapper">
                 <img src="{{ url_for('static', filename='images/activities/SkillsSwap.png') }}"
                     onerror="this.src='https://placehold.co/400x300?text=Skills+Swap'" alt="Skills Swap">
                 <div class="p-2 fw-bold text-center">Skills Swap</div>
+                <div class="hover-popup">
+                    <div class="video-wrapper">
+                        <video class="hover-popup-video" muted loop>
+                            <source src="{{ url_for('static', filename='videos/SkillsMarketplace.mp4') }}"
+                                type="video/mp4">
+                        </video>
+                        <img class="hover-popup-thumbnail"
+                            src="{{ url_for('static', filename='images/activities/SkillsSwap.png') }}" alt="">
+                    </div>
+                    <div class="hover-popup-content">
+                        <div class="hover-popup-brand"><span>🌟 JomGather</span></div>
+                        <h4 class="hover-popup-title">Skills Swap</h4>
+                        <p class="hover-popup-desc">Teach what you know, learn what you love across generations!</p>
+                        <div class="hover-popup-actions">
+                            <a href="#" class="btn-play-now"><i class="bi bi-play-circle-fill"></i> Play Now</a>
+                            <div class="hover-popup-rewards"><i class="bi bi-coin"></i> Rewards: 75</div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
 </div>
+
+<script>
+    // Netflix-style video preview on hover
+    document.querySelectorAll('.activity-card-wrapper').forEach(wrapper => {
+        const popup = wrapper.querySelector('.hover-popup');
+        if (!popup) return;
+
+        const video = popup.querySelector('video');
+        const thumbnail = popup.querySelector('.hover-popup-thumbnail');
+        let hoverTimeout;
+
+        wrapper.addEventListener('mouseenter', () => {
+            // Delay before showing popup
+            hoverTimeout = setTimeout(() => {
+                if (video) {
+                    video.currentTime = 0;
+                    video.play().catch(() => { });
+                    // Hide thumbnail when video plays
+                    if (thumbnail) thumbnail.style.opacity = '0';
+                }
+            }, 400);
+        });
+
+        wrapper.addEventListener('mouseleave', () => {
+            clearTimeout(hoverTimeout);
+            if (video) {
+                video.pause();
+                video.currentTime = 0;
+            }
+            // Show thumbnail again
+            if (thumbnail) thumbnail.style.opacity = '1';
+        });
+    });
+</script>
 {% endblock %}

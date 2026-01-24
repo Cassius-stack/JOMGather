@@ -40,3 +40,21 @@ def upload_photo():
     """Upload a photo for the streak."""
     # TODO: Handle photo upload
     return redirect(url_for('activities.photo_streak'))
+
+
+@activities_bp.route('/boomerang')
+def boomerang():
+    """BOOMERang - Description/Setup page."""
+    return render_template('activities/Boomerang/Description.html')
+
+
+@activities_bp.route('/boomerang/meetup')
+def boomerang_meetup():
+    """BOOMERang - Video call meetup page."""
+    return render_template('activities/Boomerang/Meetup.html')
+
+
+@activities_bp.route('/boomerang/loading')
+def boomerang_loading():
+    """BOOMERang - Loading/matching page."""
+    return render_template('activities/Boomerang/LoadingPage.html')
