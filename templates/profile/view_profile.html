@@ -8,37 +8,37 @@
         <!-- Page Header -->
         <div class="text-center mb-4">
             <div class="d-flex justify-content-center mb-3">
-                <!-- 1. Wrapper with 'position: relative' and 'inline-block' to hug the content -->
+                <!-- Wrapper with position relative for Edit button -->
                 <div style="position: relative; display: inline-block;">
-
                     <!-- Profile Circle -->
                     <div
                         style="width: 200px; height: 200px; background: #e0f2fe; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
                         <i class="bi bi-person-circle" style="font-size: 5rem; color: #1e3a5f;"></i>
                     </div>
-
-                    <!-- 2. Edit Button with 'position: absolute' -->
-                    <!-- Adjusted to match the blue style in your image -->
+                    <!-- Edit Button -->
                     <a href="{{ url_for('profile.edit_profile') }}"
-                        style="position: absolute; bottom: 0; right: 0; text-decoration: underline; background-color: #1d4ed8; color: white; padding: 4px 16px; border-radius: 8px; font-weight: 600; font-size: 1.1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                        style="position: absolute; bottom: 0; right: 0; text-decoration: none; background-color: #1d4ed8; color: white; padding: 4px 16px; border-radius: 8px; font-weight: 600; font-size: 1.1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                         Edit
                     </a>
-
                 </div>
             </div>
-            <div class="card-header row">
+
+            <!-- Username Display -->
+            <h2 style="color: #1e3a5f; margin-bottom: 0.5rem;">{{ user.username if user else 'User' }}</h2>
+            <p style="color: #64748b;">{{ user.user_type|capitalize if user else '' }} Member</p>
+
+            <!-- Tab Buttons -->
+            <div class="card-header row mt-3">
                 <div class="col-md-6">
                     <button class="btn btn-primary btn-lg" style="width: 100%;">
                         My Profile
                     </button>
                 </div>
                 <div class="col-md-6">
-                    <button class="btn btn-outline-primary btn-lg" style="width: 100%;">
-                        <a href="{{ url_for('profile.settings') }}"
-                            style="width: 100%; display: block; text-align: center; text-decoration: none;">
-                            Settings
-                        </a>
-                    </button>
+                    <a href="{{ url_for('profile.settings') }}" class="btn btn-outline-primary btn-lg"
+                        style="width: 100%;">
+                        Settings
+                    </a>
                 </div>
             </div>
         </div>
@@ -62,12 +62,13 @@
                         <p class="mb-0 fw-medium">{{ user.email if user else 'Not set' }}</p>
                     </div>
                     <div class="col-md-6 mb-3">
-                        <label class="form-label text-muted small">First Name</label>
-                        <p class="mb-0 fw-medium">{{ user.first_name if user and user.first_name else 'Not set' }}</p>
+                        <label class="form-label text-muted small">Age</label>
+                        <p class="mb-0 fw-medium">{{ user.age if user and user.age else 'Not set' }}</p>
                     </div>
                     <div class="col-md-6 mb-3">
-                        <label class="form-label text-muted small">Last Name</label>
-                        <p class="mb-0 fw-medium">{{ user.last_name if user and user.last_name else 'Not set' }}</p>
+                        <label class="form-label text-muted small">User Type</label>
+                        <p class="mb-0 fw-medium">{{ user.user_type|capitalize if user and user.user_type else 'Not set'
+                            }}</p>
                     </div>
                 </div>
             </div>
@@ -84,47 +85,42 @@
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-6 mb-3">
+                        <label class="form-label text-muted small">Region</label>
+                        <p class="mb-0 fw-medium">{{ user.region if user and user.region else 'Not set' }}</p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label text-muted small">Hobbies</label>
+                        <div>
+                            {% if user and user.hobbies and user.hobbies|length > 0 %}
+                            {% for hobby in user.hobbies %}
+                            <span class="badge bg-success me-1 mb-1">{{ hobby }}</span>
+                            {% endfor %}
+                            {% else %}
+                            <p class="mb-0 text-muted">No hobbies added</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-12 mb-3">
                         <label class="form-label text-muted small">Skills</label>
                         <div>
-                            {% if user and user.skills %}
-                            {% for skill in user.skills.split(',') %}
-                            <span class="badge bg-primary me-1">{{ skill.strip() }}</span>
+                            {% if user and user.skills and user.skills|length > 0 %}
+                            {% for skill in user.skills %}
+                            <span class="badge bg-primary me-1 mb-1">{{ skill }}</span>
                             {% endfor %}
                             {% else %}
                             <p class="mb-0 text-muted">No skills added</p>
                             {% endif %}
                         </div>
                     </div>
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label text-muted small">Interests</label>
-                        <div>
-                            {% if user and user.interests %}
-                            {% for interest in user.interests.split(',') %}
-                            <span class="badge bg-success me-1">{{ interest.strip() }}</span>
-                            {% endfor %}
-                            {% else %}
-                            <p class="mb-0 text-muted">No interests added</p>
-                            {% endif %}
-                        </div>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label text-muted small">Region</label>
-                        <p class="mb-0 fw-medium">{{ user.region if user and user.region else 'Not set' }}</p>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label text-muted small">Languages</label>
-                        <div>
-                            {% if user and user.languages %}
-                            {% for lang in user.languages.split(',') %}
-                            <span class="badge bg-info text-dark me-1">{{ lang.strip() }}</span>
-                            {% endfor %}
-                            {% else %}
-                            <p class="mb-0 text-muted">No languages added</p>
-                            {% endif %}
-                        </div>
-                    </div>
                 </div>
             </div>
+        </div>
+
+        <!-- Back Button -->
+        <div class="text-center mt-4">
+            <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i>Back to Home
+            </a>
         </div>
     </div>
 </main>

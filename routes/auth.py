@@ -10,18 +10,35 @@ import traceback
 
 auth_bp = Blueprint('auth', __name__)
 
-@auth_bp.route('/register', methods=['GET', 'POST'])
+@auth_bp.route('/register', methods=['GET'])
 def register():
-    """Handle user registration and link to internal DB."""
+    """Display registration form (Step 1 of registration flow)."""
+    return render_template('auth/register.html')
+
+
+@auth_bp.route('/onboarding', methods=['GET', 'POST'])
+def onboarding():
+    """Handle onboarding and complete registration with all user data."""
+    
     if request.method == 'POST':
+        # Get all form data (from hidden fields + onboarding fields)
+        username = request.form.get('username')
         email = request.form.get('email')
         password = request.form.get('password')
-        username = request.form.get('username')
-        user_type = 'senior' # Default for MVP, updated in Onboarding
-
+        age = request.form.get('age')
+        region = request.form.get('region')
+        hobbies = request.form.getlist('hobbies')
+        skills = request.form.getlist('skills')
+        user_type = 'senior'  # Default for MVP
+        
+        # Validate required fields
+        if not username or not email or not password:
+            flash("Missing account information. Please start registration again.", "danger")
+            return redirect(url_for('auth.register'))
+        
         # === DEV BYPASS: Skip Supabase if email starts with 'dev_' ===
         if email.startswith('dev_'):
-             try:
+            try:
                 # Local "Fake" Auth
                 user_uuid = str(uuid.uuid4())
                 hashed_password = generate_password_hash(password)
@@ -31,19 +48,28 @@ def register():
                     'email': email,
                     'user_type': user_type,
                     'auth_id': user_uuid,
-                    'password_hash': hashed_password
+                    'password_hash': hashed_password,
+                    'age': int(age) if age else None,
+                    'region': region if region else None,
+                    'hobbies': hobbies if hobbies else [],
+                    'skills': skills if skills else []
                 })
                 
-                flash("Dev Account created! Let's complete your profile.", "success")
-                session['pending_user_id'] = new_user['user_id']
-                return redirect(url_for('auth.onboarding'))
-             except Exception as e:
-                 print(f"Dev Register Error: {e}")
-                 traceback.print_exc()
-                 flash(f"Dev Error: {e}", "danger")
-                 return render_template('auth/register.html')
+                # Log in the user
+                session['user_id'] = new_user['user_id']
+                session['username'] = new_user['username']
+                session['user_type'] = new_user['user_type']
+                
+                flash(f"Welcome to JomGather, {new_user['username']}!", "success")
+                return redirect(url_for('index'))
+                
+            except Exception as e:
+                print(f"Dev Register Error: {e}")
+                traceback.print_exc()
+                flash(f"Dev Error: {e}", "danger")
+                return render_template('auth/onboarding.html')
         # =============================================================
-
+        
         try:
             # 1. Create Supabase Auth User
             supabase = get_supabase()
@@ -54,12 +80,12 @@ def register():
             
             # Check if user object exists (sign up success)
             if not auth_response.user:
-                 flash("Registration failed. Please try again.", "danger")
-                 return redirect(url_for("auth.register"))
+                flash("Registration failed. Please try again.", "danger")
+                return redirect(url_for("auth.register"))
                  
             user_uuid = auth_response.user.id
 
-            # 2. Link to Internal Users Table (with real hash)
+            # 2. Create user in Internal Users Table with all data
             hashed_password = generate_password_hash(password)
             
             new_user = insert('users', {
@@ -67,64 +93,27 @@ def register():
                 'email': email,
                 'user_type': user_type,
                 'auth_id': user_uuid,
-                'password_hash': hashed_password
+                'password_hash': hashed_password,
+                'age': int(age) if age else None,
+                'region': region if region else None,
+                'hobbies': hobbies if hobbies else [],
+                'skills': skills if skills else []
             })
+            
+            # 3. Log in the user
+            session['user_id'] = new_user['user_id']
+            session['username'] = new_user['username']
+            session['user_type'] = new_user['user_type']
 
-            flash("Account created! Let's complete your profile.", "success")
-            # Store user_id in session for onboarding
-            session['pending_user_id'] = new_user['user_id']
-            return redirect(url_for('auth.onboarding'))
+            flash(f"Welcome to JomGather, {new_user['username']}!", "success")
+            return redirect(url_for('index'))
 
         except Exception as e:
             print(f"Registration Error: {e}")
             traceback.print_exc()
             flash(f"Error: {e}", "danger")
     
-    return render_template('auth/register.html')
-
-
-@auth_bp.route('/onboarding', methods=['GET', 'POST'])
-def onboarding():
-    """Handle user onboarding - collect demographics and interests."""
-    # Check if we have a pending user from registration
-    pending_user_id = session.get('pending_user_id')
-    if not pending_user_id:
-        flash("Please register first.", "warning")
-        return redirect(url_for('auth.register'))
-    
-    if request.method == 'POST':
-        try:
-            from utils.supabase_db import update
-            
-            # Get form data
-            age = request.form.get('age')
-            region = request.form.get('region')
-            hobbies = request.form.getlist('hobbies')  # Multiple selections
-            skills = request.form.getlist('skills')    # Multiple skills
-            
-            # Update user profile
-            update('users', pending_user_id, {
-                'age': int(age) if age else None,
-                'region': region,
-                'hobbies': hobbies,
-                'skills': skills
-            })
-            
-            # Clear pending and set logged in session
-            user = fetch_one('users', user_id=pending_user_id)
-            session.pop('pending_user_id', None)
-            session['user_id'] = user['user_id']
-            session['username'] = user['username']
-            session['user_type'] = user['user_type']
-            
-            flash(f"Welcome to JomGather, {user['username']}!", "success")
-            return redirect(url_for('index'))
-            
-        except Exception as e:
-            print(f"Onboarding Error: {e}")
-            traceback.print_exc()
-            flash(f"Error saving profile: {e}", "danger")
-    
+    # GET request - display onboarding form
     return render_template('auth/onboarding.html')
 
 
