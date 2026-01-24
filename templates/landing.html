@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JomGather - Bridging Generations</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;700;800&family=Playfair+Display:ital,wght@1,500&display=swap"
+        rel="stylesheet">
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Icons -->
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css">
+
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            --accent-gradient: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            --text-dark: #0f172a;
+            --text-muted: #64748b;
+            --blob-blue: #dbeafe;
+            --blob-green: #dcfce7;
+            --blob-pink: #fce7f3;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            background: #fff;
+            color: var(--text-dark);
+        }
+
+        /* --- Animations --- */
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s cubic-bezier(0.5, 0, 0, 1);
+        }
+
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* --- Navigation --- */
+        .landing-nav {
+            padding: 1.5rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: fixed;
+            /* Sticky for "award winning" feel */
+            top: 0;
+            width: 100%;
+            z-index: 100;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            transition: padding 0.3s ease;
+        }
+
+        .landing-nav.scrolled {
+            padding: 1rem 2rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 800;
+            font-size: 1.4rem;
+            color: var(--text-dark);
+            font-family: 'Outfit', sans-serif;
+            letter-spacing: -0.5px;
+        }
+
+        .btn-modern {
+            background: var(--text-dark);
+            color: white;
+            padding: 0.7rem 1.8rem;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .btn-modern:hover {
+            background: transparent;
+            color: var(--text-dark);
+            border-color: var(--text-dark);
+            transform: translateY(-2px);
+        }
+
+        /* --- Hero Section --- */
+        .hero {
+            position: relative;
+            min-height: 70vh;
+            /* Reduced from 90vh */
+            display: flex;
+            align-items: center;
+            padding-top: 80px;
+            background: radial-gradient(circle at 10% 20%, #f8fafc 0%, #fff 100%);
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -20%;
+            right: -10%;
+            width: 800px;
+            height: 800px;
+            background: radial-gradient(circle, var(--blob-blue) 0%, transparent 70%);
+            border-radius: 50%;
+            filter: blur(80px);
+            z-index: -1;
+            animation: float 20s infinite ease-in-out;
+        }
+
+        .hero::after {
+            content: '';
+            position: absolute;
+            bottom: -10%;
+            left: -10%;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, var(--blob-green) 0%, transparent 70%);
+            border-radius: 50%;
+            filter: blur(60px);
+            z-index: -1;
+            animation: float 15s infinite ease-in-out reverse;
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translate(0, 0);
+            }
+
+            50% {
+                transform: translate(20px, -20px);
+            }
+        }
+
+        .hero h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 4.5rem;
+            font-weight: 800;
+            line-height: 1.05;
+            margin-bottom: 1.5rem;
+            color: var(--text-dark);
+            letter-spacing: -1px;
+        }
+
+        .hero-lead {
+            font-size: 1.25rem;
+            color: var(--text-muted);
+            line-height: 1.6;
+            margin-bottom: 2.5rem;
+            max-width: 90%;
+        }
+
+        .hero-img-wrapper {
+            position: relative;
+            height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .hero-img-mask {
+            width: 320px;
+            height: 320px;
+            border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+            overflow: hidden;
+            box-shadow: 20px 20px 60px rgba(0, 0, 0, 0.1);
+            animation: morph 8s ease-in-out infinite;
+            background: #fff;
+        }
+
+        @keyframes morph {
+            0% {
+                border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+                transform: rotate(0deg);
+            }
+
+            25% {
+                border-radius: 58% 42% 75% 25% / 76% 46% 54% 24%;
+            }
+
+            50% {
+                border-radius: 50% 50% 33% 67% / 55% 27% 73% 45%;
+                transform: rotate(2deg);
+            }
+
+            75% {
+                border-radius: 33% 67% 58% 42% / 63% 68% 32% 37%;
+            }
+
+            100% {
+                border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+                transform: rotate(0deg);
+            }
+        }
+
+        .hero-img-mask img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scale(1.1);
+            /* Slight zoom for parallax feel */
+        }
+
+        /* --- Stats Ticker --- */
+        .stats-ticker {
+            background: var(--text-dark);
+            color: white;
+            padding: 1rem 0;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+
+        .ticker-content {
+            display: inline-block;
+            animation: scroll 30s linear infinite;
+        }
+
+        .ticker-item {
+            display: inline-block;
+            margin: 0 2rem;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 600;
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        @keyframes scroll {
+            0% {
+                transform: translateX(0);
+            }
+
+            100% {
+                transform: translateX(-50%);
+            }
+        }
+
+        /* --- Vision Section --- */
+        .vision-section {
+            padding: 8rem 0;
+            position: relative;
+        }
+
+        .vision-text h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 3rem;
+            margin-bottom: 2rem;
+            color: var(--text-dark);
+        }
+
+        .vision-text p {
+            font-size: 1.2rem;
+            color: var(--text-muted);
+            line-height: 1.8;
+            margin-bottom: 1.5rem;
+        }
+
+        .vision-card {
+            background: #fff;
+            padding: 2.5rem;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            position: relative;
+            z-index: 1;
+        }
+
+        .vision-decoration {
+            position: absolute;
+            top: -20px;
+            right: -20px;
+            font-size: 8rem;
+            color: var(--blob-pink);
+            z-index: -1;
+            opacity: 0.5;
+        }
+
+        /* --- Features --- */
+        .features-section {
+            padding: 6rem 0;
+            background: #fff;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 5rem;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .section-header h2 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+
+        .feature-card {
+            border-radius: 20px;
+            overflow: hidden;
+            position: relative;
+            margin-bottom: 2rem;
+            group: 1;
+        }
+
+        .feature-img-box {
+            height: 300px;
+            overflow: hidden;
+            border-radius: 20px;
+            position: relative;
+        }
+
+        .feature-img-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        .feature-card:hover .feature-img-box img {
+            transform: scale(1.05);
+        }
+
+        .feature-content {
+            padding-top: 1.5rem;
+        }
+
+        .feature-title {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .feature-desc {
+            color: var(--text-muted);
+            line-height: 1.6;
+            margin-bottom: 1rem;
+        }
+
+        .feature-link {
+            color: #2563eb;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: gap 0.2s;
+        }
+
+        .feature-link:hover {
+            gap: 8px;
+        }
+
+        /* --- Testimonials --- */
+        .testimonials {
+            padding: 8rem 0;
+            background: linear-gradient(to bottom, #fff, #f8fafc);
+        }
+
+        .testimonial-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .testimonial-card {
+            background: white;
+            padding: 2.5rem;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.03);
+            border: 1px solid rgba(0, 0, 0, 0.03);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .testimonial-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+        }
+
+        .quote-icon {
+            font-size: 2rem;
+            color: #cbd5e1;
+            margin-bottom: 1rem;
+        }
+
+        .quote-text {
+            font-size: 1.1rem;
+            color: var(--text-dark);
+            font-style: italic;
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+
+        .author {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .author-img {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .author-info h5 {
+            margin: 0;
+            font-weight: 700;
+            font-size: 1rem;
+        }
+
+        .author-info span {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        /* --- Footer CTA --- */
+        .footer-cta {
+            background: var(--text-dark);
+            color: white;
+            padding: 6rem 0;
+            text-align: center;
+            border-top-left-radius: 60px;
+            border-top-right-radius: 60px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .footer-cta h2 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+        }
+
+        .footer-cta::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            opacity: 0.3;
+        }
+
+        @media (max-width: 991px) {
+            .hero {
+                padding-top: 100px;
+                text-align: center;
+                min-height: auto;
+                padding-bottom: 4rem;
+            }
+
+            .hero h1 {
+                font-size: 3rem;
+            }
+
+            .hero-lead {
+                margin: 0 auto 2rem auto;
+            }
+
+            .hero-img-wrapper {
+                height: 300px;
+                margin-top: 2rem;
+            }
+
+            .vision-section {
+                text-align: center;
+            }
+
+            .vision-card {
+                margin-top: 2rem;
+            }
+
+            .vision-decoration {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Nav -->
+    <nav class="landing-nav">
+        <div class="brand">
+            <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo" height="40">
+            JomGather
+        </div>
+        <div>
+            <a href="#vision" class="text-decoration-none text-muted me-4 fw-medium d-none d-md-inline">Vision</a>
+            <a href="#features" class="text-decoration-none text-muted me-4 fw-medium d-none d-md-inline">Features</a>
+            <a href="{{ url_for('auth.login') }}" class="btn-modern">Join Now</a>
+        </div>
+    </nav>
+
+    <!-- Hero -->
+    <section class="hero">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-7">
+                    <h1 class="reveal">Bridging Generations,<br>Enriching Lives.</h1>
+                    <p class="hero-lead reveal">Connect deeply with your community through shared stories, mutual
+                        support, and daily joy. Experience the award-winning platform for intergenerational connection.
+                    </p>
+                    <div class="d-flex gap-3 reveal">
+                        <a href="{{ url_for('auth.login') }}" class="btn-modern">Get Started</a>
+                        <a href="#video"
+                            class="btn btn-link text-dark text-decoration-none fw-bold d-flex align-items-center"><i
+                                class="bi bi-play-circle fs-4 me-2"></i> Watch Video</a>
+                    </div>
+                </div>
+                <div class="col-lg-5">
+                    <div class="hero-img-wrapper reveal">
+                        <div class="hero-img-mask">
+                            <img src="{{ url_for('static', filename='img/landing_hero.png') }}" alt="Hands connecting">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Ticker -->
+    <div class="stats-ticker">
+        <div class="ticker-content">
+            <span class="ticker-item">✦ 10,000+ Connections Made</span>
+            <span class="ticker-item">✦ 500+ Communities</span>
+            <span class="ticker-item">✦ voted #1 Senior Friendly App</span>
+            <span class="ticker-item">✦ 50,000+ Stories Shared</span>
+            <span class="ticker-item">✦ Safe & Secure Environment</span>
+            <!-- duplicate for smooth loop -->
+            <span class="ticker-item">✦ 10,000+ Connections Made</span>
+            <span class="ticker-item">✦ 500+ Communities</span>
+            <span class="ticker-item">✦ voted #1 Senior Friendly App</span>
+            <span class="ticker-item">✦ 50,000+ Stories Shared</span>
+            <span class="ticker-item">✦ Safe & Secure Environment</span>
+        </div>
+    </div>
+
+    <!-- Vision -->
+    <section id="vision" class="vision-section">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-6 mb-5 mb-lg-0">
+                    <div class="vision-text reveal">
+                        <h2>A world where wisdom meets wonder.</h2>
+                        <p>At JomGather, our vision is simple yet profound: to dissolve the barriers of age and
+                            distance. We believe that every generation has something unique to offer.</p>
+                        <p>Through our focused pillars of Storytelling, Support, and Play, we are creating a digital
+                            town square where seniors feel valued and youth feel grounded.</p>
+                    </div>
+                </div>
+                <div class="col-lg-5 offset-lg-1">
+                    <div class="vision-card reveal">
+                        <i class="bi bi-quote vision-decoration"></i>
+                        <h4 class="fw-bold mb-3">Our Mission</h4>
+                        <p class="text-muted mb-0">"To empower seniors to share their legacy and find daily joy, while
+                            providing a safe, engaging space for communities to foster real-world resilience and
+                            connection."</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features -->
+    <section id="features" class="features-section">
+        <div class="container">
+            <div class="section-header reveal">
+                <h2>Designed for Connection</h2>
+                <p class="text-muted">Three core experiences tailored to bring joy, purpose, and help where it matters
+                    most.</p>
+            </div>
+
+            <div class="row">
+                <!-- Card 1 -->
+                <div class="col-md-4">
+                    <div class="feature-card reveal">
+                        <div class="feature-img-box">
+                            <img src="{{ url_for('static', filename='img/feature_legacy.png') }}" alt="Legacy">
+                        </div>
+                        <div class="feature-content">
+                            <div class="feature-title">Slice of Life</div>
+                            <div class="feature-desc">A multimedia jukebox of memories. Record stories, upload photos,
+                                and build a lasting legacy.</div>
+                            <a href="#" class="feature-link">Start Sharing <i class="bi bi-arrow-right"></i></a>
+                        </div>
+                    </div>
+                </div>
+                <!-- Card 2 -->
+                <div class="col-md-4">
+                    <div class="feature-card reveal" style="transition-delay: 0.1s">
+                        <div class="feature-img-box">
+                            <img src="{{ url_for('static', filename='img/feature_support.png') }}" alt="Support">
+                        </div>
+                        <div class="feature-content">
+                            <div class="feature-title">Support Swap</div>
+                            <div class="feature-desc">Mutual aid made simple. Exchange skills, ask for help, or offer
+                                companionship to neighbors.</div>
+                            <a href="#" class="feature-link">Join Neighbors <i class="bi bi-arrow-right"></i></a>
+                        </div>
+                    </div>
+                </div>
+                <!-- Card 3 -->
+                <div class="col-md-4">
+                    <div class="feature-card reveal" style="transition-delay: 0.2s">
+                        <div class="feature-img-box">
+                            <img src="{{ url_for('static', filename='img/feature_activities.png') }}" alt="Activities">
+                        </div>
+                        <div class="feature-content">
+                            <div class="feature-title">Daily Joy</div>
+                            <div class="feature-desc">Curated activities, games, and events to keep minds sharp and
+                                spirits high every single day.</div>
+                            <a href="#" class="feature-link">Explore Fun <i class="bi bi-arrow-right"></i></a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials -->
+    <section class="testimonials">
+        <div class="container">
+            <div class="section-header reveal">
+                <h2>Community Voices</h2>
+                <p class="text-muted">See what our members are saying about their JomGather experience.</p>
+            </div>
+
+            <div class="testimonial-grid">
+                <!-- Review 1 -->
+                <div class="testimonial-card reveal">
+                    <i class="bi bi-chat-quote-fill quote-icon"></i>
+                    <p class="quote-text">"I never thought I'd be so comfortable using an app. JomGather made it easy
+                        for me to archive my recipes and stories for my grandkids. It's truly a blessing."</p>
+                    <div class="author">
+                        <img src="{{ url_for('static', filename='img/avatar_senior.png') }}" alt="Senior"
+                            class="author-img">
+                        <div class="author-info">
+                            <h5>Margaret Chen</h5>
+                            <span>Retired Teacher, 74</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Review 2 -->
+                <div class="testimonial-card reveal" style="transition-delay: 0.1s">
+                    <i class="bi bi-chat-quote-fill quote-icon"></i>
+                    <p class="quote-text">"As a student, I wanted to volunteer but didn't know how. The Support Swap
+                        feature let me help neighbors with groceries, and I've made real friends!"</p>
+                    <div class="author">
+                        <img src="{{ url_for('static', filename='img/avatar_student.png') }}" alt="Student"
+                            class="author-img">
+                        <div class="author-info">
+                            <h5>James O'Connor</h5>
+                            <span>University Student, 21</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Review 3 -->
+                <div class="testimonial-card reveal" style="transition-delay: 0.2s">
+                    <i class="bi bi-chat-quote-fill quote-icon"></i>
+                    <p class="quote-text">"This platform has transformed our neighborhood. We are more connected, safer,
+                        and happier. It's the digital glue we needed."</p>
+                    <div class="author">
+                        <img src="{{ url_for('static', filename='img/avatar_leader.png') }}" alt="Leader"
+                            class="author-img">
+                        <div class="author-info">
+                            <h5>Sarah Al-Fayed</h5>
+                            <span>Community Organizer, 45</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer CTA -->
+    <footer class="footer-cta">
+        <div class="container position-relative" style="z-index: 2;">
+            <h2 class="reveal">Ready to connect?</h2>
+            <p class="mb-5 text-white-50 fs-5 reveal">Join thousands of others in the JomGather movement.</p>
+            <a href="{{ url_for('auth.register') }}"
+                class="btn btn-light btn-lg rounded-pill px-5 fw-bold reveal">Create Free Account</a>
+            <div class="mt-5 small opacity-50">
+                &copy; 2026 JomGather Inc. All rights reserved. <br> Privacy Policy | Terms of Service
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Scroll Reveal
+        document.addEventListener('DOMContentLoaded', () => {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('active');
+                    }
+                });
+            }, { threshold: 0.1 });
+
+            document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+            // Navbar scroll effect
+            window.addEventListener('scroll', () => {
+                const nav = document.querySelector('.landing-nav');
+                if (window.scrollY > 50) {
+                    nav.classList.add('scrolled');
+                } else {
+                    nav.classList.remove('scrolled');
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>

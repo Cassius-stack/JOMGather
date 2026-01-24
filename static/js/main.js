@@ -24,19 +24,21 @@ document.addEventListener('DOMContentLoaded', () => {
     let cachedUsers = []; // Store fetched users to re-render on tab switch
     let debounceTimer;
 
-    if (searchInput && searchDropdown) {
-        // Input Listener
+    if (searchInput) {
+        console.log('Search input found, attaching listeners');
+
+        // Input Listener (Dropdown)
         searchInput.addEventListener('input', (e) => {
             clearTimeout(debounceTimer);
             const query = e.target.value.trim();
-            currentQuery = query;
 
-            if (query.length < 2) {
-                searchDropdown.classList.add('d-none');
-                return;
+            if (searchDropdown) {
+                if (query.length < 2) {
+                    searchDropdown.classList.add('d-none');
+                    return;
+                }
+                searchDropdown.classList.remove('d-none');
             }
-
-            searchDropdown.classList.remove('d-none');
 
             debounceTimer = setTimeout(() => {
                 fetchResults(query);
@@ -45,28 +47,35 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Enter Key Listener (Redirect to Results Page)
         searchInput.addEventListener('keydown', (e) => {
+            console.log('Key pressed:', e.key);
             if (e.key === 'Enter') {
                 e.preventDefault();
                 const query = searchInput.value.trim();
+                console.log('Enter pressed with query:', query);
+
                 if (query.length > 0) {
-                    window.location.href = `/social/search-results?q=${encodeURIComponent(query)}`;
+                    const targetUrl = `/social/search-results?q=${encodeURIComponent(query)}`;
+                    console.log('Redirecting to:', targetUrl);
+                    window.location.href = targetUrl;
                 }
             }
         });
 
         // Hide dropdown when clicking outside
         document.addEventListener('click', (e) => {
-            if (!searchInput.contains(e.target) && !searchDropdown.contains(e.target)) {
+            if (searchDropdown && !searchInput.contains(e.target) && !searchDropdown.contains(e.target)) {
                 searchDropdown.classList.add('d-none');
             }
         });
 
         // Show dropdown again if focused and has query
         searchInput.addEventListener('focus', () => {
-            if (searchInput.value.trim().length >= 2) {
+            if (searchInput.value.trim().length >= 2 && searchDropdown) {
                 searchDropdown.classList.remove('d-none');
             }
         });
+    } else {
+        console.warn('Dashboard search input not found on this page.');
     }
 
     // Tab Logic

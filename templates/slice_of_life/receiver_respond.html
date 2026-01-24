@@ -46,30 +46,34 @@
             <p style="font-size: 1.4rem; font-style: italic; margin: 0;">"{{ prompt.prompt_text }}"</p>
         </div>
 
-        <!-- Jeremy's Submission (to comment on) -->
+        <!-- Jeremy's Submission (Hidden / Blind Box) -->
         <div
-            style="background: white; border-radius: 24px; padding: 2rem; margin-bottom: 2rem; box-shadow: 0 8px 30px rgba(0,0,0,0.08);">
+            style="background: white; border-radius: 24px; padding: 2rem; margin-bottom: 2rem; box-shadow: 0 8px 30px rgba(0,0,0,0.08); position: relative; overflow: hidden;">
             <h3 style="font-size: 1.35rem; font-weight: 600; color: #1e3a5f; margin-bottom: 1.5rem;">
                 <i class="bi bi-person me-2" style="color: #3b82f6;"></i>{{ sender.username }}'s Submission
             </h3>
-            <div class="row">
-                <div class="col-md-5">
-                    <img src="{{ sender_submission.image_url }}"
-                        style="width: 100%; height: 200px; border-radius: 16px; object-fit: cover;">
-                </div>
-                <div class="col-md-7">
-                    <div style="background: #f8fafc; border-radius: 16px; padding: 1.5rem; margin-bottom: 1rem;">
-                        <p style="font-size: 1.1rem; color: #374151; margin: 0; line-height: 1.7;">
-                            "{{ sender_submission.thought }}"
-                        </p>
-                    </div>
 
-                    <!-- Comment on Sender's -->
-                    <h5 style="font-size: 1.1rem; font-weight: 600; color: #1e3a5f; margin-bottom: 0.5rem;">
-                        <i class="bi bi-chat-dots me-2" style="color: #22c55e;"></i>Add Your Comment
-                    </h5>
-                    <textarea id="commentOnSender" placeholder="What do you think about {{ sender.username }}'s photo?"
-                        style="width: 100%; border: 2px solid #e2e8f0; border-radius: 12px; padding: 1rem; font-size: 1rem; resize: none; height: 80px;"></textarea>
+            <div style="filter: blur(8px); opacity: 0.5; pointer-events: none;">
+                <div class="row">
+                    <div class="col-md-5">
+                        <div style="width: 100%; height: 200px; border-radius: 16px; background: #cbd5e1;"></div>
+                    </div>
+                    <div class="col-md-7">
+                        <div style="background: #f8fafc; border-radius: 16px; padding: 1.5rem; margin-bottom: 1rem;">
+                            <p style="font-size: 1.1rem; color: #374151; margin: 0; line-height: 1.7;">
+                                "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Secret message hidden..."
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div
+                style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; z-index: 10;">
+                <div
+                    style="background: rgba(255,255,255,0.9); padding: 1rem 2rem; border-radius: 50px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); border: 1px solid rgba(0,0,0,0.05);">
+                    <h5 class="m-0 fw-bold text-dark"><i class="bi bi-lock-fill me-2 text-warning"></i>Locked until you
+                        reply</h5>
                 </div>
             </div>
         </div>

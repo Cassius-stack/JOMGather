@@ -1,138 +1,110 @@
 {% extends "base.html" %}
 
-{% block title %}Catalog - Slice of Life{% endblock %}
-
 {% block content %}
-<div style="background: linear-gradient(180deg, #e8f4fc 0%, #f5f7fa 100%); min-height: calc(100vh - 70px);">
-    <div class="container py-4">
+<div class="container py-5">
 
-        <!-- Header -->
-        <div class="d-flex justify-content-between align-items-start mb-4">
-            <div>
-                <h1 style="font-size: 2rem; font-weight: 700; color: #1e3a5f; margin-bottom: 0.25rem;">
-                    <i class="bi bi-images me-2"></i>Display Catalog
-                </h1>
-                <p style="font-size: 1.1rem; color: #6b7280;">Browse all Slice of Life stories from the community</p>
-            </div>
-            <a href="{{ url_for('slice_of_life.prompt') }}"
-                style="background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%); color: white; border-radius: 25px; padding: 0.75rem 1.5rem; font-weight: 600; text-decoration: none; font-size: 1rem; box-shadow: 0 4px 15px rgba(30, 58, 95, 0.25);">
-                <i class="bi bi-plus-circle me-2"></i>Create New
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-5">
+        <div>
+            <h1 class="display-5 fw-bold text-dark mb-2">Memory Library</h1>
+            <p class="text-muted lead">Explore shared moments and your personal archive.</p>
+        </div>
+        <a href="{{ url_for('slice_of_life.prompt') }}" class="btn btn-primary rounded-pill px-4">
+            <i class="bi bi-plus-lg me-2"></i>New Slice
+        </a>
+    </div>
+
+    <!-- Filter Tabs -->
+    <div class="card border-0 shadow-sm rounded-4 mb-5 overflow-hidden">
+        <div class="d-flex border-bottom bg-light">
+            <a href="{{ url_for('slice_of_life.catalog', filter='public') }}"
+                class="text-decoration-none py-3 px-5 fw-bold {{ 'bg-white text-primary border-bottom border-primary border-3' if current_filter == 'public' else 'text-muted' }}">
+                <i class="bi bi-globe me-2"></i> Public Gallery
+            </a>
+            <a href="{{ url_for('slice_of_life.catalog', filter='friends') }}"
+                class="text-decoration-none py-3 px-5 fw-bold {{ 'bg-white text-primary border-bottom border-primary border-3' if current_filter == 'friends' else 'text-muted' }}">
+                <i class="bi bi-people me-2"></i> Friends' Circle
+            </a>
+            <a href="{{ url_for('slice_of_life.catalog', filter='private') }}"
+                class="text-decoration-none py-3 px-5 fw-bold {{ 'bg-white text-primary border-bottom border-primary border-3' if current_filter == 'private' else 'text-muted' }}">
+                <i class="bi bi-lock me-2"></i> My Private Archive
             </a>
         </div>
+    </div>
 
-        <!-- Filter Tabs -->
-        <div
-            style="background: white; border-radius: 16px; padding: 0.5rem; margin-bottom: 2rem; display: inline-flex; gap: 0.5rem; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
-            <button class="catalog-tab active" onclick="filterCatalog('public')"
-                style="background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%); color: white; border: none; border-radius: 12px; padding: 0.75rem 1.5rem; font-size: 1rem; font-weight: 500; cursor: pointer;">
-                <i class="bi bi-globe me-1"></i> Public
-            </button>
-            <button class="catalog-tab" onclick="filterCatalog('private')"
-                style="background: transparent; color: #1e3a5f; border: none; border-radius: 12px; padding: 0.75rem 1.5rem; font-size: 1rem; font-weight: 500; cursor: pointer;">
-                <i class="bi bi-lock me-1"></i> Private
-            </button>
-        </div>
-
-        <!-- Display Grid -->
-        <div class="row g-4">
-            {% set displays = [
-            {'id': 1, 'user1': 'Jeremy', 'user2': 'Grandma Rose', 'img1': 12, 'img2': 25, 'likes': 24, 'prompt': 'After
-            school/work'},
-            {'id': 2, 'user1': 'Sarah', 'user2': 'Uncle Ben', 'img1': 7, 'img2': 20, 'likes': 18, 'prompt': 'Morning
-            routine'},
-            {'id': 3, 'user1': 'Marcus', 'user2': 'Mdm Lim', 'img1': 9, 'img2': 30, 'likes': 31, 'prompt': 'Favorite
-            food'},
-            {'id': 4, 'user1': 'Aunt May', 'user2': 'Dr. Chloe', 'img1': 1, 'img2': 35, 'likes': 12, 'prompt': 'Weekend
-            plans'},
-            {'id': 5, 'user1': 'Tommy', 'user2': 'Mr. Tan', 'img1': 3, 'img2': 5, 'likes': 45, 'prompt': 'Childhood
-            memory'},
-            {'id': 6, 'user1': 'Lisa', 'user2': 'Uncle David', 'img1': 8, 'img2': 15, 'likes': 8, 'prompt': 'Learning
-            moment'}
-            ] %}
-
-            {% for display in displays %}
-            <div class="col-md-4">
-                <div style="background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.05); transition: transform 0.2s, box-shadow 0.2s; cursor: pointer;"
-                    onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 10px 30px rgba(0,0,0,0.1)';"
-                    onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 20px rgba(0,0,0,0.05)';">
-
-                    <!-- Split Image Preview -->
-                    <div style="height: 160px; display: flex; overflow: hidden;">
-                        <div
-                            style="flex: 1; background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%); display: flex; align-items: center; justify-content: center;">
-                            <img src="https://i.pravatar.cc/100?img={{ display.img1 }}"
-                                style="width: 60px; height: 60px; border-radius: 50%; border: 3px solid white;">
+    <!-- Grid -->
+    <div class="row g-4">
+        {% if displays %}
+        {% for display in displays %}
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 border-0 shadow-sm rounded-4 hover-lift transition-all">
+                <!-- Card Header (User info) -->
+                <div class="card-header bg-white border-0 pt-4 px-4 d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center">
+                        <!-- Ideally fetch creator username, for now using ID or a helper if available -->
+                        <div class="bg-light rounded-circle d-flex align-items-center justify-content-center text-primary fw-bold"
+                            style="width: 40px; height: 40px;">
+                            <i class="bi bi-person"></i>
                         </div>
-                        <div
-                            style="flex: 1; background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%); display: flex; align-items: center; justify-content: center;">
-                            <img src="https://i.pravatar.cc/100?img={{ display.img2 }}"
-                                style="width: 60px; height: 60px; border-radius: 50%; border: 3px solid white;">
+                        <div class="ms-3">
+                            <h6 class="mb-0 fw-bold">User #{{ display.creator_id }} &amp; Partner</h6>
+                            <small class="text-muted">{{ display.created_at[:10] }}</small>
                         </div>
                     </div>
+                    {% if display.is_private and current_filter == 'private' %}
+                    <span class="badge bg-light text-dark border"><i class="bi bi-lock-fill me-1"></i> Private</span>
+                    {% endif %}
+                </div>
 
-                    <div style="padding: 1.25rem;">
-                        <!-- Prompt -->
-                        <p style="font-size: 0.85rem; color: #6b7280; margin-bottom: 0.5rem;">
-                            <i class="bi bi-chat-quote me-1"></i>{{ display.prompt }}
-                        </p>
+                <!-- Card Body (Preview) -->
+                <div class="card-body px-4">
+                    <!-- Ideally fetch prompt text, for now static or skipped -->
+                    <h5 class="card-title fw-bold mb-3">Slice of Life #{{ display.display_id }}</h5>
+                    <p class="text-muted small mb-0">Click to view the full conversation and memories shared between
+                        these two generations.</p>
+                </div>
 
-                        <!-- Authors -->
-                        <div class="d-flex align-items-center gap-2 mb-3">
-                            <img src="https://i.pravatar.cc/30?img={{ display.img1 }}"
-                                style="width: 28px; height: 28px; border-radius: 50%;">
-                            <img src="https://i.pravatar.cc/30?img={{ display.img2 }}"
-                                style="width: 28px; height: 28px; border-radius: 50%; margin-left: -10px;">
-                            <span style="font-size: 0.95rem; color: #1e3a5f; font-weight: 500; margin-left: 0.25rem;">
-                                {{ display.user1 }} & {{ display.user2 }}
-                            </span>
-                        </div>
-
-                        <!-- Actions -->
-                        <div class="d-flex justify-content-between align-items-center">
-                            <button onclick="likeDisplay({{ display.id }})"
-                                style="background: none; border: none; cursor: pointer; font-size: 1rem; color: #ef4444;">
-                                <i class="bi bi-heart-fill me-1"></i>{{ display.likes }}
-                            </button>
-                            <a href="{{ url_for('slice_of_life.view_display', display_id=display.id) }}"
-                                style="background: #f1f5f9; color: #1e3a5f; border-radius: 20px; padding: 0.5rem 1rem; font-size: 0.9rem; text-decoration: none; font-weight: 500;">
-                                View Display <i class="bi bi-arrow-right ms-1"></i>
-                            </a>
-                        </div>
+                <!-- Card Footer (Actions) -->
+                <div class="card-footer bg-white border-0 pb-4 px-4 d-flex justify-content-between align-items-center">
+                    <div class="d-flex gap-3">
+                        <button class="btn btn-light btn-sm rounded-pill px-3 text-muted">
+                            <i class="bi bi-heart me-1"></i> {{ display.likes or 0 }}
+                        </button>
+                        <button class="btn btn-light btn-sm rounded-pill px-3 text-muted">
+                            <i class="bi bi-chat me-1"></i> Comment
+                        </button>
                     </div>
+                    <a href="{{ url_for('slice_of_life.review', display_id=display.display_id) }}"
+                        class="btn btn-outline-primary btn-sm rounded-pill px-4">
+                        View <i class="bi bi-arrow-right ms-1"></i>
+                    </a>
                 </div>
             </div>
-            {% endfor %}
         </div>
-
-        <!-- Load More -->
-        <div class="text-center mt-4">
-            <button
-                style="background: white; color: #1e3a5f; border: 2px solid #1e3a5f; border-radius: 25px; padding: 0.75rem 2rem; font-size: 1rem; font-weight: 600; cursor: pointer;">
-                Load More Displays
-            </button>
+        {% endfor %}
+        {% else %}
+        <div class="col-12 py-5 text-center">
+            <div class="bg-light rounded-circle d-inline-flex p-4 mb-3 text-muted">
+                <i class="bi bi-journal-album fs-1"></i>
+            </div>
+            <h4 class="text-muted">No memories found here yet.</h4>
+            <p class="text-muted mb-4">Be the first to share a slice of your life!</p>
+            <a href="{{ url_for('slice_of_life.prompt') }}" class="btn btn-outline-primary rounded-pill">Start a
+                Conversation</a>
         </div>
+        {% endif %}
     </div>
+
 </div>
-{% endblock %}
 
-{% block scripts %}
-<script>
-    function filterCatalog(type) {
-        const tabs = document.querySelectorAll('.catalog-tab');
-        tabs.forEach(tab => {
-            if (tab.textContent.toLowerCase().includes(type)) {
-                tab.style.background = 'linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%)';
-                tab.style.color = 'white';
-            } else {
-                tab.style.background = 'transparent';
-                tab.style.color = '#1e3a5f';
-            }
-        });
+<style>
+    .hover-lift:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1) !important;
     }
 
-    function likeDisplay(id) {
-        // TODO: Implement like functionality
-        console.log('Liked display:', id);
+    .transition-all {
+        transition: all 0.3s ease;
     }
-</script>
+</style>
 {% endblock %}

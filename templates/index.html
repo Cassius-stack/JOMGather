@@ -28,12 +28,12 @@
     <!-- Search Bar -->
     <div class="mx-auto position-relative"
         style="max-width: 600px; margin-top: -1.5rem; margin-bottom: 2rem; z-index: 1000;">
-        <div id="dashboardSearchContainer"
+        <form action="{{ url_for('social.search_results_page') }}" method="GET" id="dashboardSearchContainer"
             style="background: white; border-radius: 30px; padding: 0.75rem 1.25rem; display: flex; align-items: center; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
             <i class="bi bi-search text-muted me-2"></i>
-            <input type="text" id="dashboardSearchInput" placeholder="Search for friends or activities..."
-                style="border: none; outline: none; flex: 1; font-size: 1rem;">
-        </div>
+            <input type="text" name="q" id="dashboardSearchInput" placeholder="Search for friends or activities..."
+                style="border: none; outline: none; flex: 1; font-size: 1rem;" autocomplete="off">
+        </form>
 
         <!-- Search Dropdown Results -->
         <div id="searchDropdown"

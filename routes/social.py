@@ -81,42 +81,53 @@ def search_results_page():
 # === FRIEND REQUEST ENDPOINTS ===
 
 @social_bp.route('/api/search')
+@login_required
 def search_users():
     """Search for users by username."""
     try:
         query = request.args.get('q', '').strip()
         current_user_id = get_current_user_id()
+        
         if not query or len(query) < 2:
             return jsonify([])
         
         supabase = get_supabase()
-        # Search users (case-insensitive if Supabase configured, otherwise exact/ilike)
-        # Using simple partial match
+        # Search users logic
+        # Note: 'ilike' might not be supported in all client versions or table settings. 
+        # Checking robust implementation.
+        
+        # 1. Fetch potential matches
         response = supabase.table('users').select('user_id, username, user_type').ilike('username', f'%{query}%').neq('user_id', current_user_id).limit(10).execute()
         
         results = []
-        for user in response.data:
-            # Check friendship status
-            status = 'none'
-            # Check if current user sent request
-            sent = supabase.table('friendships').select('status').eq('user_id_1', current_user_id).eq('user_id_2', user['user_id']).execute()
-            if sent.data:
-                status = sent.data[0]['status'] # 'pending' or 'accepted'
-            else:
-                # Check if they sent request
-                received = supabase.table('friendships').select('status').eq('user_id_1', user['user_id']).eq('user_id_2', current_user_id).execute()
-                if received.data:
-                    status = 'received' if received.data[0]['status'] == 'pending' else 'accepted'
+        if response.data:
+            searched_users = response.data
             
-            results.append({
-                'id': user['user_id'],
-                'username': user['username'],
-                'type': user['user_type'],
-                'friendship_status': status
-            })
+            # Optimization: Fetch all relevant friendships in one go if possible, but loop is safer for prototype
+            for user in searched_users:
+                # Check friendship status
+                status = 'none'
+                
+                # Check sent
+                sent = supabase.table('friendships').select('status').eq('user_id_1', current_user_id).eq('user_id_2', user['user_id']).execute()
+                if sent.data:
+                    status = sent.data[0]['status'] 
+                else:
+                    # Check received
+                    received = supabase.table('friendships').select('status').eq('user_id_1', user['user_id']).eq('user_id_2', current_user_id).execute()
+                    if received.data:
+                        status = 'received' if received.data[0]['status'] == 'pending' else 'accepted'
+                
+                results.append({
+                    'id': user['user_id'],
+                    'username': user['username'],
+                    'type': user['user_type'],
+                    'friendship_status': status
+                })
             
         return jsonify(results)
     except Exception as e:
+        print(f"Search API Error: {e}")
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 

@@ -10,6 +10,8 @@ from flask import Flask, render_template
 from flask_socketio import SocketIO
 from config import config
 
+
+
 # Import route blueprints
 from routes.auth import auth_bp
 from routes.profile import profile_bp
@@ -65,6 +67,24 @@ def create_app(config_name='default'):
                 # Don't break the app if tracking fails
                 print(f"Error updating last_seen: {e}")
 
+    # Context Processor for Notifications
+    @app.context_processor
+    def inject_notifications():
+        from flask import session
+        if session.get('user_id'):
+            try:
+                from utils.supabase_db import get_supabase
+                supabase = get_supabase()
+                # Fetch recent unread notifications
+                response = supabase.table('notifications').select('*').eq('user_id', session.get('user_id')).order('created_at', desc=True).limit(10).execute()
+                notifications = response.data
+                unread_count = sum(1 for n in notifications if not n['is_read'])
+                return dict(notifications=notifications, unread_notifications_count=unread_count)
+            except Exception as e:
+                print(f"Error fetching notifications: {e}")
+                return dict(notifications=[], unread_notifications_count=0)
+        return dict(notifications=[], unread_notifications_count=0)
+
     # Home route
     @app.route('/')
     def index():
@@ -112,7 +132,34 @@ def create_app(config_name='default'):
             except Exception as e:
                 print(f"Error fetching online friends: {e}")
                 
+                
+        else:
+            # Not logged in? Show landing page
+            return render_template('landing.html')
+                
         return render_template('index.html', online_friends=online_friends, recent_friends=recent_friends)
+
+    # Global Access Control Hook
+    @app.before_request
+    def check_access_control():
+        from flask import session, request, redirect, url_for
+        
+        # List of protected path prefixes
+        protected_prefixes = [
+            '/profile', '/activities', '/social', '/rewards', 
+            '/messaging', '/support-swap', '/slice-of-life'
+        ]
+        
+        # Allow static (css/js/img), auth (login/register), and specific open routes
+        if request.path.startswith('/static') or request.path.startswith('/auth') or request.path == '/' or request.path == '/skeleton':
+            return
+            
+        # If user is trying to access a protected area and is NOT logged in
+        if not session.get('user_id'):
+            # Check if current path starts with any of the guarded prefixes
+            for prefix in protected_prefixes:
+                if request.path.startswith(prefix):
+                    return redirect(url_for('index')) # Redirect to landing (which is index route)
     
     # Skeleton template preview (for development only)
     @app.route('/skeleton')

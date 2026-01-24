@@ -57,6 +57,7 @@
             </button>
 
             <div class="collapse navbar-collapse" id="navbarNav">
+                {% if session.get('user_id') %}
                 <ul class="navbar-nav nav-pills-custom mx-auto mb-2 mb-lg-0">
                     <li class="nav-item">
                         <a class="nav-link {{ 'active' if request.endpoint == 'index' else '' }}"
@@ -74,11 +75,55 @@
                         <a class="nav-link {{ 'active' if 'rewards' in request.endpoint else '' }}"
                             href="{{ url_for('rewards.redeem') }}">Rewards</a>
                     </li>
-
                 </ul>
 
                 <div class="d-flex align-items-center">
+
+                    <!-- Notification Bell -->
                     {% if session.get('user_id') %}
+                    <div class="dropdown me-3">
+                        <a href="#" class="text-decoration-none position-relative" data-bs-toggle="dropdown"
+                            aria-expanded="false">
+                            <i class="bi bi-bell-fill" style="font-size: 1.5rem; color: #1e3a5f;"></i>
+                            {% if unread_notifications_count > 0 %}
+                            <span
+                                class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                                style="font-size: 0.6rem;">
+                                {{ unread_notifications_count }}
+                                <span class="visually-hidden">unread messages</span>
+                            </span>
+                            {% endif %}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-3 mt-2"
+                            style="width: 300px; max-height: 400px; overflow-y: auto;">
+                            <li>
+                                <h6 class="dropdown-header">Notifications</h6>
+                            </li>
+                            {% if notifications %}
+                            {% for notif in notifications %}
+                            <li>
+                                <a class="dropdown-item py-2 px-3 text-wrap" href="{{ notif.link or '#' }}">
+                                    <div class="d-flex align-items-start">
+                                        <i class="bi bi-info-circle me-2 mt-1 text-primary"></i>
+                                        <div>
+                                            <small>{{ notif.message }}</small><br>
+                                            <small class="text-muted" style="font-size: 0.7rem;">{{ notif.created_at
+                                                }}</small>
+                                        </div>
+                                    </div>
+                                </a>
+                            </li>
+                            <li>
+                                <hr class="dropdown-divider my-1">
+                            </li>
+                            {% endfor %}
+                            {% else %}
+                            <li><span class="dropdown-item text-muted small">No new notifications</span></li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                    {% endif %}
+
                     <span class="me-3 d-none d-md-inline" style="font-weight: 500; color: #1e3a5f;">{{
                         session.get('username') }}</span>
 
@@ -111,16 +156,8 @@
                             </li>
                         </ul>
                     </div>
-                    {% else %}
-                    <div class="d-flex gap-2">
-                        <a href="{{ url_for('auth.login') }}" class="btn btn-outline-primary btn-sm"
-                            style="border-radius: 8px; font-weight: 600;">Log In</a>
-                        <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-sm"
-                            style="background: #1e3a5f; border-color: #1e3a5f; border-radius: 8px; font-weight: 600;">Sign
-                            Up</a>
-                    </div>
-                    {% endif %}
                 </div>
+                {% endif %}
             </div>
         </div>
     </nav>
