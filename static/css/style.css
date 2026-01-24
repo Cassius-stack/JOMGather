@@ -1916,11 +1916,16 @@ body {
     margin-bottom: 20px;
 }
 
+.results-modal {
+    text-align: center;
+}
+
 .results-footer {
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 20px;
+    gap: 16px;
     margin-top: 16px;
 }
 
@@ -1961,4 +1966,259 @@ body {
     font-size: 12px;
     margin-top: 8px;
     text-align: left;
+}
+
+/* ============================================
+   MOBILE RESPONSIVE STYLES FOR SOCIAL CHAT
+   ============================================ */
+
+@media screen and (max-width: 768px) {
+
+    /* Social Hub Layout */
+    .social-layout {
+        flex-direction: column;
+        height: auto;
+        min-height: calc(100vh - 80px);
+    }
+
+    /* Inbox Panel */
+    .inbox-panel {
+        width: 100%;
+        max-width: 100%;
+        border-right: none;
+        border-bottom: 1px solid #e5e5e5;
+        max-height: 40vh;
+        overflow-y: auto;
+    }
+
+    .inbox-panel.hidden-mobile {
+        display: none;
+    }
+
+    /* Chat Window */
+    .chat-window {
+        width: 100%;
+        min-height: 60vh;
+    }
+
+    .chat-window.hidden-mobile {
+        display: none;
+    }
+
+    /* Back button (optional, if added) */
+    .mobile-back-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        background: none;
+        border: none;
+        color: #2b60de;
+        font-size: 16px;
+        cursor: pointer;
+    }
+
+    /* Chat Header */
+    .chat-header {
+        padding: 10px 15px;
+    }
+
+    .chat-header .contact-name {
+        font-size: 16px;
+    }
+
+    /* Messages */
+    .chat-messages {
+        padding: 15px;
+    }
+
+    .message .bubble {
+        max-width: 85%;
+        padding: 10px 14px;
+        font-size: 14px;
+    }
+
+    /* Input Area */
+    .input-area {
+        padding: 10px 15px;
+    }
+
+    .input-area input {
+        padding: 10px;
+        font-size: 14px;
+    }
+
+    /* Cyber Challenge Cards */
+    .cyber-challenge-card,
+    .cyber-results-card {
+        width: 100%;
+        max-width: 100%;
+        padding: 20px;
+        border-radius: 12px;
+    }
+
+    .cyber-challenge-card h3,
+    .cyber-results-card h3 {
+        font-size: 20px;
+    }
+
+    .cyber-challenge-card p,
+    .cyber-results-card p {
+        font-size: 14px;
+    }
+
+    .reward-info .reward-value {
+        font-size: 20px;
+    }
+
+    .credit-icon-small2 {
+        width: 22px;
+        height: 22px;
+    }
+
+    .btn-view {
+        padding: 10px 40px;
+        font-size: 14px;
+    }
+
+    /* Cyber Modal */
+    .cyber-modal-overlay {
+        padding: 15px;
+    }
+
+    .cyber-modal {
+        padding: 20px;
+        max-width: 100%;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+
+    .cyber-modal h2 {
+        font-size: 22px;
+        margin-bottom: 16px;
+    }
+
+    /* Scenario Card in Modal */
+    .scenario-card {
+        margin-bottom: 16px;
+    }
+
+    .scenario-header {
+        padding: 10px 12px;
+        font-size: 13px;
+    }
+
+    .scenario-sender {
+        padding: 12px;
+        gap: 10px;
+    }
+
+    .sender-avatar {
+        font-size: 28px;
+    }
+
+    .sender-info {
+        font-size: 13px;
+    }
+
+    .sender-email {
+        font-size: 11px;
+    }
+
+    .scenario-content {
+        padding: 12px;
+        font-size: 13px;
+    }
+
+    .scenario-footer {
+        padding: 10px 12px;
+        font-size: 11px;
+    }
+
+    .fake-button {
+        padding: 10px 18px;
+        font-size: 13px;
+    }
+
+    /* Safe/Scam Buttons */
+    .cyber-buttons {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .cyber-btn {
+        padding: 12px 24px;
+        font-size: 16px;
+        width: 100%;
+        justify-content: center;
+    }
+
+    /* Participant List */
+    .participant-item {
+        padding: 12px 16px;
+    }
+
+    .participant-avatar {
+        font-size: 36px;
+    }
+
+    .participant-info strong {
+        font-size: 14px;
+    }
+
+    .status-completed,
+    .status-waiting,
+    .status-success,
+    .status-failed {
+        font-size: 12px;
+    }
+
+    /* Contact Items */
+    .contact-item {
+        padding: 12px 15px;
+    }
+
+    .avatar {
+        width: 40px;
+        height: 40px;
+        font-size: 18px;
+        margin-right: 12px;
+    }
+
+    .contact-info .name {
+        font-size: 14px;
+    }
+
+    .contact-info .preview {
+        font-size: 12px;
+    }
+}
+
+/* Small Mobile (max-width: 480px) */
+@media screen and (max-width: 480px) {
+    .cyber-modal {
+        padding: 16px;
+    }
+
+    .cyber-modal h2 {
+        font-size: 18px;
+    }
+
+    .cyber-btn {
+        padding: 10px 20px;
+        font-size: 14px;
+    }
+
+    .participant-item {
+        padding: 10px 12px;
+        gap: 12px;
+    }
+
+    .participant-avatar {
+        font-size: 32px;
+    }
+
+    .reward-earned-section {
+        font-size: 16px;
+    }
 }

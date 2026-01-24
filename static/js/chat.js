@@ -229,14 +229,31 @@ socket.on('cyber_answer_submitted', (data) => {
     }
 });
 
+// Track processed challenge completions to avoid duplicates
+const processedChallengeCompletions = new Set();
+
 /**
  * When both users have answered the cyber challenge - show results
  */
 socket.on('cyber_challenge_complete', (data) => {
     console.log('[Socket.IO] Cyber challenge complete:', data);
 
-    // Store the results
     const challengeId = data.challenge_id;
+
+    // Deduplicate - skip if already processed
+    if (processedChallengeCompletions.has(challengeId)) {
+        console.log('[Socket.IO] Skipping duplicate challenge complete:', challengeId);
+        return;
+    }
+    processedChallengeCompletions.add(challengeId);
+
+    // Also skip if state already marked completed
+    if (currentChallengeState[challengeId]?.completed) {
+        console.log('[Socket.IO] Challenge already marked complete:', challengeId);
+        return;
+    }
+
+    // Store the results
     const scenario = cyberScenarios.find(s => s.id === data.scenario_id);
     const correctAnswer = scenario?.answer || 'scam';
 
@@ -255,6 +272,7 @@ socket.on('cyber_challenge_complete', (data) => {
         ...currentChallengeState[challengeId],
         completed: true,
         scenario: scenario,
+        scenarioId: data.scenario_id,
         myCorrect: myCorrect,
         partnerCorrect: partnerCorrect,
         bothCorrect: bothCorrect,
@@ -438,7 +456,7 @@ function renderMessages(messages) {
             const effectiveScenarioId = msg.scenario_id || scenario.id;
 
             chatMessages.innerHTML += `
-                <div class="cyber-challenge-card" data-message-id="${msg.id}" data-challenge-id="${effectiveChallengeId}" data-scenario-id="${effectiveScenarioId}">
+                <div class="cyber-challenge-card" data-message-id="${msg.id}" data-challenge-id="${effectiveChallengeId}" data-scenario-id="${effectiveScenarioId}" id="cyber-card-${effectiveChallengeId}">
                     <h3>🎮 Cyber Challenge!</h3>
                     <p>Can you detect if this scenario is safe or a scam?</p>
                     <div class="reward-info">
@@ -451,6 +469,9 @@ function renderMessages(messages) {
                     <button class="btn-view" onclick="showCyberChallengeModal('${effectiveChallengeId}', ${effectiveScenarioId})">View</button>
                 </div>
             `;
+
+            // Async check if this challenge is completed and update the card
+            checkAndUpdateChallengeCard(effectiveChallengeId, effectiveScenarioId);
         } else {
             // Add action buttons for sent messages
             const actionsHtml = msg.type === 'sent' ? `
@@ -479,6 +500,49 @@ function renderMessages(messages) {
     });
 
     chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+/**
+ * Check challenge status and update card if completed
+ */
+async function checkAndUpdateChallengeCard(challengeId, scenarioId) {
+    try {
+        const response = await fetch(`/social/api/cyber-challenge/${challengeId}?user=${CURRENT_USER_ID}`);
+        const data = await response.json();
+
+        if (data.found && data.status === 'completed') {
+            // Use scenario_id from database, not the random one
+            const dbScenarioId = data.scenario_id || scenarioId;
+
+            // Challenge is completed - replace card with results card
+            const card = document.getElementById(`cyber-card-${challengeId}`);
+            if (card) {
+                card.outerHTML = `<div class="cyber-results-card" data-challenge-id="${challengeId}" data-scenario-id="${dbScenarioId}"><h3>🎮 Cyber Challenge!</h3><p>Results for the challenge are out!</p><button class="btn-view" onclick="showCyberChallengeModal('${challengeId}', ${dbScenarioId})">View Results</button></div>`;
+
+                // Store the state for the results modal
+                const scenario = cyberScenarios.find(s => s.id === dbScenarioId);
+                const correctAnswer = scenario?.answer || 'scam';
+                const amUser1 = data.user1_id === CURRENT_USER_ID;
+                const user1Correct = data.user1_answer === correctAnswer;
+                const user2Correct = data.user2_answer === correctAnswer;
+
+                currentChallengeState[challengeId] = {
+                    completed: true,
+                    scenario: scenario,
+                    scenarioId: dbScenarioId,
+                    correctAnswer: correctAnswer,
+                    myCorrect: amUser1 ? user1Correct : user2Correct,
+                    partnerCorrect: amUser1 ? user2Correct : user1Correct,
+                    bothCorrect: user1Correct && user2Correct,
+                    user1_id: data.user1_id,
+                    user2_id: data.user2_id
+                };
+            }
+        }
+    } catch (error) {
+        // Silently fail - keep showing the challenge card
+        console.log('Could not fetch challenge status for card update:', error);
+    }
 }
 
 // ============================================
@@ -956,7 +1020,7 @@ function appendResultsCard(challengeId, scenarioId) {
         <div class="cyber-results-card" data-challenge-id="${challengeId}" data-scenario-id="${scenarioId}">
             <h3>🎮 Cyber Challenge!</h3>
             <p>Results for the challenge are out!</p>
-            <button class="btn-view" onclick="showResultsModal(${challengeId})">View Results</button>
+            <button class="btn-view" onclick="showResultsModal('${challengeId}')">View Results</button>
         </div>
     `;
 
@@ -996,7 +1060,7 @@ function showResultsModal(challengeId) {
     const buttonText = state.bothCorrect ? 'Go back' : 'See explanation';
     const buttonAction = state.bothCorrect
         ? `this.closest('.cyber-modal-overlay').remove()`
-        : `showExplanationModal(${challengeId}, ${state.scenarioId || scenario?.id})`;
+        : `showExplanationModal('${challengeId}', ${state.scenarioId || scenario?.id})`;
 
     const overlay = document.createElement('div');
     overlay.className = 'cyber-modal-overlay';
@@ -1167,11 +1231,6 @@ async function loadContacts() {
             });
 
             contactList.appendChild(li);
-
-            // Set the first contact as current if we don't have one set
-            if (index === 0 && !currentContactId) {
-                currentContactId = contact.id;
-            }
         });
 
         // Auto-select the first contact if none selected

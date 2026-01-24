@@ -5,6 +5,14 @@ Now using Supabase for database
 
 from flask_socketio import emit, join_room, leave_room
 from utils.supabase_db import insert, fetch_one, update, delete
+from models.reward import add_coins
+
+# Scenario correct answers (same as frontend cyberScenarios)
+SCENARIO_ANSWERS = {
+    1: 'scam',  # SingTel Support phishing
+    2: 'scam',  # Government of Singapore urgent message
+    3: 'safe',  # Bank official statement  
+}
 
 # Track online users: {user_id: socket_id}
 online_users = {}
@@ -269,14 +277,24 @@ def register_chat_events(socketio):
             print(f"[Socket.IO] Invalid cyber answer data: {data}")
             return
         
-        challenge_id = int(challenge_id)
         user_id = int(user_id)
         
-        # Get the challenge record
-        challenge = fetch_one('cyber_challenges', challenge_id=challenge_id)
+        # Handle both numeric and string (msg_X) challenge IDs
+        challenge = None
+        if str(challenge_id).startswith('msg_'):
+            # Fallback ID using message_id
+            message_id = int(challenge_id.replace('msg_', ''))
+            challenge = fetch_one('cyber_challenges', message_id=message_id)
+        else:
+            challenge_id = int(challenge_id)
+            challenge = fetch_one('cyber_challenges', challenge_id=challenge_id)
+        
         if not challenge:
             print(f"[Socket.IO] Challenge {challenge_id} not found")
             return
+        
+        # Use the actual challenge_id from database
+        challenge_id = challenge['challenge_id']
         
         user1_id = challenge['user1_id']
         user2_id = challenge['user2_id']
@@ -323,6 +341,19 @@ def register_chat_events(socketio):
             emit('cyber_challenge_complete', result_data, room=room)
             emit('cyber_challenge_complete', result_data, room=f"user_{user1_id}")
             emit('cyber_challenge_complete', result_data, room=f"user_{user2_id}")
+            
+            # Check if both users got it correct and award coins
+            correct_answer = SCENARIO_ANSWERS.get(scenario_id, 'scam')
+            user1_correct = user1_answer == correct_answer
+            user2_correct = user2_answer == correct_answer
+            
+            if user1_correct and user2_correct:
+                # Both correct - award 15 coins to each user
+                add_coins(user1_id, 15)
+                add_coins(user2_id, 15)
+                print(f"[Socket.IO] Cyber challenge {challenge_id}: BOTH CORRECT! Awarded 15 coins to user {user1_id} and user {user2_id}")
+            else:
+                print(f"[Socket.IO] Cyber challenge {challenge_id}: user1={user1_answer}({'✓' if user1_correct else '✗'}), user2={user2_answer}({'✓' if user2_correct else '✗'}) - correct was '{correct_answer}'")
             
             print(f"[Socket.IO] Cyber challenge {challenge_id} completed: user1={user1_answer}, user2={user2_answer}")
         else:
