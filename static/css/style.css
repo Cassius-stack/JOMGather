@@ -2222,3 +2222,281 @@ body {
         font-size: 16px;
     }
 }
+
+/* ============================================
+   REWARDS PAGE STYLES
+   ============================================ */
+
+/* Balance Header */
+.balance-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.view-rewards-link {
+    color: #2b60de;
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 14px;
+}
+
+.view-rewards-link:hover {
+    text-decoration: underline;
+}
+
+/* Breadcrumb */
+.breadcrumb {
+    margin-bottom: 24px;
+    font-size: 18px;
+}
+
+.breadcrumb-link {
+    color: #2b60de;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.breadcrumb-link:hover {
+    text-decoration: underline;
+}
+
+.breadcrumb-separator {
+    margin: 0 8px;
+    color: #666;
+}
+
+.breadcrumb-current {
+    color: #333;
+    font-weight: 600;
+}
+
+/* Redeemed Button Style */
+.btn-redeem.redeemed {
+    background-color: #9ca3af;
+    cursor: not-allowed;
+}
+
+/* Modal Overlay */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 16px;
+    padding: 32px 40px;
+    max-width: 480px;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.modal-content h2 {
+    font-size: 22px;
+    color: #333;
+    margin-bottom: 24px;
+    line-height: 1.4;
+}
+
+.btn-modal-ok {
+    background: #2b60de;
+    color: white;
+    border: none;
+    padding: 14px 48px;
+    font-size: 16px;
+    font-weight: 600;
+    border-radius: 24px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-modal-ok:hover {
+    background: #1e4bb8;
+}
+
+/* My Rewards Page */
+.my-rewards-grid {
+    gap: 20px;
+}
+
+.my-reward-card {
+    transition: all 0.2s;
+}
+
+.my-reward-card.status-redeemed {
+    opacity: 0.7;
+    background: #f3f4f6;
+}
+
+.reward-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 8px 0;
+}
+
+.status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+}
+
+.status-dot.available {
+    background: #22c55e;
+}
+
+.status-dot.redeemed {
+    background: #ef4444;
+}
+
+.status-text {
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.status-text.available {
+    color: #22c55e;
+}
+
+.status-text.redeemed {
+    color: #ef4444;
+}
+
+.btn-view-code {
+    background: #2b60de;
+    color: white;
+    border: none;
+    padding: 10px 24px;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: background 0.2s;
+    width: 100%;
+}
+
+.btn-view-code:hover {
+    background: #1e4bb8;
+}
+
+.btn-redeemed-status {
+    background: #9ca3af;
+    color: white;
+    border: none;
+    padding: 10px 24px;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 20px;
+    cursor: not-allowed;
+    width: 100%;
+}
+
+/* Code Modal */
+.code-modal {
+    max-width: 400px;
+}
+
+.code-display {
+    background: #f3f4f6;
+    border: 2px dashed #d1d5db;
+    border-radius: 12px;
+    padding: 20px;
+    font-family: 'Courier New', monospace;
+    font-size: 24px;
+    font-weight: 700;
+    color: #1f2937;
+    letter-spacing: 2px;
+    margin: 16px 0;
+}
+
+.code-instruction {
+    color: #6b7280;
+    font-size: 14px;
+    margin-bottom: 20px;
+}
+
+.code-modal-buttons {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.btn-copy-code {
+    flex: 1;
+    background: #2b60de;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 20px;
+    cursor: pointer;
+}
+
+.btn-copy-code:hover {
+    background: #1e4bb8;
+}
+
+.btn-mark-redeemed {
+    flex: 1;
+    background: #ef4444;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 20px;
+    cursor: pointer;
+}
+
+.btn-mark-redeemed:hover {
+    background: #dc2626;
+}
+
+.btn-modal-close {
+    background: none;
+    border: none;
+    color: #6b7280;
+    font-size: 14px;
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+.btn-modal-close:hover {
+    color: #374151;
+}
+
+/* No Rewards State */
+.no-rewards {
+    text-align: center;
+    padding: 60px 20px;
+    color: #6b7280;
+}
+
+.no-rewards p {
+    font-size: 16px;
+    margin-bottom: 20px;
+}
+
+.btn-go-shop {
+    display: inline-block;
+    background: #2b60de;
+    color: white;
+    padding: 12px 32px;
+    border-radius: 24px;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.btn-go-shop:hover {
+    background: #1e4bb8;
+}

@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+
+{% block title %}My Rewards - JOMGather{% endblock %}
+
+{% block content %}
+
+<div class="main-container">
+    <div class="breadcrumb">
+        <a href="{{ url_for('rewards.redeem') }}" class="breadcrumb-link">Balance</a>
+        <span class="breadcrumb-separator">&gt;</span>
+        <span class="breadcrumb-current">My Rewards</span>
+    </div>
+
+    <div class="balance-card">
+        <img src="{{ url_for('static', filename='images/credit.svg') }}" class="credit-icon">
+        <div class="balance-info">
+            <span class="label">Your coins</span>
+            <span class="value">{{ '{:,}'.format(coins | default(0)) }}</span>
+        </div>
+    </div>
+
+    {% if rewards %}
+    <div class="rewards-grid my-rewards-grid">
+        {% for reward in rewards %}
+        <div class="reward-card my-reward-card {% if reward.status == 'redeemed' %}status-redeemed{% endif %}"
+            data-record-id="{{ reward.id }}">
+            <div class="card-image">
+                <img src="{{ url_for('static', filename='images/' + (reward.reward_image or 'giftbox.svg')) }}"
+                    class="reward-image">
+            </div>
+            <div class="reward-info">
+                <h3>{{ reward.reward_name }}</h3>
+                <div class="reward-status">
+                    {% if reward.status == 'available' %}
+                    <span class="status-dot available"></span>
+                    <span class="status-text available">Available</span>
+                    {% else %}
+                    <span class="status-dot redeemed"></span>
+                    <span class="status-text redeemed">Redeemed</span>
+                    {% endif %}
+                </div>
+                {% if reward.status == 'available' %}
+                <button class="btn-view-code" onclick="showCode('{{ reward.reward_code }}', {{ reward.id }})">View
+                    Code</button>
+                {% else %}
+                <button class="btn-redeemed-status" disabled>Redeemed</button>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="no-rewards">
+        <p>You haven't redeemed any rewards yet.</p>
+        <a href="{{ url_for('rewards.redeem') }}" class="btn-go-shop">Go to Rewards Shop</a>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Code Modal -->
+<div id="code-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content code-modal">
+        <h2>Your Redemption Code</h2>
+        <div class="code-display" id="code-display"></div>
+        <p class="code-instruction">Show this code at the counter to claim your reward.</p>
+        <div class="code-modal-buttons">
+            <button class="btn-copy-code" onclick="copyCode()">Copy Code</button>
+            <button class="btn-mark-redeemed" id="btn-mark-redeemed" onclick="markAsRedeemed()">Mark as
+                Redeemed</button>
+        </div>
+        <button class="btn-modal-close" onclick="closeCodeModal()">Close</button>
+    </div>
+</div>
+
+<script>
+    let currentRecordId = null;
+    let currentCode = null;
+
+    function showCode(code, recordId) {
+        currentCode = code;
+        currentRecordId = recordId;
+        document.getElementById('code-display').textContent = code;
+        document.getElementById('code-modal').style.display = 'flex';
+    }
+
+    function closeCodeModal() {
+        document.getElementById('code-modal').style.display = 'none';
+        currentRecordId = null;
+        currentCode = null;
+    }
+
+    function copyCode() {
+        navigator.clipboard.writeText(currentCode).then(() => {
+            alert('Code copied to clipboard!');
+        });
+    }
+
+    async function markAsRedeemed() {
+        if (!currentRecordId) return;
+
+        try {
+            const response = await fetch('/rewards/mark-redeemed', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ record_id: currentRecordId })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                // Update the card UI
+                const card = document.querySelector(`[data-record-id="${currentRecordId}"]`);
+                card.classList.add('status-redeemed');
+
+                // Update status text
+                const statusDot = card.querySelector('.status-dot');
+                const statusText = card.querySelector('.status-text');
+                statusDot.className = 'status-dot redeemed';
+                statusText.className = 'status-text redeemed';
+                statusText.textContent = 'Redeemed';
+
+                // Update button
+                const btn = card.querySelector('.btn-view-code');
+                btn.textContent = 'Redeemed';
+                btn.className = 'btn-redeemed-status';
+                btn.disabled = true;
+                btn.onclick = null;
+
+                closeCodeModal();
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Failed to mark as redeemed');
+        }
+    }
+
+    // Close modal on overlay click
+    document.getElementById('code-modal').addEventListener('click', function (e) {
+        if (e.target === this) {
+            closeCodeModal();
+        }
+    });
+</script>
+
+{% endblock %}
