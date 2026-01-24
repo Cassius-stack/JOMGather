@@ -269,6 +269,33 @@
 
     // Initialize
     async function init() {
+        // Check if we're in a secure context (HTTPS or localhost)
+        const isSecure = window.isSecureContext ||
+            location.hostname === 'localhost' ||
+            location.hostname === '127.0.0.1';
+
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            console.error('getUserMedia not available - insecure context');
+            document.getElementById('permissionError').classList.add('show');
+            document.getElementById('permissionError').innerHTML = `
+                <strong>⚠️ Secure Connection Required</strong>
+                <p>Camera access requires a secure connection. Please access via:</p>
+                <ul style="text-align: left; margin-top: 10px;">
+                    <li><strong>http://127.0.0.1:5000</strong> (recommended for testing)</li>
+                    <li>Or use HTTPS in production</li>
+                </ul>
+            `;
+            document.getElementById('videoPlaceholder').innerHTML = `
+                <i class="bi bi-shield-exclamation"></i>
+                <span>Secure connection needed</span>
+            `;
+            document.getElementById('statusMessage').textContent = '⚠️ Use localhost for camera access';
+
+            // Still connect to socket for matching (audio-only mode)
+            connectSocket();
+            return;
+        }
+
         try {
             // Get user media (camera + mic)
             localStream = await navigator.mediaDevices.getUserMedia({
@@ -292,6 +319,9 @@
                 <span>Camera access denied</span>
             `;
             document.getElementById('statusMessage').textContent = '❌ Please allow camera access';
+
+            // Still connect to socket even without camera
+            connectSocket();
         }
     }
 

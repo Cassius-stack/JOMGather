@@ -79,6 +79,35 @@ def register_boomerang_events(socketio):
             del boomerang_queue[sid]
             print(f"[BOOMERang] User {sid} left queue")
     
+    @socketio.on('boomerang_join_room')
+    def handle_join_room(data):
+        """User joins an existing room (for Meetup page)."""
+        sid = request.sid
+        room_id = data.get('room_id')
+        user_name = data.get('name', 'Anonymous')
+        
+        if not room_id:
+            print(f"[BOOMERang] Join room failed: no room_id")
+            return
+        
+        # Create room if it doesn't exist (first user to join meetup)
+        if room_id not in active_rooms:
+            active_rooms[room_id] = set()
+        
+        # Add user to room
+        active_rooms[room_id].add(sid)
+        user_room_map[sid] = room_id
+        join_room(room_id)
+        
+        print(f"[BOOMERang] {user_name} ({sid}) joined room {room_id}. Users in room: {len(active_rooms[room_id])}")
+        
+        # Notify others in room that someone joined
+        emit('boomerang_user_joined', {
+            'name': user_name,
+            'sid': sid,
+            'room_size': len(active_rooms[room_id])
+        }, room=room_id, include_self=False)
+    
     @socketio.on('boomerang_offer')
     def handle_offer(data):
         """Relay WebRTC offer to partner."""
@@ -156,22 +185,6 @@ def register_boomerang_events(socketio):
             
             print(f"[BOOMERang] User {sid} ended call in room {room_id}")
     
-    @socketio.on('disconnect')
-    def handle_boomerang_disconnect():
-        """Clean up when user disconnects."""
-        sid = request.sid
-        
-        # Remove from queue if waiting
-        if sid in boomerang_queue:
-            del boomerang_queue[sid]
-        
-        # End any active call
-        room_id = user_room_map.get(sid)
-        if room_id:
-            emit('boomerang_partner_left', {}, room=room_id, include_self=False)
-            if sid in user_room_map:
-                del user_room_map[sid]
-            if room_id in active_rooms:
-                active_rooms[room_id].discard(sid)
-                if len(active_rooms[room_id]) == 0:
-                    del active_rooms[room_id]
+    # NOTE: We don't add a @socketio.on('disconnect') here because
+    # chat_events.py already has one, and having two causes conflicts.
+    # BOOMERang cleanup is handled by boomerang_end_call event instead.
