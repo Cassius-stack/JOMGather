@@ -1,0 +1,809 @@
+{% extends "base.html" %}
+{% block title %}Communities - JomGather{% endblock %}
+
+{% block head %}
+<!-- TailwindCSS for community UI -->
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+    /* Override base styles for community page */
+    .community-container {
+        margin-top: -1rem;
+    }
+
+    .emoji-btn:hover {
+        transform: scale(1.2);
+    }
+
+    .message-hover-controls {
+        opacity: 0;
+        transition: opacity 0.2s;
+    }
+
+    .message-group:hover .message-hover-controls {
+        opacity: 1;
+    }
+
+    /* Ensure community app fills available space */
+    #community-app {
+        min-height: calc(100vh - 180px);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="community-container">
+    <div id="community-app" class="flex bg-gray-50">
+        <div class="flex items-center justify-center w-full py-20">
+            <div class="text-center text-gray-500">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500 mx-auto mb-4"></div>
+                <p>Loading communities...</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // API base URL - uses relative URLs since we're in the same Flask app
+    const API_BASE = '/social/community/api';
+    const CURRENT_USER_ID = {{ session.get('user_id') | default ('null') }};
+    const CURRENT_USERNAME = "{{ session.get('username', 'User') }}";
+
+    let state = {
+        communities: [],
+        notifications: [],
+        currentUser: { id: CURRENT_USER_ID, name: CURRENT_USERNAME },
+        activeCommunityId: null,
+        activeChannelId: null,
+        activeTab: 'channels',
+        searchQuery: '',
+        messageText: '',
+        editingMessageId: null,
+        editMessageText: '',
+        replyingTo: null,
+        showEmojiPicker: null,
+        showReactionPicker: null,
+        showAddChannel: false,
+        showAddCommunity: false,
+        showCommunityList: false,
+        showChannelSettings: false,
+        showCommunitySettings: false,
+        showManageRoles: false,
+        showNotifications: false,
+        messageMenuId: null,
+        newChannelName: '',
+        newChannelIsAnnouncement: false,
+        newCommunityName: '',
+        newCommunityDesc: ''
+    };
+
+    const emojis = ['👍', '❤️', '😂', '😮', '😢', '🙏', '🎉', '🔥'];
+
+    // API calls
+    async function fetchCommunities() {
+        try {
+            const res = await fetch(`${API_BASE}/communities`);
+            if (!res.ok) throw new Error('Failed to fetch communities');
+            state.communities = await res.json();
+            if (!state.activeCommunityId && state.communities.length > 0) {
+                state.activeCommunityId = state.communities[0].id;
+            }
+            render();
+        } catch (error) {
+            console.error('Error fetching communities:', error);
+            state.communities = [];
+            render();
+        }
+    }
+
+    async function createCommunity() {
+        if (!state.newCommunityName.trim()) return;
+
+        try {
+            const res = await fetch(`${API_BASE}/communities`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: state.newCommunityName,
+                    description: state.newCommunityDesc
+                })
+            });
+
+            if (!res.ok) throw new Error('Failed to create community');
+            const newCommunity = await res.json();
+            state.communities.push(newCommunity);
+            state.activeCommunityId = newCommunity.id;
+            state.newCommunityName = '';
+            state.newCommunityDesc = '';
+            state.showAddCommunity = false;
+            state.showCommunityList = false;
+            render();
+        } catch (error) {
+            console.error('Error creating community:', error);
+            alert('Failed to create community');
+        }
+    }
+
+    async function deleteCommunity() {
+        if (!confirm('Delete this community? This cannot be undone.')) return;
+
+        try {
+            await fetch(`${API_BASE}/communities/${state.activeCommunityId}`, {
+                method: 'DELETE'
+            });
+
+            state.communities = state.communities.filter(c => c.id !== state.activeCommunityId);
+            state.activeCommunityId = state.communities[0]?.id || null;
+            state.activeChannelId = null;
+            state.showCommunitySettings = false;
+            render();
+        } catch (error) {
+            console.error('Error deleting community:', error);
+        }
+    }
+
+    async function createChannel() {
+        if (!state.newChannelName.trim()) return;
+
+        try {
+            const res = await fetch(`${API_BASE}/communities/${state.activeCommunityId}/channels`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: state.newChannelName,
+                    isAnnouncement: state.newChannelIsAnnouncement
+                })
+            });
+
+            if (!res.ok) throw new Error('Failed to create channel');
+            const newChannel = await res.json();
+            const community = state.communities.find(c => c.id === state.activeCommunityId);
+            community.channels.push(newChannel);
+            state.newChannelName = '';
+            state.newChannelIsAnnouncement = false;
+            state.showAddChannel = false;
+            render();
+        } catch (error) {
+            console.error('Error creating channel:', error);
+        }
+    }
+
+    async function deleteChannel() {
+        if (!confirm('Delete this channel? This cannot be undone.')) return;
+
+        try {
+            await fetch(`${API_BASE}/communities/${state.activeCommunityId}/channels/${state.activeChannelId}`, {
+                method: 'DELETE'
+            });
+
+            const community = state.communities.find(c => c.id === state.activeCommunityId);
+            community.channels = community.channels.filter(ch => ch.id !== state.activeChannelId);
+            state.activeChannelId = null;
+            state.showChannelSettings = false;
+            render();
+        } catch (error) {
+            console.error('Error deleting channel:', error);
+        }
+    }
+
+    async function sendMessage() {
+        if (!state.messageText.trim()) return;
+
+        try {
+            const res = await fetch(
+                `${API_BASE}/communities/${state.activeCommunityId}/channels/${state.activeChannelId}/messages`,
+                {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        text: state.messageText,
+                        replyTo: state.replyingTo
+                    })
+                }
+            );
+
+            if (!res.ok) {
+                const error = await res.json();
+                if (error.error) alert(error.error);
+                return;
+            }
+
+            const newMessage = await res.json();
+            const community = state.communities.find(c => c.id === state.activeCommunityId);
+            const channel = community.channels.find(ch => ch.id === state.activeChannelId);
+            channel.messages.push(newMessage);
+
+            state.messageText = '';
+            state.replyingTo = null;
+            render();
+
+            // Scroll to bottom
+            setTimeout(() => {
+                const chatContainer = document.getElementById('chat-messages');
+                if (chatContainer) chatContainer.scrollTop = chatContainer.scrollHeight;
+            }, 100);
+        } catch (error) {
+            console.error('Error sending message:', error);
+        }
+    }
+
+    async function editMessage() {
+        if (!state.editMessageText.trim()) return;
+
+        try {
+            const res = await fetch(
+                `${API_BASE}/communities/${state.activeCommunityId}/channels/${state.activeChannelId}/messages/${state.editingMessageId}`,
+                {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: state.editMessageText })
+                }
+            );
+
+            const updatedMessage = await res.json();
+            const community = state.communities.find(c => c.id === state.activeCommunityId);
+            const channel = community.channels.find(ch => ch.id === state.activeChannelId);
+            const msgIndex = channel.messages.findIndex(m => m.id === state.editingMessageId);
+            channel.messages[msgIndex] = updatedMessage;
+
+            state.editingMessageId = null;
+            state.editMessageText = '';
+            render();
+        } catch (error) {
+            console.error('Error editing message:', error);
+        }
+    }
+
+    async function deleteMessage(messageId) {
+        try {
+            await fetch(
+                `${API_BASE}/communities/${state.activeCommunityId}/channels/${state.activeChannelId}/messages/${messageId}`,
+                { method: 'DELETE' }
+            );
+
+            const community = state.communities.find(c => c.id === state.activeCommunityId);
+            const channel = community.channels.find(ch => ch.id === state.activeChannelId);
+            channel.messages = channel.messages.filter(m => m.id !== messageId);
+            state.messageMenuId = null;
+            render();
+        } catch (error) {
+            console.error('Error deleting message:', error);
+        }
+    }
+
+    async function addReaction(messageId, emoji) {
+        try {
+            const res = await fetch(
+                `${API_BASE}/communities/${state.activeCommunityId}/channels/${state.activeChannelId}/messages/${messageId}/reactions`,
+                {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ emoji })
+                }
+            );
+
+            const reactions = await res.json();
+            const community = state.communities.find(c => c.id === state.activeCommunityId);
+            const channel = community.channels.find(ch => ch.id === state.activeChannelId);
+            const message = channel.messages.find(m => m.id === messageId);
+            message.reactions = reactions;
+
+            state.showReactionPicker = null;
+            render();
+        } catch (error) {
+            console.error('Error adding reaction:', error);
+        }
+    }
+
+    // Helper functions
+    function formatTime(timestamp) {
+        if (!timestamp) return '';
+        const date = new Date(timestamp);
+        const now = new Date();
+        const diff = now - date;
+        const minutes = Math.floor(diff / 60000);
+        const hours = Math.floor(diff / 3600000);
+        const days = Math.floor(diff / 86400000);
+
+        if (minutes < 1) return 'Just now';
+        if (minutes < 60) return `${minutes}m ago`;
+        if (hours < 24) return `${hours}h ago`;
+        return `${days}d ago`;
+    }
+
+    function getActiveCommunity() {
+        return state.communities.find(c => c.id === state.activeCommunityId);
+    }
+
+    function getActiveChannel() {
+        const community = getActiveCommunity();
+        return community?.channels?.find(ch => ch.id === state.activeChannelId);
+    }
+
+    function isUserAdmin() {
+        const community = getActiveCommunity();
+        return community?.admins?.includes(state.currentUser?.id);
+    }
+
+    function isUserModerator() {
+        const community = getActiveCommunity();
+        return community?.moderators?.includes(state.currentUser?.id);
+    }
+
+    function hasModPermissions() {
+        return isUserAdmin() || isUserModerator();
+    }
+
+    // Render functions
+    function render() {
+        const app = document.getElementById('community-app');
+        const community = getActiveCommunity();
+        const channel = getActiveChannel();
+        const unreadCount = state.notifications.filter(n => !n.read).length;
+
+        if (!state.communities.length && !state.showAddCommunity) {
+            app.innerHTML = renderEmptyState();
+            return;
+        }
+
+        app.innerHTML = `
+            ${state.showCommunityList ? renderCommunityList() : ''}
+            
+            <!-- Sidebar -->
+            <div class="w-80 bg-white border-r border-gray-200 flex flex-col" style="min-height: calc(100vh - 180px);">
+                <!-- Header -->
+                <div class="p-4 border-b border-gray-200">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-3 flex-1">
+                            <button onclick="state.showCommunityList = true; render();" 
+                                class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center hover:bg-green-600 transition">
+                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                                </svg>
+                            </button>
+                            <div class="flex-1 min-w-0">
+                                <h1 class="font-semibold text-lg truncate">${community?.name || 'Select Community'}</h1>
+                                <p class="text-sm text-gray-500">${community?.members || 0} members</p>
+                            </div>
+                        </div>
+                        ${community ? `
+                        <button onclick="state.showCommunitySettings = true; render();" class="p-2 hover:bg-gray-100 rounded-full transition">
+                            <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            </svg>
+                        </button>
+                        ` : ''}
+                    </div>
+                    <input type="text" placeholder="Search channels..." 
+                        value="${state.searchQuery}"
+                        oninput="state.searchQuery = this.value; render();"
+                        class="w-full px-4 py-2 bg-gray-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
+                </div>
+
+                <!-- Tabs -->
+                <div class="flex border-b border-gray-200">
+                    <button onclick="state.activeTab = 'channels'; render();" 
+                        class="flex-1 py-3 text-sm font-medium transition ${state.activeTab === 'channels' ? 'text-green-600 border-b-2 border-green-600' : 'text-gray-600 hover:text-gray-800'}">
+                        Channels
+                    </button>
+                    <button onclick="state.activeTab = 'members'; render();" 
+                        class="flex-1 py-3 text-sm font-medium transition ${state.activeTab === 'members' ? 'text-green-600 border-b-2 border-green-600' : 'text-gray-600 hover:text-gray-800'}">
+                        Members
+                    </button>
+                </div>
+
+                <!-- Content -->
+                <div class="flex-1 overflow-y-auto">
+                    ${state.activeTab === 'channels' ? renderChannelsList(community) : renderMembersList(community)}
+                </div>
+
+                <!-- About -->
+                ${community ? `
+                <div class="p-4 bg-gray-50 border-t border-gray-200">
+                    <p class="text-xs text-gray-600 mb-2 font-medium">About this community</p>
+                    <p class="text-sm text-gray-800">${community?.description || 'No description available.'}</p>
+                </div>
+                ` : ''}
+            </div>
+
+            <!-- Chat Area -->
+            ${channel ? renderChatArea(channel) : renderWelcomeScreen(community)}
+
+            <!-- Modals -->
+            ${state.showAddChannel ? renderAddChannelModal() : ''}
+            ${state.showAddCommunity ? renderAddCommunityModal() : ''}
+            ${state.showChannelSettings ? renderChannelSettingsModal(channel) : ''}
+            ${state.showCommunitySettings ? renderCommunitySettingsModal(community) : ''}
+        `;
+    }
+
+    function renderEmptyState() {
+        return `
+            <div class="flex items-center justify-center w-full py-20">
+                <div class="text-center">
+                    <div class="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <svg class="w-12 h-12 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                        </svg>
+                    </div>
+                    <h2 class="text-2xl font-bold text-gray-800 mb-2">Welcome to Communities!</h2>
+                    <p class="text-gray-600 mb-6">You haven't joined any communities yet.<br>Create one to get started!</p>
+                    <button onclick="state.showAddCommunity = true; render();"
+                        class="px-6 py-3 bg-green-500 text-white rounded-lg font-medium hover:bg-green-600 transition">
+                        Create Your First Community
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
+    function renderCommunityList() {
+        return `
+            <div class="fixed inset-0 bg-black bg-opacity-50 z-50" onclick="state.showCommunityList = false; render();">
+                <div class="w-80 bg-white h-full shadow-xl" onclick="event.stopPropagation();">
+                    <div class="p-4 border-b border-gray-200">
+                        <div class="flex items-center justify-between">
+                            <h2 class="text-lg font-semibold">Your Communities</h2>
+                            <button onclick="state.showCommunityList = false; render();" class="p-2 hover:bg-gray-100 rounded-full">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="overflow-y-auto" style="max-height: calc(100vh - 80px);">
+                        ${state.communities.map(c => `
+                            <div onclick="state.activeCommunityId = ${c.id}; state.activeChannelId = null; state.showCommunityList = false; render();"
+                                class="p-4 cursor-pointer border-b border-gray-100 hover:bg-gray-50 transition ${c.id === state.activeCommunityId ? 'bg-green-50' : ''}">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-12 h-12 rounded-full flex items-center justify-center ${c.id === state.activeCommunityId ? 'bg-green-500' : 'bg-gray-300'}">
+                                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                                        </svg>
+                                    </div>
+                                    <div class="flex-1">
+                                        <h3 class="font-semibold text-sm">${c.name}</h3>
+                                        <p class="text-xs text-gray-500">${c.members} members</p>
+                                    </div>
+                                    ${c.id === state.activeCommunityId ? '<div class="w-2 h-2 bg-green-500 rounded-full"></div>' : ''}
+                                </div>
+                            </div>
+                        `).join('')}
+                        <button onclick="state.showAddCommunity = true; state.showCommunityList = false; render();"
+                            class="w-full p-4 flex items-center gap-3 hover:bg-gray-50 text-green-600 border-b border-gray-100 transition">
+                            <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                </svg>
+                            </div>
+                            <span class="font-medium text-sm">Create New Community</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    function renderChannelsList(community) {
+        if (!community) return '<div class="p-4 text-center text-gray-500">Select a community</div>';
+
+        const filteredChannels = (community.channels || []).filter(ch =>
+            ch.name.toLowerCase().includes(state.searchQuery.toLowerCase())
+        );
+
+        return `
+            ${filteredChannels.map(ch => `
+                <div onclick="state.activeChannelId = ${ch.id}; render();"
+                    class="p-4 hover:bg-gray-50 cursor-pointer border-b border-gray-100 transition ${ch.id === state.activeChannelId ? 'bg-green-50' : ''}">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3 flex-1">
+                            <div class="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
+                                ${ch.isAnnouncement ?
+                '<svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>' :
+                '<svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"></path></svg>'
+            }
+                            </div>
+                            <div class="flex-1">
+                                <div class="flex items-center gap-2">
+                                    <h3 class="font-medium text-sm">${ch.name}</h3>
+                                    ${ch.isAnnouncement ? '<span class="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded">Announcement</span>' : ''}
+                                </div>
+                                <p class="text-xs text-gray-500">${ch.messages?.length || 0} messages</p>
+                            </div>
+                        </div>
+                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                        </svg>
+                    </div>
+                </div>
+            `).join('')}
+            <button onclick="state.showAddChannel = true; render();"
+                class="w-full p-4 flex items-center gap-3 hover:bg-gray-50 text-green-600 transition">
+                <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                    </svg>
+                </div>
+                <span class="font-medium text-sm">Create New Channel</span>
+            </button>
+        `;
+    }
+
+    function renderMembersList(community) {
+        if (!community) return '<div class="p-4 text-center text-gray-500">Select a community</div>';
+
+        return `
+            <div class="p-4">
+                <div class="mb-4">
+                    <h3 class="text-xs font-semibold text-gray-500 uppercase mb-3">Admins (${community.admins?.length || 0})</h3>
+                    <div class="space-y-2">
+                        ${(community.admins || []).map(adminId => `
+                            <div class="flex items-center gap-3 p-2 rounded hover:bg-gray-50">
+                                <div class="w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center text-white text-sm font-semibold">
+                                    ${adminId === CURRENT_USER_ID ? 'Y' : 'A'}
+                                </div>
+                                <div class="flex-1">
+                                    <p class="text-sm font-medium">${adminId === CURRENT_USER_ID ? 'You' : `User ${adminId}`}</p>
+                                    <p class="text-xs text-gray-500">Administrator</p>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                ${community.moderators?.length > 0 ? `
+                <div class="mb-4">
+                    <h3 class="text-xs font-semibold text-gray-500 uppercase mb-3">Moderators (${community.moderators.length})</h3>
+                    <div class="space-y-2">
+                        ${community.moderators.map(modId => `
+                            <div class="flex items-center gap-3 p-2 rounded hover:bg-gray-50">
+                                <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-semibold">
+                                    M
+                                </div>
+                                <div class="flex-1">
+                                    <p class="text-sm font-medium">${modId === CURRENT_USER_ID ? 'You' : `User ${modId}`}</p>
+                                    <p class="text-xs text-gray-500">Moderator</p>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                ` : ''}
+                <p class="text-xs text-gray-500 text-center mt-4">Total: ${community.members} members</p>
+            </div>
+        `;
+    }
+
+    function renderWelcomeScreen(community) {
+        return `
+            <div class="flex-1 flex items-center justify-center bg-gray-50">
+                <div class="text-center">
+                    <div class="w-20 h-20 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                        </svg>
+                    </div>
+                    <h2 class="text-xl font-semibold text-gray-700 mb-2">Select a Channel</h2>
+                    <p class="text-gray-500">Choose a channel from the sidebar to start chatting</p>
+                </div>
+            </div>
+        `;
+    }
+
+    function renderChatArea(channel) {
+        const community = getActiveCommunity();
+        const canPost = !channel.isAnnouncement || isUserAdmin();
+
+        return `
+            <div class="flex-1 flex flex-col bg-white" style="min-height: calc(100vh - 180px);">
+                <!-- Channel Header -->
+                <div class="p-4 border-b border-gray-200 flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                            <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <h2 class="font-semibold">${channel.name}</h2>
+                            <p class="text-xs text-gray-500">${channel.messages?.length || 0} messages</p>
+                        </div>
+                    </div>
+                    ${hasModPermissions() ? `
+                    <button onclick="state.showChannelSettings = true; render();" class="p-2 hover:bg-gray-100 rounded-full transition">
+                        <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"></path>
+                        </svg>
+                    </button>
+                    ` : ''}
+                </div>
+                
+                <!-- Messages -->
+                <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-4">
+                    ${(channel.messages || []).length === 0 ? `
+                        <div class="text-center py-10 text-gray-500">
+                            <p>No messages yet. Be the first to say something!</p>
+                        </div>
+                    ` : (channel.messages || []).map(msg => renderMessage(msg)).join('')}
+                </div>
+                
+                <!-- Input Area -->
+                <div class="p-4 border-t border-gray-200">
+                    ${!canPost ? `
+                        <div class="text-center py-2 text-gray-500 text-sm">
+                            Only admins can post in announcement channels
+                        </div>
+                    ` : `
+                        <div class="flex gap-3">
+                            <input type="text" 
+                                id="message-input"
+                                placeholder="Type your message..." 
+                                value="${state.messageText}"
+                                oninput="state.messageText = this.value;"
+                                onkeypress="if(event.key === 'Enter') sendMessage();"
+                                class="flex-1 px-4 py-3 bg-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
+                            <button onclick="sendMessage();" 
+                                class="px-6 py-3 bg-green-500 text-white rounded-lg font-medium hover:bg-green-600 transition">
+                                Send
+                            </button>
+                        </div>
+                    `}
+                </div>
+            </div>
+        `;
+    }
+
+    function renderMessage(msg) {
+        const isOwn = msg.userId === CURRENT_USER_ID;
+        const community = getActiveCommunity();
+        const canDelete = isOwn || hasModPermissions();
+
+        return `
+            <div class="message-group flex gap-3 ${isOwn ? 'flex-row-reverse' : ''}">
+                <div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-semibold ${isOwn ? 'bg-green-500' : 'bg-blue-500'}">
+                    ${(msg.userName || 'U')[0].toUpperCase()}
+                </div>
+                <div class="flex-1 ${isOwn ? 'text-right' : ''}">
+                    <div class="flex items-center gap-2 mb-1 ${isOwn ? 'justify-end' : ''}">
+                        <span class="font-medium text-sm">${msg.userName || 'Unknown'}</span>
+                        <span class="text-xs text-gray-500">${formatTime(msg.timestamp)}</span>
+                        ${msg.edited ? '<span class="text-xs text-gray-400">(edited)</span>' : ''}
+                    </div>
+                    <div class="inline-block px-4 py-2 rounded-lg ${isOwn ? 'bg-green-500 text-white' : 'bg-gray-100 text-gray-800'}">
+                        ${msg.text}
+                    </div>
+                    
+                    <!-- Reactions -->
+                    ${Object.keys(msg.reactions || {}).length > 0 ? `
+                        <div class="flex gap-1 mt-1 ${isOwn ? 'justify-end' : ''}">
+                            ${Object.entries(msg.reactions).map(([emoji, users]) => `
+                                <button onclick="addReaction(${msg.id}, '${emoji}');" 
+                                    class="px-2 py-0.5 rounded-full text-xs ${users.includes(CURRENT_USER_ID) ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'} hover:bg-gray-200 transition">
+                                    ${emoji} ${users.length}
+                                </button>
+                            `).join('')}
+                        </div>
+                    ` : ''}
+                    
+                    <!-- Action buttons -->
+                    <div class="message-hover-controls flex gap-2 mt-1 ${isOwn ? 'justify-end' : ''}">
+                        <button onclick="state.showReactionPicker = state.showReactionPicker === ${msg.id} ? null : ${msg.id}; render();"
+                            class="text-xs text-gray-500 hover:text-gray-700">
+                            😊 React
+                        </button>
+                        ${canDelete ? `
+                            <button onclick="deleteMessage(${msg.id});" class="text-xs text-red-500 hover:text-red-700">
+                                Delete
+                            </button>
+                        ` : ''}
+                    </div>
+                    
+                    <!-- Reaction picker -->
+                    ${state.showReactionPicker === msg.id ? `
+                        <div class="flex gap-1 mt-2 p-2 bg-white border rounded-lg shadow-lg ${isOwn ? 'justify-end' : ''}">
+                            ${emojis.map(emoji => `
+                                <button onclick="addReaction(${msg.id}, '${emoji}');" 
+                                    class="emoji-btn text-lg hover:bg-gray-100 p-1 rounded transition">
+                                    ${emoji}
+                                </button>
+                            `).join('')}
+                        </div>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+    }
+
+    function renderAddChannelModal() {
+        return `
+            <div class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center" onclick="state.showAddChannel = false; render();">
+                <div class="bg-white rounded-xl p-6 w-96 shadow-xl" onclick="event.stopPropagation();">
+                    <h3 class="text-lg font-semibold mb-4">Create New Channel</h3>
+                    <input type="text" placeholder="Channel name" 
+                        value="${state.newChannelName}"
+                        oninput="state.newChannelName = this.value;"
+                        class="w-full px-4 py-2 border rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-green-500">
+                    <label class="flex items-center gap-2 mb-4 cursor-pointer">
+                        <input type="checkbox" ${state.newChannelIsAnnouncement ? 'checked' : ''} 
+                            onchange="state.newChannelIsAnnouncement = this.checked;">
+                        <span class="text-sm">Announcement channel (only admins can post)</span>
+                    </label>
+                    <div class="flex gap-3">
+                        <button onclick="state.showAddChannel = false; render();" 
+                            class="flex-1 py-2 border rounded-lg hover:bg-gray-50 transition">Cancel</button>
+                        <button onclick="createChannel();" 
+                            class="flex-1 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition">Create</button>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    function renderAddCommunityModal() {
+        return `
+            <div class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center" onclick="state.showAddCommunity = false; render();">
+                <div class="bg-white rounded-xl p-6 w-96 shadow-xl" onclick="event.stopPropagation();">
+                    <h3 class="text-lg font-semibold mb-4">Create New Community</h3>
+                    <input type="text" placeholder="Community name" 
+                        value="${state.newCommunityName}"
+                        oninput="state.newCommunityName = this.value;"
+                        class="w-full px-4 py-2 border rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-green-500">
+                    <textarea placeholder="Description (optional)" 
+                        oninput="state.newCommunityDesc = this.value;"
+                        class="w-full px-4 py-2 border rounded-lg mb-4 h-24 resize-none focus:outline-none focus:ring-2 focus:ring-green-500">${state.newCommunityDesc}</textarea>
+                    <div class="flex gap-3">
+                        <button onclick="state.showAddCommunity = false; render();" 
+                            class="flex-1 py-2 border rounded-lg hover:bg-gray-50 transition">Cancel</button>
+                        <button onclick="createCommunity();" 
+                            class="flex-1 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition">Create</button>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    function renderChannelSettingsModal(channel) {
+        if (!channel) return '';
+        return `
+            <div class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center" onclick="state.showChannelSettings = false; render();">
+                <div class="bg-white rounded-xl p-6 w-96 shadow-xl" onclick="event.stopPropagation();">
+                    <h3 class="text-lg font-semibold mb-4">Channel Settings</h3>
+                    <p class="text-gray-600 mb-4">Channel: <strong>${channel.name}</strong></p>
+                    <button onclick="deleteChannel();" 
+                        class="w-full py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition mb-3">
+                        Delete Channel
+                    </button>
+                    <button onclick="state.showChannelSettings = false; render();" 
+                        class="w-full py-2 border rounded-lg hover:bg-gray-50 transition">Cancel</button>
+                </div>
+            </div>
+        `;
+    }
+
+    function renderCommunitySettingsModal(community) {
+        if (!community) return '';
+        return `
+            <div class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center" onclick="state.showCommunitySettings = false; render();">
+                <div class="bg-white rounded-xl p-6 w-96 shadow-xl" onclick="event.stopPropagation();">
+                    <h3 class="text-lg font-semibold mb-4">Community Settings</h3>
+                    <p class="text-gray-600 mb-4">Community: <strong>${community.name}</strong></p>
+                    ${isUserAdmin() ? `
+                        <button onclick="deleteCommunity();" 
+                            class="w-full py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition mb-3">
+                            Delete Community
+                        </button>
+                    ` : ''}
+                    <button onclick="state.showCommunitySettings = false; render();" 
+                        class="w-full py-2 border rounded-lg hover:bg-gray-50 transition">Close</button>
+                </div>
+            </div>
+        `;
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+        fetchCommunities();
+    });
+</script>
+{% endblock %}

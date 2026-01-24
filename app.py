@@ -21,6 +21,7 @@ from routes.social import social_bp
 from routes.support_swap import support_swap_bp
 from routes.rewards import rewards_bp
 from routes.slice_of_life import slice_of_life_bp
+from routes.community import community_bp
 
 # Create SocketIO instance (initialized later with app)
 socketio = SocketIO()
@@ -44,6 +45,7 @@ def create_app(config_name='default'):
     app.register_blueprint(support_swap_bp, url_prefix='/support-swap')
     app.register_blueprint(rewards_bp, url_prefix='/rewards')
     app.register_blueprint(slice_of_life_bp, url_prefix='/slice-of-life')
+    app.register_blueprint(community_bp, url_prefix='/social/community')
     
     # Import and register socket events
     from routes.chat_events import register_chat_events
