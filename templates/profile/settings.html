@@ -3,51 +3,114 @@
 {% block title %}Settings - JOMGather{% endblock %}
 
 {% block content %}
-<!-- TODO: Zongrong to implement settings page -->
-<div class="container">
-    <div class="card">
-        <h1 class="card-title">Settings</h1>
-        <div class="card-body">
-            <div class="setting-item">
-                <p class="card-text mb-0">
-                    <i class="fa fa-bell me-2 text-muted"></i>Push Notifications
-                </p>
-                <div class="form-check form-switch">
-                    <input class="form-check-input" type="checkbox" checked>
+<main>
+    <div class="container py-4">
+        <!-- Page Header -->
+        <div class="text-center mb-4">
+            <div class="d-flex justify-content-center mb-3">
+                <!-- 1. Wrapper with 'position: relative' and 'inline-block' to hug the content -->
+                <div style="position: relative; display: inline-block;">
+
+                    <!-- Profile Circle -->
+                    <div
+                        style="width: 200px; height: 200px; background: #e0f2fe; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                        <i class="bi bi-person-circle" style="font-size: 5rem; color: #1e3a5f;"></i>
+                    </div>
+
+                    <!-- 2. Edit Button with 'position: absolute' -->
+                    <!-- Adjusted to match the blue style in your image -->
+                    <a href="{{ url_for('profile.edit_profile') }}"
+                        style="position: absolute; bottom: 0; right: 0; text-decoration: underline; background-color: #1d4ed8; color: white; padding: 4px 16px; border-radius: 8px; font-weight: 600; font-size: 1.1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                        Edit
+                    </a>
+
                 </div>
             </div>
-            <div class="setting-item">
-                <p class="card-text mb-0">
-                    <i class="fa fa-envelope me-2 text-muted"></i>Email Notifications
-                </p>
-                <div class="form-check form-switch">
-                    <input class="form-check-input" type="checkbox">
+            <div class="card-header row">
+                <div class="col-md-6">
+                    <button class="btn btn-outline-primary btn-lg" style="width: 100%;">
+                        <a href="{{ url_for('profile.view_profile', user_id=session.get('user_id')) }}"
+                            style="width: 100%; display: block; text-align: center; text-decoration: none;">
+                            My Profile
+                        </a>
+                    </button>
+                </div>
+                <div class="col-md-6">
+                    <button class="btn btn-primary btn-lg" style="width: 100%;">
+                        Settings
+                    </button>
                 </div>
             </div>
-            <div class="setting-item">
-                <p class="card-text mb-0">
-                    <i class="fa fa-lock me-2 text-muted"></i>Privacy
-                </p>
-                <i class="fa fa-chevron-right text-muted small"></i>
+        </div>
+
+        <!-- Card 1: Notifications -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header">
+                <h2 class="mb-0 h5"><i class="bi bi-bell me-2"></i>Notifications</h2>
             </div>
-            <div class="setting-item">
-                <p class="card-text mb-0">
-                    <i class="fa fa-globe me-2 text-muted"></i>Language
-                </p>
-                <span class="text-muted small">English <i class="fa fa-chevron-right ms-2"></i></span>
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom">
+                    <div>
+                        <i class="bi bi-bell-fill me-2 text-muted"></i>
+                        <span>Push Notifications</span>
+                    </div>
+                    <div class="form-check form-switch mb-0">
+                        <input class="form-check-input" type="checkbox" id="pushNotif" checked>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <i class="bi bi-envelope-fill me-2 text-muted"></i>
+                        <span>Email Notifications</span>
+                    </div>
+                    <div class="form-check form-switch mb-0">
+                        <input class="form-check-input" type="checkbox" id="emailNotif">
+                    </div>
+                </div>
             </div>
-            <div class="setting-item">
-                <p class="card-text mb-0">
-                    <i class="fa fa-clock me-2 text-muted"></i>Time Zone
-                </p>
-                <span class="text-muted small">GMT+8 <i class="fa fa-chevron-right ms-2"></i></span>
+        </div>
+
+        <!-- Card 2: Preferences -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header">
+                <h2 class="mb-0 h5"><i class="bi bi-sliders me-2"></i>Preferences</h2>
             </div>
-            <button class="btn btn-danger w-100 mt-2">
-                <span style="text-decoration: underline;">
-                    <i class="fa fa-sign-out-alt me-2"></i>Logout
-                </span>
-            </button>
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom">
+                    <div>
+                        <i class="bi bi-shield-lock me-2 text-muted"></i>
+                        <span>Privacy</span>
+                    </div>
+                    <i class="bi bi-chevron-right text-muted"></i>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom">
+                    <div>
+                        <i class="bi bi-globe me-2 text-muted"></i>
+                        <span>Language</span>
+                    </div>
+                    <span class="text-muted">English <i class="bi bi-chevron-right ms-2"></i></span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <i class="bi bi-clock me-2 text-muted"></i>
+                        <span>Time Zone</span>
+                    </div>
+                    <span class="text-muted">GMT+8 <i class="bi bi-chevron-right ms-2"></i></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card 3: Account -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header">
+                <h2 class="mb-0 h5"><i class="bi bi-person-gear me-2"></i>Account</h2>
+            </div>
+            <div class="card-body">
+                <a href="{{ url_for('auth.logout') }}" class="btn btn-danger w-100">
+                    <i class="bi bi-box-arrow-right me-2"></i>Logout
+                </a>
+            </div>
         </div>
     </div>
-</div>
+</main>
 {% endblock %}
