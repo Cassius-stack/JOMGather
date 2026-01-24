@@ -13,6 +13,10 @@ def redeem():
     user_id = session.get('user_id')
     user_coins = get_user_coins(user_id)
     
+    # DEBUG: Print to terminal to see what's happening
+    print(f"DEBUG: user_id from session = {user_id}")
+    print(f"DEBUG: coins retrieved = {user_coins}")
+    
     # List of rewards (can be moved to database later)
     rewards = [
         {'id': 1, 'name': 'Welcome Gift', 'price': 200, 'image': 'giftbox.svg'},
