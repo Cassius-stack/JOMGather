@@ -10,18 +10,35 @@ import traceback
 
 auth_bp = Blueprint('auth', __name__)
 
-@auth_bp.route('/register', methods=['GET', 'POST'])
+@auth_bp.route('/register', methods=['GET'])
 def register():
-    """Handle user registration and link to internal DB."""
+    """Display registration form (Step 1 of registration flow)."""
+    return render_template('auth/register.html')
+
+
+@auth_bp.route('/onboarding', methods=['GET', 'POST'])
+def onboarding():
+    """Handle onboarding and complete registration with all user data."""
+    
     if request.method == 'POST':
+        # Get all form data (from hidden fields + onboarding fields)
+        username = request.form.get('username')
         email = request.form.get('email')
         password = request.form.get('password')
-        username = request.form.get('username')
-        user_type = 'senior' # Default for MVP, updated in Onboarding
-
+        age = request.form.get('age')
+        region = request.form.get('region')
+        hobbies = request.form.getlist('hobbies')
+        skills = request.form.getlist('skills')
+        user_type = 'senior'  # Default for MVP
+        
+        # Validate required fields
+        if not username or not email or not password:
+            flash("Missing account information. Please start registration again.", "danger")
+            return redirect(url_for('auth.register'))
+        
         # === DEV BYPASS: Skip Supabase if email starts with 'dev_' ===
         if email.startswith('dev_'):
-             try:
+            try:
                 # Local "Fake" Auth
                 user_uuid = str(uuid.uuid4())
                 hashed_password = generate_password_hash(password)
@@ -34,21 +51,21 @@ def register():
                     'password_hash': hashed_password
                 })
                 
-                # Create coins row for new user (starts with 0 coins)
-                insert('coins', {'user_id': new_user['user_id'], 'total_coins': 0})
-                
                 flash("Dev Account created! Logged in locally.", "success")
                 session['user_id'] = new_user['user_id']
                 session['username'] = new_user['username']
                 session['user_type'] = new_user['user_type']
+                
+                flash(f"Welcome to JomGather, {new_user['username']}!", "success")
                 return redirect(url_for('index'))
-             except Exception as e:
-                 print(f"Dev Register Error: {e}")
-                 traceback.print_exc()
-                 flash(f"Dev Error: {e}", "danger")
-                 return render_template('auth/register.html')
+                
+            except Exception as e:
+                print(f"Dev Register Error: {e}")
+                traceback.print_exc()
+                flash(f"Dev Error: {e}", "danger")
+                return render_template('auth/onboarding.html')
         # =============================================================
-
+        
         try:
             # 1. Create Supabase Auth User
             supabase = get_supabase()
@@ -59,12 +76,12 @@ def register():
             
             # Check if user object exists (sign up success)
             if not auth_response.user:
-                 flash("Registration failed. Please try again.", "danger")
-                 return redirect(url_for("auth.register"))
+                flash("Registration failed. Please try again.", "danger")
+                return redirect(url_for("auth.register"))
                  
             user_uuid = auth_response.user.id
 
-            # 2. Link to Internal Users Table (with real hash)
+            # 2. Create user in Internal Users Table with all data
             hashed_password = generate_password_hash(password)
             
             new_user = insert('users', {
@@ -74,9 +91,6 @@ def register():
                 'auth_id': user_uuid,
                 'password_hash': hashed_password
             })
-            
-            # Create coins row for new user (starts with 0 coins)
-            insert('coins', {'user_id': new_user['user_id'], 'total_coins': 0})
 
             flash("Account created! Please log in.", "success")
             return redirect(url_for('auth.login'))
@@ -86,7 +100,8 @@ def register():
             traceback.print_exc()
             flash(f"Error: {e}", "danger")
     
-    return render_template('auth/register.html')
+    # GET request - display onboarding form
+    return render_template('auth/onboarding.html')
 
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
