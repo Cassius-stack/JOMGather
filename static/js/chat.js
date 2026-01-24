@@ -99,6 +99,9 @@ socket.on('new_message', (data) => {
 
     // Always update the contact preview
     updateContactPreview(otherUserId, data.text, messageType);
+
+    // Move this contact to top of the list
+    moveContactToTop(otherUserId);
 });
 
 /**
@@ -271,6 +274,16 @@ function updateContactPreview(contactId, text, type) {
             const prefix = type === 'sent' ? 'You: ' : '';
             preview.textContent = `${prefix}${text.substring(0, 25)}${text.length > 25 ? '...' : ''}`;
         }
+    }
+}
+
+/**
+ * Move a contact to the top of the contact list (for new messages)
+ */
+function moveContactToTop(contactId) {
+    const contactItem = document.querySelector(`[data-contact-id="${contactId}"]`);
+    if (contactItem && contactList.firstChild !== contactItem) {
+        contactList.insertBefore(contactItem, contactList.firstChild);
     }
 }
 
@@ -611,6 +624,7 @@ async function loadContacts() {
                     <span class="name">${contact.name}</span>
                     <span class="preview">${contact.lastMessage || 'No messages yet'}</span>
                 </div>
+                ${contact.unreadCount > 0 ? `<span class="unread-badge">${contact.unreadCount > 9 ? '9+' : contact.unreadCount}</span>` : ''}
             `;
 
             // Add click handler
@@ -626,18 +640,29 @@ async function loadContacts() {
             }
         });
 
-        // Update current contact ID to first contact if current doesn't exist
-        const currentExists = contacts.some(c => c.id === currentContactId);
-        if (!currentExists && contacts.length > 0) {
-            currentContactId = contacts[0].id;
-        }
+        // Auto-select the first contact if none selected
+        if (contacts.length > 0 && !currentContactId) {
+            const firstContact = contacts[0];
+            currentContactId = firstContact.id;
 
-        // Update header with first contact
-        const activeContact = contacts.find(c => c.id === currentContactId);
-        if (activeContact) {
-            chatContactName.textContent = activeContact.name;
-            chatContactStatus.textContent = activeContact.status;
-            chatContactStatus.style.color = activeContact.status === 'Active now' ? '#22c55e' : '#888';
+            // Mark first contact as active in UI
+            const firstItem = document.querySelector(`[data-contact-id="${firstContact.id}"]`);
+            if (firstItem) {
+                firstItem.classList.add('active');
+            }
+
+            // Update header
+            chatContactName.textContent = firstContact.name;
+            chatContactStatus.textContent = firstContact.status;
+            chatContactStatus.style.color = firstContact.status === 'Active now' ? '#22c55e' : '#888';
+
+            // Join the chat room and load messages
+            socket.emit('join_chat', { user_id: CURRENT_USER_ID, contact_id: firstContact.id });
+            loadMessages(firstContact.id);
+
+            // Mark messages as read and clear badge
+            fetch(`/social/api/messages/${firstContact.id}/read`, { method: 'POST' });
+            clearUnreadBadge(firstContact.id);
         }
 
     } catch (error) {
@@ -658,8 +683,9 @@ function switchContact(contactId, contactName, contactStatus) {
     // Join the new room
     socket.emit('join_chat', { user_id: CURRENT_USER_ID, contact_id: contactId });
 
-    // Clear unread badge for this contact
+    // Clear unread badge for this contact and mark messages as read
     clearUnreadBadge(contactId);
+    fetch(`/social/api/messages/${contactId}/read`, { method: 'POST' });
 
     // Update header
     chatContactName.textContent = contactName;

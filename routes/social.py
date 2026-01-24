@@ -181,14 +181,12 @@ def accept_friend_request():
 
 @social_bp.route('/api/contacts')
 def get_contacts():
-    """Get accepted friends."""
+    """Get accepted friends, sorted by most recent message."""
     try:
         current_user_id = get_current_user_id()
         supabase = get_supabase()
         
         # Get friendships where status is accepted and involves current user
-        # Note: Supabase OR with AND logic is tricky in URL params, doing 2 queries for simplicity
-        
         friends = []
         
         # 1. Where I am user_1 (I requested, they accepted)
@@ -203,6 +201,18 @@ def get_contacts():
             
         if not friends:
             return jsonify([])
+        
+        # Helper: Check if user is online (active in last 5 mins)
+        import datetime
+        def is_online(user_data):
+            last_seen = user_data.get('last_seen')
+            if not last_seen:
+                return False
+            try:
+                five_mins_ago = (datetime.datetime.now() - datetime.timedelta(minutes=5)).isoformat()
+                return last_seen > five_mins_ago
+            except:
+                return False
             
         # Fetch user details for these IDs
         result = []
@@ -211,12 +221,14 @@ def get_contacts():
             if user_data:
                 # Get last message
                 last_msg = None
+                last_msg_time = None
                 try:
                     msg_res = supabase.table('messages').select('*').or_(
                         f"and(sender_id.eq.{current_user_id},receiver_id.eq.{friend_id}),and(sender_id.eq.{friend_id},receiver_id.eq.{current_user_id})"
                     ).order('sent_at', desc=True).limit(1).execute()
                     if msg_res.data:
                         last_msg = msg_res.data[0]
+                        last_msg_time = last_msg.get('sent_at')
                 except:
                     pass
                 
@@ -225,17 +237,49 @@ def get_contacts():
                     prefix = 'You: ' if last_msg['sender_id'] == current_user_id else ''
                     preview = f"{prefix}{last_msg['content'][:30]}"
                 
+                # Determine online status from last_seen
+                status = 'Active now' if is_online(user_data) else 'Offline'
+                
+                # Count unread messages from this friend
+                unread_count = 0
+                try:
+                    unread_res = supabase.table('messages').select('message_id', count='exact').eq('sender_id', friend_id).eq('receiver_id', current_user_id).eq('read', False).execute()
+                    unread_count = unread_res.count or 0
+                except:
+                    pass
+                
                 result.append({
                     'id': friend_id,
                     'name': user_data['username'],
                     'lastMessage': preview,
-                    'status': 'Active now' # TODO: Real status
+                    'status': status,
+                    'lastMessageTime': last_msg_time,
+                    'unreadCount': unread_count
                 })
+        
+        # Sort by last message time (most recent first), new friends (no messages) at top
+        result.sort(key=lambda x: x.get('lastMessageTime') or '9999-99-99', reverse=True)
                 
         return jsonify(result)
     except Exception as e:
         print(f"Error in get_contacts: {e}")
         traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+
+@social_bp.route('/api/messages/<int:contact_id>/read', methods=['POST'])
+def mark_messages_read(contact_id):
+    """Mark all messages from a contact as read."""
+    try:
+        current_user_id = get_current_user_id()
+        supabase = get_supabase()
+        
+        # Mark all unread messages from this contact as read
+        supabase.table('messages').update({'read': True}).eq('sender_id', contact_id).eq('receiver_id', current_user_id).eq('read', False).execute()
+        
+        return jsonify({'success': True})
+    except Exception as e:
+        print(f"Error marking messages as read: {e}")
         return jsonify({'error': str(e)}), 500
 
 
