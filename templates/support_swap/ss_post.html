@@ -31,38 +31,39 @@
     <div class="container">
         <div class="card">
             <div class="card-body">
-                <form action="/send-message" method="POST">
+                <form action="{{ url_for('support_swap.ss_post') }}" method="POST">
                     <h2>Post a Request</h2>
                     <div class="mb-3">
-                        <label for="skillName" class="form-label fw-bold">Title / Title</label>
-                        <input type="text" class="form-control" id="skillName"
-                            placeholder="e.g., Teach me how to use Zoom">
+                        <label for="title" class="form-label fw-bold">Title</label>
+                        <input type="text" class="form-control" id="title" name="title"
+                            placeholder="e.g., Teach me how to use Zoom" required>
                     </div>
                     <div class="mb-3">
-                        <label for="skillName" class="form-label fw-bold">Description</label>
-                        <input type="text" class="form-control" id="skillName" placeholder="Describe the help you need">
+                        <label for="description" class="form-label fw-bold">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="3"
+                            placeholder="Describe the help you need"></textarea>
                     </div>
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <label class="form-label fw-bold">Type</label>
-                            <select class="form-control">
-                                <option>I need Assistance (Elderly)</option>
-                                <option>I want to Learn (Youth)</option>
+                            <select class="form-control" name="request_type">
+                                <option value="assistance">I need Assistance (Elderly)</option>
+                                <option value="learning">I want to Learn (Youth)</option>
                             </select>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-bold">Duration (Hours)</label>
-                            <input type="number" class="form-control" placeholder="1">
+                            <input type="number" class="form-control" name="duration_hours" value="1" min="1" max="8">
                         </div>
                     </div>
                     <div class="mb-3">
-                        <label for="skillName" class="form-label fw-bold">Location</label>
-                        <input type="text" class="form-control" id="skillName"
+                        <label for="location" class="form-label fw-bold">Location</label>
+                        <input type="text" class="form-control" id="location" name="location"
                             placeholder="e.g., Yishun Community Centre">
                     </div>
                     <div class="mb-3">
-                        <label for="skillName" class="form-label fw-bold">Date</label>
-                        <input type="date" class="form-control" id="skillName" placeholder="e.g., Weekdays 2pm-4pm">
+                        <label for="scheduled_date" class="form-label fw-bold">Date</label>
+                        <input type="date" class="form-control" id="scheduled_date" name="scheduled_date">
                     </div>
                     <button type="submit" class="btn btn-primary">Post Request</button>
                 </form>
@@ -72,14 +73,32 @@
 
     <div class="container pt-4">
         <div class="card">
-            <h2 class="card-header">Requested List</h2>
-            <div class="card-body">
-                <h5 class="card-title">Request: Learn to Code</h5>
-                <p class="card-text">I need assistance learning to code.</p>
-                <div class="deletebtn">
-                    <button type="button" class="btn btn-danger">Delete</button>
+            <h2 class="card-header">My Requests</h2>
+            {% if my_requests %}
+            {% for req in my_requests %}
+            <div class="card-body border-bottom">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h5 class="card-title">{{ req.title }}</h5>
+                        <p class="card-text text-muted">{{ req.description or 'No description' }}</p>
+                        <small class="text-muted">
+                            <i class="bi bi-geo-alt"></i> {{ req.location or 'No location' }} |
+                            <i class="bi bi-clock"></i> {{ req.duration_hours }} hour(s) |
+                            <span class="badge bg-{{ 'success' if req.status == 'open' else 'secondary' }}">{{
+                                req.status }}</span>
+                        </small>
+                    </div>
+                    <form action="{{ url_for('support_swap.delete_request', request_id=req.id) }}" method="POST">
+                        <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                    </form>
                 </div>
             </div>
+            {% endfor %}
+            {% else %}
+            <div class="card-body">
+                <p class="text-muted">You haven't posted any requests yet.</p>
+            </div>
+            {% endif %}
         </div>
     </div>
 </main>

@@ -55,45 +55,46 @@
             </div>
         </div>
 
-        <!-- Skills Grid -->
+        <!-- Help Requests Grid -->
         <div class="row g-4">
-            <!-- Placeholder skill cards - will be populated from database -->
+            {% if requests %}
+            {% for req in requests %}
             <div class="col-md-4">
                 <div class="card shadow-sm h-100">
                     <div class="card-body">
-                        <h5 class="card-title">Python Programming</h5>
-                        <p class="card-text text-muted">Learn Python basics and advanced concepts</p>
-                        <span class="badge bg-primary">Technology</span>
+                        <h5 class="card-title">{{ req.title }}</h5>
+                        <p class="card-text text-muted">{{ req.description or 'No description provided' }}</p>
+                        <span class="badge bg-{{ 'primary' if req.request_type == 'learning' else 'success' }}">
+                            {{ 'Want to Learn' if req.request_type == 'learning' else 'Need Assistance' }}
+                        </span>
+                        <div class="mt-2">
+                            <small class="text-muted">
+                                <i class="bi bi-geo-alt"></i> {{ req.location or 'Location TBD' }}<br>
+                                <i class="bi bi-clock"></i> {{ req.duration_hours }} hour(s)
+                            </small>
+                        </div>
                     </div>
-                    <div class="card-footer bg-transparent">
-                        <small class="text-muted">Offered by: John Doe</small>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card shadow-sm h-100">
-                    <div class="card-body">
-                        <h5 class="card-title">Guitar Lessons</h5>
-                        <p class="card-text text-muted">Beginner to intermediate guitar teaching</p>
-                        <span class="badge bg-success">Music</span>
-                    </div>
-                    <div class="card-footer bg-transparent">
-                        <small class="text-muted">Offered by: Jane Smith</small>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card shadow-sm h-100">
-                    <div class="card-body">
-                        <h5 class="card-title">Japanese Language</h5>
-                        <p class="card-text text-muted">Conversational Japanese for beginners</p>
-                        <span class="badge bg-warning text-dark">Languages</span>
-                    </div>
-                    <div class="card-footer bg-transparent">
-                        <small class="text-muted">Offered by: Tanaka San</small>
+                    <div class="card-footer bg-transparent d-flex justify-content-between align-items-center">
+                        <small class="text-muted">By: {{ req.users.username if req.users else 'Unknown' }}</small>
+                        <form action="{{ url_for('support_swap.offer_help', request_id=req.id) }}" method="POST">
+                            <button type="submit" class="btn btn-primary btn-sm">Offer Help</button>
+                        </form>
                     </div>
                 </div>
             </div>
+            {% endfor %}
+            {% else %}
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-body text-center py-5">
+                        <i class="bi bi-inbox display-4 text-muted"></i>
+                        <h5 class="mt-3">No Help Requests Yet</h5>
+                        <p class="text-muted">Be the first to <a href="{{ url_for('support_swap.ss_post') }}">post a
+                                request</a>!</p>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
         </div>
     </div>
 </main>
