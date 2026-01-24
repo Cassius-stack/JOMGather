@@ -64,4 +64,6 @@ app = create_app('development')
 
 if __name__ == '__main__':
     # Use socketio.run() instead of app.run() for WebSocket support
-    socketio.run(app, debug=True)
+    # host='0.0.0.0' allows connections from other devices on the same network
+    # Your friend can connect using your computer's IP address (e.g., 192.168.x.x:5000)
+    socketio.run(app, host='0.0.0.0', port=5000, debug=True)
