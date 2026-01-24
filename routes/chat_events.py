@@ -4,7 +4,15 @@ Now using Supabase for database
 """
 
 from flask_socketio import emit, join_room, leave_room
-from utils.supabase_db import insert
+from utils.supabase_db import insert, fetch_one, update, delete
+from models.reward import add_coins
+
+# Scenario correct answers (same as frontend cyberScenarios)
+SCENARIO_ANSWERS = {
+    1: 'scam',  # SingTel Support phishing
+    2: 'scam',  # Government of Singapore urgent message
+    3: 'safe',  # Bank official statement  
+}
 
 # Track online users: {user_id: socket_id}
 online_users = {}
@@ -21,7 +29,30 @@ def register_chat_events(socketio):
     @socketio.on('disconnect')
     def handle_disconnect():
         """Called when a client disconnects."""
-        print(f"[Socket.IO] Client disconnected")
+        from flask import request
+        sid = request.sid
+        print(f"[Socket.IO] Client disconnected: {sid}")
+        
+        # Clean up BOOMERang state if applicable
+        try:
+            from routes.boomerang_events import boomerang_queue, user_room_map, active_rooms
+            
+            # Remove from queue if waiting
+            if sid in boomerang_queue:
+                del boomerang_queue[sid]
+            
+            # End any active call
+            room_id = user_room_map.get(sid)
+            if room_id:
+                emit('boomerang_partner_left', {}, room=room_id, include_self=False)
+                if sid in user_room_map:
+                    del user_room_map[sid]
+                if room_id in active_rooms:
+                    active_rooms[room_id].discard(sid)
+                    if len(active_rooms[room_id]) == 0:
+                        del active_rooms[room_id]
+        except Exception as e:
+            print(f"[Socket.IO] BOOMERang cleanup error: {e}")
     
     @socketio.on('register_user')
     def handle_register_user(data):
@@ -69,6 +100,8 @@ def register_chat_events(socketio):
         sender_id = data.get('sender_id')
         receiver_id = data.get('receiver_id')
         content = data.get('content')
+        is_cyber_challenge = data.get('is_cyber_challenge', False)
+        scenario_id = data.get('scenario_id', 1)  # Default to scenario 1
         
         if not sender_id or not receiver_id or not content:
             return
@@ -84,11 +117,29 @@ def register_chat_events(socketio):
             print(f"[Socket.IO] Failed to save message to database")
             return
         
+        challenge_id = None
+        
+        # If this is a cyber challenge, create a challenge record
+        if is_cyber_challenge:
+            challenge = insert('cyber_challenges', {
+                'message_id': new_message['message_id'],
+                'scenario_id': scenario_id,
+                'user1_id': sender_id,
+                'user2_id': receiver_id,
+                'status': 'pending'
+            })
+            if challenge:
+                challenge_id = challenge['challenge_id']
+                print(f"[Socket.IO] Created cyber challenge {challenge_id} for message {new_message['message_id']}")
+        
         message_data = {
             'id': new_message['message_id'],
             'sender_id': sender_id,
             'receiver_id': receiver_id,
-            'text': content
+            'text': content,
+            'is_cyber_challenge': is_cyber_challenge,
+            'challenge_id': challenge_id,
+            'scenario_id': scenario_id
         }
         
         # Emit to the chat room (both users in the conversation)
@@ -231,6 +282,119 @@ def register_chat_events(socketio):
         emit('message_deleted', delete_data, room=f"user_{receiver_id}")
         
         print(f"[Socket.IO] Message {message_id} deleted by user {user_id} - EMITS COMPLETE")
+    
+    @socketio.on('submit_cyber_answer')
+    def handle_submit_cyber_answer(data):
+        """
+        Called when a user submits their answer to a cyber challenge.
+        1. Save their answer to the correct column (user1 or user2)
+        2. Check if both users have answered
+        3. If both answered, emit challenge_complete with results
+        4. Otherwise, emit answer_submitted to notify the other user
+        """
+        challenge_id = data.get('challenge_id')
+        user_id = data.get('user_id')
+        answer = data.get('answer')  # 'safe' or 'scam'
+        
+        if not challenge_id or not user_id or not answer:
+            print(f"[Socket.IO] Invalid cyber answer data: {data}")
+            return
+        
+        user_id = int(user_id)
+        
+        # Handle both numeric and string (msg_X) challenge IDs
+        challenge = None
+        if str(challenge_id).startswith('msg_'):
+            # Fallback ID using message_id
+            message_id = int(challenge_id.replace('msg_', ''))
+            challenge = fetch_one('cyber_challenges', message_id=message_id)
+        else:
+            challenge_id = int(challenge_id)
+            challenge = fetch_one('cyber_challenges', challenge_id=challenge_id)
+        
+        if not challenge:
+            print(f"[Socket.IO] Challenge {challenge_id} not found")
+            return
+        
+        # Use the actual challenge_id from database
+        challenge_id = challenge['challenge_id']
+        
+        user1_id = challenge['user1_id']
+        user2_id = challenge['user2_id']
+        
+        # Determine which user is answering
+        if user_id == user1_id:
+            update('cyber_challenges', {'user1_answer': answer}, challenge_id=challenge_id)
+            my_answer = answer
+            other_answer = challenge.get('user2_answer')
+            other_user_id = user2_id
+        elif user_id == user2_id:
+            update('cyber_challenges', {'user2_answer': answer}, challenge_id=challenge_id)
+            my_answer = answer
+            other_answer = challenge.get('user1_answer')
+            other_user_id = user1_id
+        else:
+            print(f"[Socket.IO] User {user_id} is not part of challenge {challenge_id}")
+            return
+        
+        room = get_room_name(user1_id, user2_id)
+        scenario_id = challenge['scenario_id']
+        
+        # Check if both have answered
+        if other_answer:
+            # Both users have answered - mark complete and send results
+            update('cyber_challenges', {'status': 'completed'}, challenge_id=challenge_id)
+            
+            # Re-fetch to get updated answers
+            updated_challenge = fetch_one('cyber_challenges', challenge_id=challenge_id)
+            user1_answer = updated_challenge['user1_answer']
+            user2_answer = updated_challenge['user2_answer']
+            
+            result_data = {
+                'challenge_id': challenge_id,
+                'scenario_id': scenario_id,
+                'user1_id': user1_id,
+                'user2_id': user2_id,
+                'user1_answer': user1_answer,
+                'user2_answer': user2_answer,
+                'status': 'completed'
+            }
+            
+            # Emit to both users
+            emit('cyber_challenge_complete', result_data, room=room)
+            emit('cyber_challenge_complete', result_data, room=f"user_{user1_id}")
+            emit('cyber_challenge_complete', result_data, room=f"user_{user2_id}")
+            
+            # Check if both users got it correct and award coins
+            correct_answer = SCENARIO_ANSWERS.get(scenario_id, 'scam')
+            user1_correct = user1_answer == correct_answer
+            user2_correct = user2_answer == correct_answer
+            
+            if user1_correct and user2_correct:
+                # Both correct - award 15 coins to each user
+                add_coins(user1_id, 15)
+                add_coins(user2_id, 15)
+                print(f"[Socket.IO] Cyber challenge {challenge_id}: BOTH CORRECT! Awarded 15 coins to user {user1_id} and user {user2_id}")
+            else:
+                print(f"[Socket.IO] Cyber challenge {challenge_id}: user1={user1_answer}({'✓' if user1_correct else '✗'}), user2={user2_answer}({'✓' if user2_correct else '✗'}) - correct was '{correct_answer}'")
+            
+            print(f"[Socket.IO] Cyber challenge {challenge_id} completed: user1={user1_answer}, user2={user2_answer}")
+        else:
+            # Only one user has answered - notify the submitter
+            answer_data = {
+                'challenge_id': challenge_id,
+                'scenario_id': scenario_id,
+                'user_id': user_id,
+                'other_user_id': other_user_id,
+                'status': 'waiting'
+            }
+            
+            # Emit to the room so both users know
+            emit('cyber_answer_submitted', answer_data, room=room)
+            emit('cyber_answer_submitted', answer_data, room=f"user_{user1_id}")
+            emit('cyber_answer_submitted', answer_data, room=f"user_{user2_id}")
+            
+            print(f"[Socket.IO] User {user_id} answered challenge {challenge_id}, waiting for user {other_user_id}")
 
 
 def get_room_name(user1_id, user2_id):

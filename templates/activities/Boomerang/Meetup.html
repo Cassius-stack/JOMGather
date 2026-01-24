@@ -1,0 +1,788 @@
+{% extends "base.html" %}
+
+{% block title %}Chatroom - BOOMERang | JOMGather{% endblock %}
+
+{% block head %}
+<style>
+    body {
+        background: #f5f5f5;
+    }
+
+    .chatroom-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    /* Header */
+    .chatroom-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 20px;
+        padding: 15px 25px;
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    }
+
+    .header-left {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .chatroom-title {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #3949ab;
+        text-decoration: underline;
+        margin: 0;
+    }
+
+    .timer {
+        font-size: 1.1rem;
+        color: #666;
+        font-weight: 500;
+    }
+
+    .header-actions {
+        display: flex;
+        gap: 15px;
+        align-items: center;
+    }
+
+    .btn-leave {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: white;
+        color: #333;
+        border: 2px solid #ddd;
+        padding: 12px 25px;
+        border-radius: 10px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+        transition: all 0.2s;
+    }
+
+    .btn-leave:hover {
+        background: #f5f5f5;
+        border-color: #ccc;
+        color: #333;
+    }
+
+    .btn-next {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: linear-gradient(135deg, #3949ab 0%, #5c6bc0 100%);
+        color: white;
+        border: none;
+        padding: 12px 25px;
+        border-radius: 10px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+        transition: all 0.2s;
+    }
+
+    .btn-next:hover {
+        background: linear-gradient(135deg, #303f9f 0%, #3949ab 100%);
+        color: white;
+        transform: translateX(3px);
+    }
+
+    .profile-icon {
+        width: 45px;
+        height: 45px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #e67e22 0%, #f39c12 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.3rem;
+    }
+
+    /* Main Content Layout */
+    .chatroom-content {
+        display: flex;
+        gap: 25px;
+    }
+
+    /* Video Section */
+    .video-section {
+        flex: 1;
+    }
+
+    .video-feed {
+        position: relative;
+        width: 100%;
+        height: 250px;
+        border-radius: 15px;
+        overflow: hidden;
+        margin-bottom: 15px;
+        background: #1a1a2e;
+    }
+
+    .video-feed video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .video-feed.local video {
+        transform: scaleX(-1);
+        /* Mirror local video */
+    }
+
+    .video-feed .name-tag {
+        position: absolute;
+        bottom: 15px;
+        left: 15px;
+        background: rgba(0, 0, 0, 0.7);
+        color: white;
+        padding: 8px 15px;
+        border-radius: 8px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .name-tag .muted-icon {
+        color: #e74c3c;
+    }
+
+    .video-placeholder {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        color: white;
+        font-size: 1.2rem;
+    }
+
+    .video-placeholder i {
+        font-size: 3rem;
+        margin-bottom: 10px;
+    }
+
+    .partner-placeholder {
+        background: linear-gradient(135deg, #e67e22 0%, #f39c12 100%);
+    }
+
+    .local-placeholder {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    /* Video Controls */
+    .video-controls {
+        display: flex;
+        justify-content: center;
+        gap: 20px;
+        padding: 20px;
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    }
+
+    .control-btn {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        transition: all 0.2s;
+        background: linear-gradient(135deg, #3949ab 0%, #5c6bc0 100%);
+        color: white;
+        box-shadow: 0 4px 15px rgba(57, 73, 171, 0.3);
+    }
+
+    .control-btn:hover {
+        transform: scale(1.1);
+    }
+
+    .control-btn.muted {
+        background: #e74c3c;
+        box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3);
+    }
+
+    .control-btn.add-friend {
+        background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+        box-shadow: 0 4px 15px rgba(46, 204, 113, 0.3);
+    }
+
+    /* Chat Section */
+    .chat-section {
+        width: 350px;
+        display: flex;
+        flex-direction: column;
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        overflow: hidden;
+    }
+
+    .chat-header {
+        padding: 18px 20px;
+        border-bottom: 1px solid #eee;
+    }
+
+    .chat-header h3 {
+        margin: 0;
+        color: #3949ab;
+        font-size: 1.4rem;
+        font-weight: 700;
+    }
+
+    .chat-messages {
+        flex: 1;
+        padding: 20px;
+        overflow-y: auto;
+        max-height: 400px;
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .message {
+        max-width: 85%;
+    }
+
+    .message.sent {
+        align-self: flex-end;
+    }
+
+    .message.received {
+        align-self: flex-start;
+    }
+
+    .message-bubble {
+        padding: 12px 16px;
+        border-radius: 18px;
+        font-size: 1rem;
+        line-height: 1.4;
+    }
+
+    .message.sent .message-bubble {
+        background: linear-gradient(135deg, #3949ab 0%, #5c6bc0 100%);
+        color: white;
+        border-bottom-right-radius: 5px;
+    }
+
+    .message.received .message-bubble {
+        background: #f0f0f0;
+        color: #333;
+        border-bottom-left-radius: 5px;
+    }
+
+    .message-time {
+        font-size: 0.75rem;
+        color: #999;
+        margin-top: 5px;
+        display: block;
+    }
+
+    .message.sent .message-time {
+        text-align: right;
+    }
+
+    /* Chat Input */
+    .chat-input {
+        display: flex;
+        gap: 10px;
+        padding: 15px 20px;
+        border-top: 1px solid #eee;
+        background: #fafafa;
+    }
+
+    .chat-input input {
+        flex: 1;
+        padding: 12px 18px;
+        border: 2px solid #e0e0e0;
+        border-radius: 25px;
+        font-size: 1rem;
+        transition: all 0.2s;
+    }
+
+    .chat-input input:focus {
+        outline: none;
+        border-color: #3949ab;
+    }
+
+    .chat-input button {
+        width: 45px;
+        height: 45px;
+        border-radius: 50%;
+        border: none;
+        background: linear-gradient(135deg, #3949ab 0%, #5c6bc0 100%);
+        color: white;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        transition: all 0.2s;
+    }
+
+    .chat-input button:hover {
+        transform: scale(1.1);
+    }
+
+    /* Connection Status */
+    .connection-status {
+        text-align: center;
+        padding: 10px;
+        background: #fff3cd;
+        color: #856404;
+        border-radius: 10px;
+        margin-bottom: 15px;
+        display: none;
+    }
+
+    .connection-status.show {
+        display: block;
+    }
+
+    .connection-status.connected {
+        background: #d4edda;
+        color: #155724;
+    }
+
+    .connection-status.error {
+        background: #f8d7da;
+        color: #721c24;
+    }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+        .chatroom-content {
+            flex-direction: column;
+        }
+
+        .chat-section {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="chatroom-container">
+    <!-- Header -->
+    <div class="chatroom-header">
+        <div class="header-left">
+            <h1 class="chatroom-title">Chatroom</h1>
+            <span class="timer" id="timer">(00:00:00)</span>
+        </div>
+        <div class="header-actions">
+            <button class="btn-leave" id="leaveBtn">
+                <i class="bi bi-x-lg"></i> Leave Room
+            </button>
+            <button class="btn-next" id="nextBtn">
+                Next Room <i class="bi bi-arrow-right"></i>
+            </button>
+            <div class="profile-icon">
+                <i class="bi bi-person-fill"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Connection Status -->
+    <div class="connection-status" id="connectionStatus">
+        Connecting to partner...
+    </div>
+
+    <!-- Main Content -->
+    <div class="chatroom-content">
+        <!-- Video Section -->
+        <div class="video-section">
+            <!-- Partner Video -->
+            <div class="video-feed" id="remoteVideoContainer">
+                <video id="remoteVideo" autoplay playsinline></video>
+                <div class="video-placeholder partner-placeholder" id="remotePlaceholder">
+                    <i class="bi bi-person-fill"></i>
+                    <span>Waiting for partner...</span>
+                </div>
+                <div class="name-tag" id="partnerName">Partner</div>
+            </div>
+
+            <!-- Your Video -->
+            <div class="video-feed local" id="localVideoContainer">
+                <video id="localVideo" autoplay muted playsinline></video>
+                <div class="video-placeholder local-placeholder" id="localPlaceholder">
+                    <i class="bi bi-person-fill"></i>
+                    <span>Loading camera...</span>
+                </div>
+                <div class="name-tag">
+                    <i class="bi bi-mic-mute-fill muted-icon" id="micStatus" style="display: none;"></i>
+                    <span id="userName">You</span>
+                </div>
+            </div>
+
+            <!-- Video Controls -->
+            <div class="video-controls">
+                <button class="control-btn" id="micBtn" title="Toggle Microphone">
+                    <i class="bi bi-mic-fill"></i>
+                </button>
+                <button class="control-btn" id="camBtn" title="Toggle Camera">
+                    <i class="bi bi-camera-video-fill"></i>
+                </button>
+                <button class="control-btn add-friend" id="addFriendBtn" title="Add as Friend">
+                    <i class="bi bi-person-plus-fill"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Chat Section -->
+        <div class="chat-section">
+            <div class="chat-header">
+                <h3>Chat</h3>
+            </div>
+            <div class="chat-messages" id="chatMessages">
+                <!-- Messages will be added here -->
+            </div>
+            <div class="chat-input">
+                <input type="text" id="messageInput" placeholder="😊 Type a message..."
+                    onkeypress="handleKeyPress(event)">
+                <button onclick="sendMessage()">
+                    <i class="bi bi-send-fill"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Socket.IO -->
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+
+<script>
+    // Get session data
+    const roomId = sessionStorage.getItem('boomerang_room');
+    const partnerName = sessionStorage.getItem('boomerang_partner');
+    const isInitiator = sessionStorage.getItem('boomerang_initiator') === 'true';
+    const userName = sessionStorage.getItem('boomerang_user') || 'You';
+
+    // Update UI with names
+    document.getElementById('userName').textContent = userName;
+    document.getElementById('partnerName').textContent = partnerName || 'Partner';
+
+    // WebRTC configuration
+    const rtcConfig = {
+        iceServers: [
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:stun1.l.google.com:19302' }
+        ]
+    };
+
+    // State
+    let socket = null;
+    let peerConnection = null;
+    let localStream = null;
+    let audioEnabled = true;
+    let videoEnabled = true;
+    let seconds = 0;
+
+    // Timer
+    setInterval(() => {
+        seconds++;
+        const hrs = Math.floor(seconds / 3600).toString().padStart(2, '0');
+        const mins = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
+        const secs = (seconds % 60).toString().padStart(2, '0');
+        document.getElementById('timer').textContent = `(${hrs}:${mins}:${secs})`;
+    }, 1000);
+
+    // Initialize
+    async function init() {
+        if (!roomId) {
+            showStatus('No room found. Redirecting...', 'error');
+            setTimeout(() => {
+                window.location.href = "{{ url_for('activities.boomerang_loading') }}";
+            }, 2000);
+            return;
+        }
+
+        showStatus('Setting up camera and microphone...', '');
+
+        try {
+            // Get local media
+            localStream = await navigator.mediaDevices.getUserMedia({
+                video: true,
+                audio: true
+            });
+
+            // Show local video
+            const localVideo = document.getElementById('localVideo');
+            localVideo.srcObject = localStream;
+            document.getElementById('localPlaceholder').style.display = 'none';
+
+            // Connect to Socket.IO
+            connectSocket();
+
+        } catch (err) {
+            console.error('Media error:', err);
+            showStatus('Camera/mic access denied. Please allow access.', 'error');
+        }
+    }
+
+    function connectSocket() {
+        socket = io();
+
+        socket.on('connect', () => {
+            console.log('[Meetup] Connected to server');
+            showStatus('Connected! Setting up video call...', '');
+
+            // Join the existing room (not queue!)
+            socket.emit('boomerang_join_room', { name: userName, room_id: roomId });
+
+            // Create peer connection
+            createPeerConnection();
+
+            // If we're the initiator, create and send offer after a short delay
+            // (to allow both users to join the room first)
+            if (isInitiator) {
+                setTimeout(() => {
+                    createOffer();
+                }, 1000);
+            }
+        });
+
+        // Handle when partner joins room
+        socket.on('boomerang_user_joined', (data) => {
+            console.log('[Meetup] Partner joined room:', data);
+            showStatus('Partner connected! Starting video...', '');
+
+            // If we're the initiator and partner just joined, send offer
+            if (isInitiator && peerConnection) {
+                createOffer();
+            }
+        });
+
+        // Handle WebRTC signaling
+        socket.on('boomerang_offer', async (data) => {
+            console.log('[Meetup] Received offer');
+            if (peerConnection) {
+                await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
+                const answer = await peerConnection.createAnswer();
+                await peerConnection.setLocalDescription(answer);
+                socket.emit('boomerang_answer', { answer: answer });
+            }
+        });
+
+        socket.on('boomerang_answer', async (data) => {
+            console.log('[Meetup] Received answer');
+            if (peerConnection) {
+                await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+            }
+        });
+
+        socket.on('boomerang_ice_candidate', async (data) => {
+            console.log('[Meetup] Received ICE candidate');
+            if (peerConnection && data.candidate) {
+                try {
+                    await peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
+                } catch (e) {
+                    console.error('Error adding ICE candidate:', e);
+                }
+            }
+        });
+
+        // Handle chat messages
+        socket.on('boomerang_chat', (data) => {
+            addMessage(data.message, false, data.name);
+        });
+
+        // Partner left
+        socket.on('boomerang_partner_left', () => {
+            showStatus('Partner has left the room.', 'error');
+            document.getElementById('remotePlaceholder').style.display = 'flex';
+            document.getElementById('remotePlaceholder').innerHTML = `
+                <i class="bi bi-person-x"></i>
+                <span>Partner disconnected</span>
+            `;
+        });
+
+        socket.on('disconnect', () => {
+            showStatus('Connection lost. Trying to reconnect...', 'error');
+        });
+    }
+
+    function createPeerConnection() {
+        peerConnection = new RTCPeerConnection(rtcConfig);
+
+        // Add local tracks
+        localStream.getTracks().forEach(track => {
+            peerConnection.addTrack(track, localStream);
+        });
+
+        // Handle remote stream
+        peerConnection.ontrack = (event) => {
+            console.log('[Meetup] Received remote track');
+            const remoteVideo = document.getElementById('remoteVideo');
+            remoteVideo.srcObject = event.streams[0];
+            document.getElementById('remotePlaceholder').style.display = 'none';
+            showStatus('Connected!', 'connected');
+        };
+
+        // Handle ICE candidates
+        peerConnection.onicecandidate = (event) => {
+            if (event.candidate) {
+                socket.emit('boomerang_ice_candidate', { candidate: event.candidate });
+            }
+        };
+
+        // Connection state changes
+        peerConnection.onconnectionstatechange = () => {
+            console.log('[Meetup] Connection state:', peerConnection.connectionState);
+            if (peerConnection.connectionState === 'connected') {
+                showStatus('Video call connected!', 'connected');
+            } else if (peerConnection.connectionState === 'failed') {
+                showStatus('Connection failed. Try refreshing.', 'error');
+            }
+        };
+    }
+
+    async function createOffer() {
+        try {
+            const offer = await peerConnection.createOffer();
+            await peerConnection.setLocalDescription(offer);
+            socket.emit('boomerang_offer', { offer: offer });
+            console.log('[Meetup] Sent offer');
+        } catch (e) {
+            console.error('Error creating offer:', e);
+        }
+    }
+
+    function showStatus(message, type) {
+        const status = document.getElementById('connectionStatus');
+        status.textContent = message;
+        status.className = 'connection-status show';
+        if (type === 'connected') {
+            status.classList.add('connected');
+            setTimeout(() => { status.classList.remove('show'); }, 3000);
+        } else if (type === 'error') {
+            status.classList.add('error');
+        }
+    }
+
+    // Toggle microphone
+    document.getElementById('micBtn').addEventListener('click', function () {
+        if (localStream) {
+            audioEnabled = !audioEnabled;
+            localStream.getAudioTracks().forEach(track => {
+                track.enabled = audioEnabled;
+            });
+
+            this.classList.toggle('muted', !audioEnabled);
+            const icon = this.querySelector('i');
+            icon.className = audioEnabled ? 'bi bi-mic-fill' : 'bi bi-mic-mute-fill';
+            document.getElementById('micStatus').style.display = audioEnabled ? 'none' : 'inline';
+        }
+    });
+
+    // Toggle camera
+    document.getElementById('camBtn').addEventListener('click', function () {
+        if (localStream) {
+            videoEnabled = !videoEnabled;
+            localStream.getVideoTracks().forEach(track => {
+                track.enabled = videoEnabled;
+            });
+
+            this.classList.toggle('muted', !videoEnabled);
+            const icon = this.querySelector('i');
+            icon.className = videoEnabled ? 'bi bi-camera-video-fill' : 'bi bi-camera-video-off-fill';
+        }
+    });
+
+    // Add friend button
+    document.getElementById('addFriendBtn').addEventListener('click', function () {
+        alert('Friend request sent to ' + partnerName + '! (Demo)');
+        this.disabled = true;
+        this.innerHTML = '<i class="bi bi-check-lg"></i>';
+    });
+
+    // Chat functions
+    function sendMessage() {
+        const input = document.getElementById('messageInput');
+        const message = input.value.trim();
+        if (!message) return;
+
+        // Send via socket
+        if (socket) {
+            socket.emit('boomerang_chat', { message: message, name: userName });
+        }
+
+        // Add to local UI
+        addMessage(message, true);
+        input.value = '';
+    }
+
+    function addMessage(text, isSent, senderName = '') {
+        const chatMessages = document.getElementById('chatMessages');
+        const now = new Date();
+        const time = now.getHours().toString().padStart(2, '0') + ':' +
+            now.getMinutes().toString().padStart(2, '0');
+
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'message ' + (isSent ? 'sent' : 'received');
+        messageDiv.innerHTML = `
+            <div class="message-bubble">${text}</div>
+            <span class="message-time">${time}</span>
+        `;
+        chatMessages.appendChild(messageDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function handleKeyPress(e) {
+        if (e.key === 'Enter') {
+            sendMessage();
+        }
+    }
+
+    // Leave room
+    document.getElementById('leaveBtn').addEventListener('click', function () {
+        cleanup();
+        window.location.href = "{{ url_for('activities.boomerang') }}";
+    });
+
+    // Next room
+    document.getElementById('nextBtn').addEventListener('click', function () {
+        cleanup();
+        // Clear session and go back to loading
+        sessionStorage.removeItem('boomerang_room');
+        sessionStorage.removeItem('boomerang_partner');
+        sessionStorage.removeItem('boomerang_initiator');
+        window.location.href = "{{ url_for('activities.boomerang_loading') }}?name=" + encodeURIComponent(userName);
+    });
+
+    function cleanup() {
+        if (socket) {
+            socket.emit('boomerang_end_call');
+            socket.disconnect();
+        }
+        if (peerConnection) {
+            peerConnection.close();
+        }
+        if (localStream) {
+            localStream.getTracks().forEach(track => track.stop());
+        }
+    }
+
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', cleanup);
+
+    // Start
+    init();
+</script>
+{% endblock %}

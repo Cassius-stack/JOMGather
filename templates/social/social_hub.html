@@ -4,12 +4,12 @@
 <div class="container py-4">
     <div class="chat-wrapper">
         <nav class="sidebar">
-            <div class="nav-icon active">
+            <a href="{{ url_for('social.social_hub') }}" class="nav-icon active" title="Chat">
                 <i class="bi bi-chat-fill"></i>
-            </div>
-            <div class="nav-icon">
+            </a>
+            <a href="{{ url_for('community.community_hub') }}" class="nav-icon" title="Communities">
                 <i class="bi bi-people-fill"></i>
-            </div>
+            </a>
         </nav>
         <aside class="inbox-pane">
             <div class="inbox-header">
