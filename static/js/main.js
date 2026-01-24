@@ -142,6 +142,81 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // === MODAL SEARCH LOGIC ===
+    const modalSearchInput = document.getElementById('userSearchInput');
+    const modalSearchResults = document.getElementById('searchResults');
+    let modalDebounceTimer;
+
+    if (modalSearchInput && modalSearchResults) {
+        modalSearchInput.addEventListener('input', (e) => {
+            clearTimeout(modalDebounceTimer);
+            const query = e.target.value.trim();
+
+            if (query.length < 2) {
+                modalSearchResults.innerHTML = '<div class="text-center text-muted py-3"><small class="fs-6">Type to search for people...</small></div>';
+                return;
+            }
+
+            modalDebounceTimer = setTimeout(async () => {
+                try {
+                    modalSearchResults.innerHTML = '<div class="text-center py-3"><span class="spinner-border spinner-border-sm text-primary"></span></div>';
+
+                    const res = await fetch(`/social/api/search?q=${encodeURIComponent(query)}`);
+                    const users = await res.json();
+
+                    modalSearchResults.innerHTML = '';
+                    if (users.length === 0) {
+                        modalSearchResults.innerHTML = '<div class="text-center text-muted py-3">No users found.</div>';
+                        return;
+                    }
+
+                    users.forEach(user => {
+                        const item = document.createElement('div');
+                        item.className = 'list-group-item border-0 d-flex align-items-center gap-3 py-3 px-0';
+
+                        let actionBtn = '';
+                        if (user.friendship_status === 'pending') {
+                            actionBtn = '<button class="btn btn-sm btn-secondary rounded-pill" disabled>Requested</button>';
+                        } else if (user.friendship_status === 'accepted') {
+                            actionBtn = '<button class="btn btn-sm btn-success rounded-pill" disabled><i class="bi bi-check"></i> Friend</button>';
+                        } else if (user.friendship_status === 'received') {
+                            actionBtn = '<button class="btn btn-sm btn-primary rounded-pill btn-accept-modal" data-id="' + user.id + '">Accept</button>';
+                        } else {
+                            actionBtn = '<button class="btn btn-sm btn-primary rounded-pill btn-add-modal" style="background: #1e3a5f; border: none;" data-id="' + user.id + '"><i class="bi bi-person-plus"></i> Add</button>';
+                        }
+
+                        item.innerHTML = `
+                            <div style="width: 50px; height: 50px; background: #e0f2fe; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #1e3a5f; font-size: 1.2rem;">
+                                <i class="bi bi-person-fill"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <h6 class="mb-0 fw-bold" style="color: #1e3a5f;">${user.username}</h6>
+                                <small class="text-muted text-capitalize">${user.type}</small>
+                            </div>
+                            ${actionBtn}
+                        `;
+
+                        // Bind Events
+                        const addBtn = item.querySelector('.btn-add-modal');
+                        if (addBtn) {
+                            addBtn.addEventListener('click', () => sendFriendRequest(user.id, addBtn));
+                        }
+                        const acceptBtn = item.querySelector('.btn-accept-modal');
+                        if (acceptBtn) {
+                            acceptBtn.addEventListener('click', () => acceptFriendRequest(user.id, acceptBtn));
+                        }
+
+                        modalSearchResults.appendChild(item);
+                    });
+
+                } catch (err) {
+                    console.error(err);
+                    modalSearchResults.innerHTML = '<div class="text-center text-danger py-3">Error searching.</div>';
+                }
+            }, 300);
+        });
+    }
+
     function createUserItem(user) {
         const item = document.createElement('div');
         item.className = 'd-flex align-items-center gap-3 p-3 border-bottom';
