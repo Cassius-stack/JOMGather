@@ -29,7 +29,13 @@ def onboarding():
         region = request.form.get('region')
         hobbies = request.form.getlist('hobbies')
         skills = request.form.getlist('skills')
-        user_type = 'senior'  # Default for MVP
+        
+        # Determine user type based on age
+        try:
+            user_age = int(age) if age else 0
+            user_type = 'Senior' if user_age > 55 else 'Youth'
+        except ValueError:
+            user_type = 'Youth'  # Default if age is invalid
         
         # Validate required fields
         if not username or not email or not password:
@@ -48,7 +54,11 @@ def onboarding():
                     'email': email,
                     'user_type': user_type,
                     'auth_id': user_uuid,
-                    'password_hash': hashed_password
+                    'password_hash': hashed_password,
+                    'age': age,
+                    'region': region,
+                    'hobbies': ','.join(hobbies) if hobbies else '',
+                    'skills': ','.join(skills) if skills else ''
                 })
                 
                 flash("Dev Account created! Logged in locally.", "success")
@@ -89,7 +99,11 @@ def onboarding():
                 'email': email,
                 'user_type': user_type,
                 'auth_id': user_uuid,
-                'password_hash': hashed_password
+                'password_hash': hashed_password,
+                'age': age,
+                'region': region,
+                'hobbies': ','.join(hobbies) if hobbies else '',
+                'skills': ','.join(skills) if skills else ''
             })
 
             flash("Account created! Please log in.", "success")
