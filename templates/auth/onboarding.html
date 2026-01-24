@@ -1,84 +1,217 @@
 {% extends "base.html" %}
 
-{% block title %}Register - JOMGather{% endblock %}
+{% block title %}Complete Your Profile - JOMGather{% endblock %}
 
 {% block content %}
-<!-- TODO: Team member to implement registration page -->
-<div class="container">
-    <h1>Register</h1>
+<div class="container" style="max-width: 600px; margin: 2rem auto; padding: 2rem;">
+    <h1 style="text-align: center; color: #1e3a5f; margin-bottom: 0.5rem;">Complete Your Profile</h1>
+    <p style="text-align: center; color: #64748b; margin-bottom: 2rem;">Tell us a bit about yourself</p>
+
     <!-- Progress Dots -->
-    <div class="flex justify-center mb-6 space-x-2">
-        <div id="dot-1" class="h-2 w-2 rounded-full bg-indigo-600 transition-all duration-300"></div>
-        <div id="dot-2" class="h-2 w-2 rounded-full bg-gray-300 transition-all duration-300"></div>
-        <div id="dot-3" class="h-2 w-2 rounded-full bg-gray-300 transition-all duration-300"></div>
+    <div style="display: flex; justify-content: center; gap: 0.5rem; margin-bottom: 2rem;">
+        <div id="dot-1"
+            style="height: 10px; width: 10px; border-radius: 50%; background: #1e3a5f; transition: all 0.3s;"></div>
+        <div id="dot-2"
+            style="height: 10px; width: 10px; border-radius: 50%; background: #e2e8f0; transition: all 0.3s;"></div>
+        <div id="dot-3"
+            style="height: 10px; width: 10px; border-radius: 50%; background: #e2e8f0; transition: all 0.3s;"></div>
     </div>
-    <form id="reg-form" onsubmit="event.preventDefault(); submitRegistration();">
-        <!-- STEP 1: CREDENTIALS -->
-        <div id="step-1">
-            <label class="block text-sm font-bold text-gray-700 mb-1">Account Info</label>
-            <div class="space-y-4">
-                <input type="text" id="reg-username" placeholder="Username"
-                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:outline-none">
-                <input type="email" id="reg-email" placeholder="Email Address"
-                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:outline-none">
-                <input type="password" id="reg-password" placeholder="Create Password"
-                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:outline-none">
+
+    <form id="onboarding-form" method="POST" action="{{ url_for('auth.onboarding') }}">
+        <!-- STEP 1: DEMOGRAPHICS -->
+        <div id="step-1" style="display: block;">
+            <h3 style="color: #334155; margin-bottom: 1rem;">About You</h3>
+            <div style="display: flex; flex-direction: column; gap: 1rem;">
+                <div>
+                    <label for="age"
+                        style="display: block; margin-bottom: 0.5rem; color: #334155; font-weight: 500;">Age</label>
+                    <input type="number" id="age" name="age" placeholder="Your age" min="1" max="120"
+                        style="width: 100%; padding: 0.75rem 1rem; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 1rem;">
+                </div>
+                <div>
+                    <label for="region"
+                        style="display: block; margin-bottom: 0.5rem; color: #334155; font-weight: 500;">Region</label>
+                    <select id="region" name="region"
+                        style="width: 100%; padding: 0.75rem 1rem; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 1rem; background: white;">
+                        <option value="" disabled selected>Select your region</option>
+                        <option value="North">North</option>
+                        <option value="South">South</option>
+                        <option value="East">East</option>
+                        <option value="West">West</option>
+                        <option value="Central">Central</option>
+                    </select>
+                </div>
             </div>
-            <div class="mt-6 flex justify-end">
+            <div style="margin-top: 2rem; display: flex; justify-content: flex-end;">
                 <button type="button" onclick="nextStep(2)"
-                    class="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium">Next
-                    &rarr;</button>
+                    style="padding: 0.75rem 2rem; background: #1e3a5f; color: white; border: none; border-radius: 12px; font-size: 1rem; font-weight: 600; cursor: pointer;">
+                    Next &rarr;
+                </button>
             </div>
         </div>
-        <!-- STEP 2: DEMOGRAPHICS -->
-        <div id="step-2" class="hidden-section">
-            <label class="block text-sm font-bold text-gray-700 mb-1">About You</label>
-            <div class="space-y-4">
-                <input type="number" id="reg-age" placeholder="Age"
-                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:outline-none">
-                <select id="reg-region"
-                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:outline-none bg-white">
-                    <option value="" disabled selected>Select Region</option>
-                    <option value="North">North</option>
-                    <option value="South">South</option>
-                    <option value="East">East</option>
-                    <option value="West">West</option>
-                </select>
+
+        <!-- STEP 2: HOBBIES -->
+        <div id="step-2" style="display: none;">
+            <h3 style="color: #334155; margin-bottom: 1rem;">Your Hobbies</h3>
+            <p style="color: #64748b; margin-bottom: 1rem;">Select hobbies you enjoy:</p>
+            <div id="hobbies-container" style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem;">
+                <!-- Hobby buttons generated by JS -->
             </div>
-            <div class="mt-6 flex justify-between">
-                <button type="button" onclick="nextStep(1)" class="text-gray-500 hover:text-gray-800">Back</button>
+            <div style="margin-top: 2rem; display: flex; justify-content: space-between;">
+                <button type="button" onclick="nextStep(1)"
+                    style="color: #64748b; background: none; border: none; cursor: pointer; font-size: 1rem;">
+                    &larr; Back
+                </button>
                 <button type="button" onclick="nextStep(3)"
-                    class="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium">Next
-                    &rarr;</button>
+                    style="padding: 0.75rem 2rem; background: #1e3a5f; color: white; border: none; border-radius: 12px; font-size: 1rem; font-weight: 600; cursor: pointer;">
+                    Next &rarr;
+                </button>
             </div>
         </div>
 
-        <!-- STEP 3: INTERESTS -->
-        <div id="step-3" class="hidden-section">
-            <label class="block text-sm font-bold text-gray-700 mb-2">Interests & Skills</label>
-
-            <!-- Hobbies Selection -->
-            <p class="text-xs text-gray-500 mb-2">Select Hobbies:</p>
-            <div class="flex flex-wrap gap-2 mb-4" id="hobbies-container">
-                <!-- Generated by JS -->
-            </div>
-
-            <!-- Skills Input -->
-            <p class="text-xs text-gray-500 mb-2">Add Skills:</p>
-            <div class="flex gap-2 mb-2">
-                <input type="text" id="skill-input" placeholder="Type skill..."
-                    class="flex-1 p-2 border border-gray-300 rounded-lg text-sm">
+        <!-- STEP 3: SKILLS -->
+        <div id="step-3" style="display: none;">
+            <h3 style="color: #334155; margin-bottom: 1rem;">Your Skills</h3>
+            <p style="color: #64748b; margin-bottom: 1rem;">What skills can you share with others?</p>
+            <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+                <input type="text" id="skill-input" placeholder="Type a skill..."
+                    style="flex: 1; padding: 0.75rem 1rem; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 1rem;">
                 <button type="button" onclick="addSkill()"
-                    class="bg-gray-800 text-white px-3 py-2 rounded-lg text-sm">Add</button>
+                    style="padding: 0.75rem 1rem; background: #334155; color: white; border: none; border-radius: 12px; cursor: pointer;">
+                    Add
+                </button>
             </div>
-            <div id="skills-list" class="flex flex-wrap gap-2 min-h-[30px]"></div>
-
-            <div class="mt-6 flex justify-between">
-                <button type="button" onclick="nextStep(2)" class="text-gray-500 hover:text-gray-800">Back</button>
+            <div id="skills-list" style="display: flex; flex-wrap: wrap; gap: 0.5rem; min-height: 40px;">
+                <!-- Skills tags added by JS -->
+            </div>
+            <div id="skills-hidden-inputs">
+                <!-- Hidden inputs for skills added by JS -->
+            </div>
+            <div style="margin-top: 2rem; display: flex; justify-content: space-between;">
+                <button type="button" onclick="nextStep(2)"
+                    style="color: #64748b; background: none; border: none; cursor: pointer; font-size: 1rem;">
+                    &larr; Back
+                </button>
                 <button type="submit"
-                    class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-bold shadow-lg">Complete</button>
+                    style="padding: 0.75rem 2rem; background: #22c55e; color: white; border: none; border-radius: 12px; font-size: 1rem; font-weight: 600; cursor: pointer;">
+                    Complete Profile ✓
+                </button>
             </div>
         </div>
     </form>
 </div>
+
+<script>
+    // Available hobbies
+    const hobbies = ['Reading', 'Cooking', 'Gardening', 'Music', 'Sports', 'Art', 'Travel', 'Photography', 'Gaming', 'Crafts'];
+    const selectedHobbies = new Set();
+    const skillsList = [];
+
+    // Initialize hobbies
+    document.addEventListener('DOMContentLoaded', function () {
+        const container = document.getElementById('hobbies-container');
+        hobbies.forEach(hobby => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.textContent = hobby;
+            btn.style.cssText = 'padding: 0.5rem 1rem; border: 2px solid #e2e8f0; border-radius: 20px; background: white; cursor: pointer; transition: all 0.2s;';
+            btn.onclick = function () {
+                if (selectedHobbies.has(hobby)) {
+                    selectedHobbies.delete(hobby);
+                    btn.style.background = 'white';
+                    btn.style.borderColor = '#e2e8f0';
+                    btn.style.color = '#334155';
+                } else {
+                    selectedHobbies.add(hobby);
+                    btn.style.background = '#1e3a5f';
+                    btn.style.borderColor = '#1e3a5f';
+                    btn.style.color = 'white';
+                }
+                updateHobbiesInput();
+            };
+            container.appendChild(btn);
+        });
+    });
+
+    function updateHobbiesInput() {
+        // Remove existing hidden inputs
+        const existing = document.querySelectorAll('input[name="hobbies"]');
+        existing.forEach(el => el.remove());
+
+        // Add new hidden inputs for each selected hobby
+        const form = document.getElementById('onboarding-form');
+        selectedHobbies.forEach(hobby => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'hobbies';
+            input.value = hobby;
+            form.appendChild(input);
+        });
+    }
+
+    function nextStep(step) {
+        // Hide all steps
+        document.getElementById('step-1').style.display = 'none';
+        document.getElementById('step-2').style.display = 'none';
+        document.getElementById('step-3').style.display = 'none';
+
+        // Show target step
+        document.getElementById('step-' + step).style.display = 'block';
+
+        // Update dots
+        for (let i = 1; i <= 3; i++) {
+            const dot = document.getElementById('dot-' + i);
+            if (i <= step) {
+                dot.style.background = '#1e3a5f';
+            } else {
+                dot.style.background = '#e2e8f0';
+            }
+        }
+    }
+
+    function addSkill() {
+        const input = document.getElementById('skill-input');
+        const skill = input.value.trim();
+
+        if (skill && !skillsList.includes(skill)) {
+            skillsList.push(skill);
+
+            // Add visible tag
+            const tag = document.createElement('span');
+            tag.style.cssText = 'display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; background: #f1f5f9; border-radius: 20px; font-size: 0.9rem;';
+            tag.innerHTML = `${skill} <button type="button" onclick="removeSkill('${skill}', this)" style="background: none; border: none; color: #ef4444; cursor: pointer; font-size: 1rem;">&times;</button>`;
+            document.getElementById('skills-list').appendChild(tag);
+
+            // Add hidden input
+            const hidden = document.createElement('input');
+            hidden.type = 'hidden';
+            hidden.name = 'skills';
+            hidden.value = skill;
+            hidden.id = 'skill-hidden-' + skill.replace(/\s+/g, '-');
+            document.getElementById('skills-hidden-inputs').appendChild(hidden);
+
+            input.value = '';
+        }
+    }
+
+    function removeSkill(skill, btn) {
+        const index = skillsList.indexOf(skill);
+        if (index > -1) {
+            skillsList.splice(index, 1);
+        }
+        btn.parentElement.remove();
+        const hidden = document.getElementById('skill-hidden-' + skill.replace(/\s+/g, '-'));
+        if (hidden) hidden.remove();
+    }
+
+    // Allow Enter key to add skills
+    document.addEventListener('DOMContentLoaded', function () {
+        document.getElementById('skill-input').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                addSkill();
+            }
+        });
+    });
+</script>
 {% endblock %}

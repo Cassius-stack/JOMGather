@@ -49,4 +49,15 @@
                 style="width: 100%; background: #1e3a5f; color: white; border: none; padding: 1rem; border-radius: 12px; font-size: 1.1rem; font-weight: 600; cursor: pointer; transition: background 0.2s; margin-bottom: 1.5rem;">
                 Create Account
             </button>
-            {% endblock %}
+        </form>
+
+        <!-- Login Link -->
+        <div class="text-center">
+            <p style="color: #64748b;">Already have an account?
+                <a href="{{ url_for('auth.login') }}"
+                    style="color: #1e3a5f; font-weight: 600; text-decoration: none;">Sign In</a>
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}
