@@ -34,6 +34,9 @@ def register():
                     'password_hash': hashed_password
                 })
                 
+                # Create coins row for new user (starts with 0 coins)
+                insert('coins', {'user_id': new_user['user_id'], 'total_coins': 0})
+                
                 flash("Dev Account created! Logged in locally.", "success")
                 session['user_id'] = new_user['user_id']
                 session['username'] = new_user['username']
@@ -71,6 +74,9 @@ def register():
                 'auth_id': user_uuid,
                 'password_hash': hashed_password
             })
+            
+            # Create coins row for new user (starts with 0 coins)
+            insert('coins', {'user_id': new_user['user_id'], 'total_coins': 0})
 
             flash("Account created! Please log in.", "success")
             return redirect(url_for('auth.login'))

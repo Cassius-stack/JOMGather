@@ -44,6 +44,8 @@ def register_chat_events(socketio):
         """Called when a user opens a chat with someone."""
         user_id = data.get('user_id')
         other_user_id = data.get('contact_id')
+        if not user_id or not other_user_id:
+            return  # Skip if either ID is missing
         room = get_room_name(user_id, other_user_id)
         join_room(room)
         print(f"[Socket.IO] User {user_id} joined room: {room}")

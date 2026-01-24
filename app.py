@@ -49,6 +49,10 @@ def create_app(config_name='default'):
     from routes.chat_events import register_chat_events
     register_chat_events(socketio)
     
+    # Register BOOMERang video chat events
+    from routes.boomerang_events import register_boomerang_events
+    register_boomerang_events(socketio)
+    
     # Track user activity
     @app.before_request
     def update_last_seen():
@@ -111,22 +115,22 @@ def create_app(config_name='default'):
                 if friends_ids:
                     # Fetch all friends with last_seen
                     response = supabase.table('users').select('user_id, username, last_seen').in_('user_id', friends_ids).execute()
-                    start_friends = response.data
+                    all_friends = response.data
                     
                     five_mins_ago = (datetime.datetime.now() - datetime.timedelta(minutes=5)).isoformat()
                     
-                    for friend in start_friends:
-                        # Simple string comparison for ISO timestamps works if they are in same format/timezone
-                        if friend.get('last_seen') and friend['last_seen'] > five_mins_ago:
+                    for friend in all_friends:
+                        # Check if online (active in last 5 mins)
+                        is_online = friend.get('last_seen') and friend['last_seen'] > five_mins_ago
+                        friend['is_online'] = is_online
+                        
+                        if is_online:
                             online_friends.append(friend)
                         else:
-                            pass # Will handle offline friends below
-                            
-                    # If no users are online, get the most recent ones
-                    if not online_friends and start_friends:
-                        # filter out online ones (already 0) -> just sort all by last_seen
-                        # Sort by last_seen descending, treating None as very old
-                        recent_friends = sorted(start_friends, key=lambda x: x.get('last_seen') or '', reverse=True)[:5]
+                            recent_friends.append(friend)
+                    
+                    # Sort recent friends by last_seen (most recent first)
+                    recent_friends.sort(key=lambda x: x.get('last_seen') or '', reverse=True)
 
                     
             except Exception as e:
