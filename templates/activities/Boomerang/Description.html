@@ -1,0 +1,723 @@
+{% extends "base.html" %}
+
+{% block title %}BOOMERang - Connect & Chat | JOMGather{% endblock %}
+
+{% block head %}
+<style>
+    /* BOOMERang - Warm & Friendly Design for Grandparents */
+
+    body {
+        background: linear-gradient(135deg, #fff5e6 0%, #ffe4c4 100%);
+    }
+
+    .boomerang-container {
+        max-width: 950px;
+        margin: 0 auto;
+        padding: 25px;
+    }
+
+    /* Friendly Back Button */
+    .back-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 20px;
+        background: white;
+        color: #d35400;
+        border-radius: 25px;
+        text-decoration: none;
+        margin-bottom: 25px;
+        font-weight: 600;
+        font-size: 1.1rem;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+        transition: all 0.2s;
+    }
+
+    .back-btn:hover {
+        background: #fff5e6;
+        color: #e67e22;
+        transform: translateX(-5px);
+    }
+
+    /* Welcome Header */
+    .welcome-header {
+        text-align: center;
+        margin-bottom: 30px;
+        padding: 25px;
+        background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+        border-radius: 20px;
+        color: white;
+        box-shadow: 0 8px 25px rgba(230, 126, 34, 0.3);
+    }
+
+    .welcome-header h1 {
+        font-size: 2.2rem;
+        font-weight: 800;
+        margin-bottom: 10px;
+    }
+
+    .welcome-header p {
+        font-size: 1.2rem;
+        opacity: 0.95;
+        margin: 0;
+    }
+
+    .welcome-emoji {
+        font-size: 3rem;
+        margin-bottom: 10px;
+    }
+
+    /* Tabs - Larger & Friendlier */
+    .tab-container {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 25px;
+        justify-content: center;
+    }
+
+    .tab-btn {
+        padding: 16px 40px;
+        border: none;
+        font-weight: 700;
+        font-size: 1.15rem;
+        cursor: pointer;
+        transition: all 0.3s;
+        border-radius: 15px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .tab-btn.active {
+        background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+        color: white;
+        box-shadow: 0 6px 20px rgba(46, 204, 113, 0.4);
+        transform: scale(1.02);
+    }
+
+    .tab-btn:not(.active) {
+        background: white;
+        color: #666;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+    }
+
+    .tab-btn:hover:not(.active) {
+        background: #f0f0f0;
+        transform: scale(1.02);
+    }
+
+    .tab-btn i {
+        font-size: 1.3rem;
+    }
+
+    /* Main Card - Warm & Inviting */
+    .main-card {
+        background: white;
+        border-radius: 25px;
+        padding: 35px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        border: 3px solid #fff5e6;
+    }
+
+    .main-card h2 {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #2c3e50;
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .subtitle {
+        color: #666;
+        margin-bottom: 30px;
+        font-size: 1.15rem;
+        line-height: 1.6;
+    }
+
+    /* Layout */
+    .content-layout {
+        display: flex;
+        gap: 35px;
+    }
+
+    .left-panel {
+        flex: 1;
+    }
+
+    .right-panel {
+        width: 300px;
+        flex-shrink: 0;
+    }
+
+    /* Form Sections - Larger Text */
+    .section-title {
+        font-weight: 700;
+        color: #e67e22;
+        margin-bottom: 15px;
+        font-size: 1.3rem;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 10px;
+        display: block;
+        font-size: 1.1rem;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 16px 20px;
+        border: 3px solid #e0e0e0;
+        border-radius: 15px;
+        font-size: 1.15rem;
+        transition: all 0.2s;
+        margin-bottom: 22px;
+        background: #fafafa;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: #e67e22;
+        background: white;
+        box-shadow: 0 0 0 4px rgba(230, 126, 34, 0.1);
+    }
+
+    .form-control::placeholder {
+        color: #aaa;
+    }
+
+    textarea.form-control {
+        min-height: 120px;
+        resize: vertical;
+    }
+
+    /* Settings - Clearer Options */
+    .settings-section {
+        margin-top: 25px;
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 15px;
+    }
+
+    .checkbox-group {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .checkbox-item {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        cursor: pointer;
+        padding: 12px 15px;
+        background: white;
+        border-radius: 12px;
+        transition: all 0.2s;
+    }
+
+    .checkbox-item:hover {
+        background: #fff5e6;
+    }
+
+    .checkbox-item input[type="checkbox"] {
+        width: 24px;
+        height: 24px;
+        accent-color: #e67e22;
+        cursor: pointer;
+    }
+
+    .checkbox-item label {
+        color: #2c3e50;
+        cursor: pointer;
+        font-size: 1.1rem;
+        font-weight: 500;
+    }
+
+    /* Big Friendly Join Button */
+    .btn-join {
+        background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+        color: white;
+        border: none;
+        padding: 20px 50px;
+        border-radius: 20px;
+        font-size: 1.4rem;
+        font-weight: 700;
+        cursor: pointer;
+        margin-top: 30px;
+        transition: all 0.3s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        width: 100%;
+        box-shadow: 0 8px 25px rgba(46, 204, 113, 0.4);
+    }
+
+    .btn-join:hover {
+        background: linear-gradient(135deg, #219a52 0%, #27ae60 100%);
+        transform: translateY(-3px);
+        box-shadow: 0 12px 35px rgba(46, 204, 113, 0.5);
+    }
+
+    .btn-join i {
+        font-size: 1.5rem;
+    }
+
+    /* Chat History Panel - Warmer */
+    .history-panel {
+        background: linear-gradient(135deg, #fff5e6 0%, #ffecd2 100%);
+        border-radius: 20px;
+        padding: 25px;
+        height: 100%;
+        border: 2px solid #f5d5a8;
+    }
+
+    .history-title {
+        font-weight: 700;
+        color: #d35400;
+        font-size: 1.3rem;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .history-section {
+        margin-bottom: 20px;
+    }
+
+    .history-date {
+        font-weight: 700;
+        color: #e67e22;
+        font-size: 1rem;
+        margin-bottom: 12px;
+        padding-left: 5px;
+    }
+
+    .history-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px;
+        background: white;
+        border-radius: 15px;
+        margin-bottom: 12px;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+        transition: all 0.2s;
+    }
+
+    .history-item:hover {
+        transform: translateX(5px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .history-info {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .history-name {
+        font-weight: 700;
+        color: #2c3e50;
+        font-size: 1.1rem;
+    }
+
+    .history-time {
+        font-size: 0.9rem;
+        color: #888;
+        margin-top: 3px;
+    }
+
+    .btn-add {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        color: white;
+        background: linear-gradient(135deg, #3498db 0%, #5dade2 100%);
+        border: none;
+        font-weight: 600;
+        cursor: pointer;
+        font-size: 0.95rem;
+        padding: 10px 18px;
+        border-radius: 25px;
+        transition: all 0.2s;
+    }
+
+    .btn-add:hover {
+        transform: scale(1.05);
+        box-shadow: 0 4px 12px rgba(52, 152, 219, 0.4);
+    }
+
+    .no-history {
+        text-align: center;
+        color: #999;
+        font-size: 1rem;
+        margin-top: 20px;
+        font-style: italic;
+    }
+
+    /* Tab Content */
+    .tab-content {
+        display: none;
+    }
+
+    .tab-content.active {
+        display: block;
+    }
+
+    /* Friends Tab - Warm Cards */
+    .friends-list {
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+    }
+
+    .friend-card {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 20px;
+        background: linear-gradient(135deg, #fff5e6 0%, #ffecd2 100%);
+        border-radius: 18px;
+        border: 2px solid #f5d5a8;
+        transition: all 0.2s;
+    }
+
+    .friend-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    }
+
+    .friend-info {
+        display: flex;
+        align-items: center;
+        gap: 18px;
+    }
+
+    .friend-avatar {
+        width: 65px;
+        height: 65px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #e67e22 0%, #f39c12 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 700;
+        font-size: 1.4rem;
+        box-shadow: 0 4px 12px rgba(230, 126, 34, 0.3);
+    }
+
+    .friend-details h4 {
+        font-weight: 700;
+        margin: 0;
+        font-size: 1.2rem;
+        color: #2c3e50;
+    }
+
+    .friend-details span {
+        color: #888;
+        font-size: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        margin-top: 3px;
+    }
+
+    .status-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #2ecc71;
+        display: inline-block;
+    }
+
+    .status-dot.offline {
+        background: #bdc3c7;
+    }
+
+    .btn-call {
+        background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+        color: white;
+        border: none;
+        padding: 15px 30px;
+        border-radius: 15px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: 1.1rem;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        box-shadow: 0 5px 15px rgba(46, 204, 113, 0.3);
+    }
+
+    .btn-call:hover {
+        transform: scale(1.05);
+        box-shadow: 0 8px 25px rgba(46, 204, 113, 0.4);
+    }
+
+    .btn-call i {
+        font-size: 1.2rem;
+    }
+
+    /* Tips Section */
+    .tips-section {
+        background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+        border-radius: 15px;
+        padding: 20px;
+        margin-top: 25px;
+        border-left: 5px solid #27ae60;
+    }
+
+    .tips-title {
+        font-weight: 700;
+        color: #27ae60;
+        font-size: 1.1rem;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .tips-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .tips-list li {
+        padding: 8px 0;
+        color: #2c3e50;
+        font-size: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .tips-list li::before {
+        content: "✨";
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .content-layout {
+            flex-direction: column;
+        }
+
+        .right-panel {
+            width: 100%;
+        }
+
+        .welcome-header h1 {
+            font-size: 1.8rem;
+        }
+
+        .tab-btn {
+            padding: 14px 25px;
+            font-size: 1rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="boomerang-container">
+    <!-- Back Button -->
+    <a href="{{ url_for('activities.activity_list') }}" class="back-btn">
+        <i class="bi bi-arrow-left"></i> Back to Activities
+    </a>
+
+    <!-- Welcome Header -->
+    <div class="welcome-header">
+        <div class="welcome-emoji">👋🌟</div>
+        <h1>Welcome to BOOMERang!</h1>
+        <p>Connect with wonderful people across generations in just one click</p>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tab-container">
+        <button class="tab-btn active" data-tab="call-setup">
+            <i class="bi bi-telephone-outbound"></i> Start a Chat
+        </button>
+        <button class="tab-btn" data-tab="friends">
+            <i class="bi bi-people-fill"></i> My Friends
+        </button>
+    </div>
+
+    <!-- Main Card -->
+    <div class="main-card">
+        <!-- Call Setup Tab -->
+        <div id="call-setup" class="tab-content active">
+            <h2><i class="bi bi-person-hearts" style="color: #e67e22;"></i> Ready to Connect?</h2>
+            <p class="subtitle">Fill in your details below and we'll find you a friendly chat partner!
+                Don't worry, it's easy and fun. 😊</p>
+
+            <div class="content-layout">
+                <!-- Left Panel - Form -->
+                <div class="left-panel">
+                    <form action="#" method="POST">
+                        <!-- Profile Section -->
+                        <div class="section-title">
+                            <i class="bi bi-person-circle"></i> Tell Us About Yourself
+                        </div>
+
+                        <label class="form-label">Your Name</label>
+                        <input type="text" class="form-control" name="name" placeholder="e.g., Mary Tan" required>
+
+                        <label class="form-label">A Little About You</label>
+                        <textarea class="form-control" name="description"
+                            placeholder="e.g., I enjoy cooking Hokkien mee and listening to old songs! Would love to share stories with young people."></textarea>
+
+                        <!-- Settings Section -->
+                        <div class="settings-section">
+                            <div class="section-title">
+                                <i class="bi bi-gear"></i> Call Preferences
+                            </div>
+                            <div class="checkbox-group">
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="noVideo" name="no_video">
+                                    <label for="noVideo">🙈 Voice only (hide my video)</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="noAudio" name="no_audio">
+                                    <label for="noAudio">🔇 Mute my microphone at start</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tips -->
+                        <div class="tips-section">
+                            <div class="tips-title">
+                                <i class="bi bi-lightbulb"></i> Helpful Tips
+                            </div>
+                            <ul class="tips-list">
+                                <li>Calls are just 5 minutes - quick and easy!</li>
+                                <li>You can end anytime if you feel uncomfortable</li>
+                                <li>Found a great chat buddy? Add them as a friend!</li>
+                            </ul>
+                        </div>
+
+                        <button type="button" class="btn-join" onclick="startSearch()">
+                            <i class="bi bi-telephone-outbound-fill"></i>
+                            Find Me a Chat Partner!
+                        </button>
+                    </form>
+
+                    <script>
+                        function startSearch() {
+                            const nameInput = document.querySelector('input[name="name"]');
+                            const name = nameInput.value.trim() || 'Guest';
+                            window.location.href = "{{ url_for('activities.boomerang_loading') }}?name=" + encodeURIComponent(name);
+                        }
+                    </script>
+                </div>
+
+                <!-- Right Panel - Chat History -->
+                <div class="right-panel">
+                    <div class="history-panel">
+                        <div class="history-title">
+                            <i class="bi bi-clock-history"></i> Recent Chats
+                        </div>
+
+                        <!-- Today Section -->
+                        <div class="history-section">
+                            <div class="history-date">📅 Today</div>
+                            <div class="history-item">
+                                <div class="history-info">
+                                    <span class="history-name">Marcus Lim</span>
+                                    <span class="history-time">10 min chat</span>
+                                </div>
+                                <button class="btn-add"><i class="bi bi-person-plus"></i> Add</button>
+                            </div>
+                        </div>
+
+                        <!-- Yesterday Section -->
+                        <div class="history-section">
+                            <div class="history-date">📅 Yesterday</div>
+                            <div class="history-item">
+                                <div class="history-info">
+                                    <span class="history-name">Sarah Wong</span>
+                                    <span class="history-time">5 min chat</span>
+                                </div>
+                                <button class="btn-add"><i class="bi bi-person-plus"></i> Add</button>
+                            </div>
+                            <div class="history-item">
+                                <div class="history-info">
+                                    <span class="history-name">James Chia</span>
+                                    <span class="history-time">8 min chat</span>
+                                </div>
+                                <button class="btn-add"><i class="bi bi-person-plus"></i> Add</button>
+                            </div>
+                        </div>
+
+                        <div class="no-history">That's all your recent chats! 🌸</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Friends Tab -->
+        <div id="friends" class="tab-content">
+            <h2><i class="bi bi-heart-fill" style="color: #e74c3c;"></i> Your Chat Friends</h2>
+            <p class="subtitle">These are the wonderful people you've connected with.
+                Call them anytime for a friendly chat! 💬</p>
+
+            <div class="friends-list">
+                <div class="friend-card">
+                    <div class="friend-info">
+                        <div class="friend-avatar">ML</div>
+                        <div class="friend-details">
+                            <h4>Mdm. Lim Siew Eng</h4>
+                            <span><span class="status-dot"></span> Online now</span>
+                        </div>
+                    </div>
+                    <button class="btn-call"><i class="bi bi-telephone-fill"></i> Call Now</button>
+                </div>
+                <div class="friend-card">
+                    <div class="friend-info">
+                        <div class="friend-avatar">MT</div>
+                        <div class="friend-details">
+                            <h4>Mr. Tan Ah Kow</h4>
+                            <span><span class="status-dot offline"></span> Last seen 2 hours ago</span>
+                        </div>
+                    </div>
+                    <button class="btn-call"><i class="bi bi-telephone-fill"></i> Call Now</button>
+                </div>
+                <div class="friend-card">
+                    <div class="friend-info">
+                        <div class="friend-avatar">SW</div>
+                        <div class="friend-details">
+                            <h4>Sarah Wong (Student)</h4>
+                            <span><span class="status-dot"></span> Online now</span>
+                        </div>
+                    </div>
+                    <button class="btn-call"><i class="bi bi-telephone-fill"></i> Call Now</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Tab switching
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            // Remove active from all tabs
+            document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+            // Add active to clicked tab
+            btn.classList.add('active');
+            document.getElementById(btn.dataset.tab).classList.add('active');
+        });
+    });
+</script>
+{% endblock %}
