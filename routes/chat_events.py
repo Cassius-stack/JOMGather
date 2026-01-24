@@ -29,7 +29,30 @@ def register_chat_events(socketio):
     @socketio.on('disconnect')
     def handle_disconnect():
         """Called when a client disconnects."""
-        print(f"[Socket.IO] Client disconnected")
+        from flask import request
+        sid = request.sid
+        print(f"[Socket.IO] Client disconnected: {sid}")
+        
+        # Clean up BOOMERang state if applicable
+        try:
+            from routes.boomerang_events import boomerang_queue, user_room_map, active_rooms
+            
+            # Remove from queue if waiting
+            if sid in boomerang_queue:
+                del boomerang_queue[sid]
+            
+            # End any active call
+            room_id = user_room_map.get(sid)
+            if room_id:
+                emit('boomerang_partner_left', {}, room=room_id, include_self=False)
+                if sid in user_room_map:
+                    del user_room_map[sid]
+                if room_id in active_rooms:
+                    active_rooms[room_id].discard(sid)
+                    if len(active_rooms[room_id]) == 0:
+                        del active_rooms[room_id]
+        except Exception as e:
+            print(f"[Socket.IO] BOOMERang cleanup error: {e}")
     
     @socketio.on('register_user')
     def handle_register_user(data):

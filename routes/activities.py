@@ -41,6 +41,25 @@ def upload_photo():
     # TODO: Handle photo upload
     return redirect(url_for('activities.photo_streak'))
 
+
+@activities_bp.route('/boomerang')
+def boomerang():
+    """BOOMERang - Description/Setup page."""
+    return render_template('activities/Boomerang/Description.html')
+
+
+@activities_bp.route('/boomerang/meetup')
+def boomerang_meetup():
+    """BOOMERang - Video call meetup page."""
+    return render_template('activities/Boomerang/Meetup.html')
+
+
+@activities_bp.route('/boomerang/loading')
+def boomerang_loading():
+    """BOOMERang - Loading/matching page."""
+    return render_template('activities/Boomerang/LoadingPage.html')
+
+
 # === Helper Functions ===
 def search_activities_logic(query):
     """Search for activities matching the query."""
@@ -49,7 +68,7 @@ def search_activities_logic(query):
         {'name': 'Support Swap', 'description': 'Exchange skills and help', 'url': url_for('support_swap.ss_profile'), 'icon': 'bi-lightbulb', 'color': 'warning'},
         {'name': 'Jukebox', 'description': 'Share songs and playlists', 'url': url_for('social.social_hub'), 'icon': 'bi-music-note-beamed', 'color': 'info'},
         {'name': 'Cyber Challenge', 'description': 'Digital literacy quiz', 'url': url_for('activities.puzzle_challenge'), 'icon': 'bi-shield-check', 'color': 'danger'},
-        {'name': 'BOOMERang', 'description': 'Quick video chat', 'url': url_for('messaging.boomerang'), 'icon': 'bi-camera-video', 'color': 'secondary'},
+        {'name': 'BOOMERang', 'description': 'Quick video chat', 'url': url_for('activities.boomerang'), 'icon': 'bi-camera-video', 'color': 'secondary'},
         {'name': 'Puzzle Challenge', 'description': 'Cooperative brain games', 'url': url_for('activities.puzzle_challenge'), 'icon': 'bi-puzzle', 'color': 'success'},
         {'name': 'TikTok Challenge', 'description': 'Viral video challenges', 'url': url_for('activities.tiktok_challenge'), 'icon': 'bi-tiktok', 'color': 'dark'}
     ]
@@ -59,3 +78,4 @@ def search_activities_logic(query):
         
     query = query.lower()
     return [a for a in activities if query in a['name'].lower() or query in a['description'].lower()]
+

@@ -49,6 +49,10 @@ def create_app(config_name='default'):
     from routes.chat_events import register_chat_events
     register_chat_events(socketio)
     
+    # Register BOOMERang video chat events
+    from routes.boomerang_events import register_boomerang_events
+    register_boomerang_events(socketio)
+    
     # Track user activity
     @app.before_request
     def update_last_seen():
