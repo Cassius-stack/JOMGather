@@ -257,8 +257,8 @@ def get_contacts():
                     'unreadCount': unread_count
                 })
         
-        # Sort by last message time (most recent first)
-        result.sort(key=lambda x: x.get('lastMessageTime') or '', reverse=True)
+        # Sort by last message time (most recent first), new friends (no messages) at top
+        result.sort(key=lambda x: x.get('lastMessageTime') or '9999-99-99', reverse=True)
                 
         return jsonify(result)
     except Exception as e:

@@ -82,8 +82,7 @@
             </div>
             {% endfor %}
 
-            {% if not online_friends %}
-            {% if recent_friends %}
+            <!-- Offline Friends Loop (always show, after online) -->
             {% for friend in recent_friends %}
             <a href="{{ url_for('profile.view_profile', user_id=friend['user_id']) }}" class="text-decoration-none"
                 title="Offline">
@@ -98,11 +97,11 @@
                 </div>
             </a>
             {% endfor %}
-            {% else %}
+
+            {% if not online_friends and not recent_friends %}
             <div class="d-flex align-items-center text-muted ms-2">
-                <small>No friends online.</small>
+                <small>No friends yet.</small>
             </div>
-            {% endif %}
             {% endif %}
         </div>
     </div>
