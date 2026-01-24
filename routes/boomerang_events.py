@@ -79,6 +79,35 @@ def register_boomerang_events(socketio):
             del boomerang_queue[sid]
             print(f"[BOOMERang] User {sid} left queue")
     
+    @socketio.on('boomerang_join_room')
+    def handle_join_room(data):
+        """User joins an existing room (for Meetup page)."""
+        sid = request.sid
+        room_id = data.get('room_id')
+        user_name = data.get('name', 'Anonymous')
+        
+        if not room_id:
+            print(f"[BOOMERang] Join room failed: no room_id")
+            return
+        
+        # Create room if it doesn't exist (first user to join meetup)
+        if room_id not in active_rooms:
+            active_rooms[room_id] = set()
+        
+        # Add user to room
+        active_rooms[room_id].add(sid)
+        user_room_map[sid] = room_id
+        join_room(room_id)
+        
+        print(f"[BOOMERang] {user_name} ({sid}) joined room {room_id}. Users in room: {len(active_rooms[room_id])}")
+        
+        # Notify others in room that someone joined
+        emit('boomerang_user_joined', {
+            'name': user_name,
+            'sid': sid,
+            'room_size': len(active_rooms[room_id])
+        }, room=room_id, include_self=False)
+    
     @socketio.on('boomerang_offer')
     def handle_offer(data):
         """Relay WebRTC offer to partner."""

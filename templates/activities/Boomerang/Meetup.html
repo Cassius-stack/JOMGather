@@ -543,15 +543,29 @@
             console.log('[Meetup] Connected to server');
             showStatus('Connected! Setting up video call...', '');
 
-            // Re-join the room
-            socket.emit('boomerang_join_queue', { name: userName, room_id: roomId });
+            // Join the existing room (not queue!)
+            socket.emit('boomerang_join_room', { name: userName, room_id: roomId });
 
-            // If we're the initiator, create and send offer
+            // Create peer connection
+            createPeerConnection();
+
+            // If we're the initiator, create and send offer after a short delay
+            // (to allow both users to join the room first)
             if (isInitiator) {
-                createPeerConnection();
+                setTimeout(() => {
+                    createOffer();
+                }, 1000);
+            }
+        });
+
+        // Handle when partner joins room
+        socket.on('boomerang_user_joined', (data) => {
+            console.log('[Meetup] Partner joined room:', data);
+            showStatus('Partner connected! Starting video...', '');
+
+            // If we're the initiator and partner just joined, send offer
+            if (isInitiator && peerConnection) {
                 createOffer();
-            } else {
-                createPeerConnection();
             }
         });
 
