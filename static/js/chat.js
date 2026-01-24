@@ -430,19 +430,25 @@ function renderMessages(messages) {
     messages.forEach(msg => {
         if (msg.type === 'timestamp') {
             chatMessages.innerHTML += `<div class="timestamp">${msg.text}</div>`;
-        } else if (msg.type === 'cyber-challenge') {
+        } else if (msg.text === '!cyber' || msg.type === 'cyber-challenge') {
+            // This is a cyber challenge - render as a challenge card
+            // Use a random scenario for display (scenario was stored in DB but we use local for now)
+            const scenario = cyberScenarios[Math.floor(Math.random() * cyberScenarios.length)];
+            const effectiveChallengeId = msg.challenge_id || `msg_${msg.id}`;
+            const effectiveScenarioId = msg.scenario_id || scenario.id;
+
             chatMessages.innerHTML += `
-                <div class="cyber-challenge-card">
-                    <h3>Cyber Challenge!</h3>
+                <div class="cyber-challenge-card" data-message-id="${msg.id}" data-challenge-id="${effectiveChallengeId}" data-scenario-id="${effectiveScenarioId}">
+                    <h3>🎮 Cyber Challenge!</h3>
                     <p>Can you detect if this scenario is safe or a scam?</p>
                     <div class="reward-info">
                         <span class="reward-label">Rewards:</span>
                         <div class="reward-value">
-                            <img src="/static/images/credit.svg" class="credit-icon-small2">
-                            <span>${msg.reward || 15}</span>
+                            <img src="/static/images/credit.svg" class="credit-icon-small2" onerror="this.style.display='none'">
+                            <span>15</span>
                         </div>
                     </div>
-                    <button class="btn-view">View</button>
+                    <button class="btn-view" onclick="showCyberChallengeModal('${effectiveChallengeId}', ${effectiveScenarioId})">View</button>
                 </div>
             `;
         } else {
@@ -719,19 +725,62 @@ function appendCyberChallenge(messageId, challengeId, scenarioId) {
 
 /**
  * Show the cyber challenge modal with scenario
- * @param {number} challengeId - The challenge ID from server
+ * @param {string|number} challengeId - The challenge ID from server
  * @param {number} scenarioId - The scenario ID
  */
-function showCyberChallengeModal(challengeId, scenarioId) {
+async function showCyberChallengeModal(challengeId, scenarioId) {
     const scenario = cyberScenarios.find(s => s.id === scenarioId);
     if (!scenario) return;
 
-    // Check if user has already answered this challenge
+    // Check if user has already answered (from in-memory state first)
     const existingState = currentChallengeState[challengeId];
     if (existingState && existingState.myAnswer) {
-        // User already answered - show waiting modal or results
-        showWaitingModal(challengeId, scenarioId);
+        // Check if challenge is completed (both answered)
+        if (existingState.completed) {
+            showResultsModal(challengeId);
+        } else {
+            showWaitingModal(challengeId, scenarioId);
+        }
         return;
+    }
+
+    // Fetch challenge status from database
+    try {
+        const response = await fetch(`/social/api/cyber-challenge/${challengeId}?user=${CURRENT_USER_ID}`);
+        const data = await response.json();
+
+        if (data.found && data.my_answer) {
+            // User already answered - store in local state and show appropriate modal
+            currentChallengeState[challengeId] = {
+                myAnswer: data.my_answer,
+                scenarioId: data.scenario_id,
+                correctAnswer: scenario.answer,
+                completed: data.status === 'completed',
+                user1_id: data.user1_id,
+                user2_id: data.user2_id
+            };
+
+            if (data.status === 'completed') {
+                // Both users answered - show results
+                const amUser1 = data.user1_id === CURRENT_USER_ID;
+                const user1Correct = data.user1_answer === scenario.answer;
+                const user2Correct = data.user2_answer === scenario.answer;
+
+                currentChallengeState[challengeId].myCorrect = amUser1 ? user1Correct : user2Correct;
+                currentChallengeState[challengeId].partnerCorrect = amUser1 ? user2Correct : user1Correct;
+                currentChallengeState[challengeId].bothCorrect = user1Correct && user2Correct;
+                currentChallengeState[challengeId].scenario = scenario;
+
+                showResultsModal(challengeId);
+            } else {
+                // Still waiting for partner
+                showWaitingModal(challengeId, scenarioId);
+            }
+            return;
+        }
+    } catch (error) {
+        console.log('Could not fetch challenge status:', error);
+        // Continue to show the challenge - might be a new challenge or DB issue
     }
 
     const buttonHtml = scenario.buttonText ?
@@ -767,10 +816,10 @@ function showCyberChallengeModal(challengeId, scenarioId) {
             </div>
             
             <div class="cyber-buttons">
-                <button class="cyber-btn safe" onclick="submitCyberAnswer('safe', ${challengeId}, ${scenarioId}, this)">
+                <button class="cyber-btn safe" onclick="submitCyberAnswer('safe', '${challengeId}', ${scenarioId}, this)">
                     <i class="bi bi-hand-thumbs-up"></i> Safe
                 </button>
-                <button class="cyber-btn scam" onclick="submitCyberAnswer('scam', ${challengeId}, ${scenarioId}, this)">
+                <button class="cyber-btn scam" onclick="submitCyberAnswer('scam', '${challengeId}', ${scenarioId}, this)">
                     <i class="bi bi-hand-thumbs-down"></i> Scam
                 </button>
             </div>

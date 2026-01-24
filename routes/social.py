@@ -412,3 +412,54 @@ def delete_question_route(question_id):
     except Exception as e:
         print(f"Error deleting question: {e}")
     return redirect(url_for('social.ask_grandfriend'))
+
+
+@social_bp.route('/api/cyber-challenge/<challenge_id>')
+def get_cyber_challenge_status(challenge_id):
+    """Get the status of a cyber challenge (who has answered, etc.)."""
+    try:
+        user_id = request.args.get('user', type=int)
+        if not user_id:
+            return jsonify({'error': 'User ID required'}), 400
+        
+        supabase = get_supabase()
+        
+        # Handle both numeric and string challenge IDs
+        if str(challenge_id).startswith('msg_'):
+            # This is a fallback ID using message_id
+            message_id = int(challenge_id.replace('msg_', ''))
+            result = supabase.table('cyber_challenges').select('*').eq('message_id', message_id).execute()
+        else:
+            # Direct challenge_id lookup
+            result = supabase.table('cyber_challenges').select('*').eq('challenge_id', int(challenge_id)).execute()
+        
+        if not result.data:
+            return jsonify({'found': False, 'status': 'not_found'})
+        
+        challenge = result.data[0]
+        
+        # Determine if current user has answered
+        if user_id == challenge['user1_id']:
+            my_answer = challenge.get('user1_answer')
+            partner_answer = challenge.get('user2_answer')
+        elif user_id == challenge['user2_id']:
+            my_answer = challenge.get('user2_answer')
+            partner_answer = challenge.get('user1_answer')
+        else:
+            return jsonify({'found': False, 'error': 'User not part of this challenge'})
+        
+        return jsonify({
+            'found': True,
+            'challenge_id': challenge['challenge_id'],
+            'scenario_id': challenge['scenario_id'],
+            'status': challenge['status'],
+            'my_answer': my_answer,
+            'partner_answered': partner_answer is not None,
+            'user1_id': challenge['user1_id'],
+            'user2_id': challenge['user2_id'],
+            'user1_answer': challenge.get('user1_answer'),
+            'user2_answer': challenge.get('user2_answer')
+        })
+    except Exception as e:
+        print(f"Error getting cyber challenge status: {e}")
+        return jsonify({'found': False, 'error': str(e)}), 500
