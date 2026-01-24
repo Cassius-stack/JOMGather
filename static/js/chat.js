@@ -7,13 +7,22 @@
 // SOCKET.IO CONNECTION
 // ============================================
 
-// Connect to the Socket.IO server
-const socket = io();
+// Connect to the Socket.IO server (explicitly use current host for cross-device support)
+const socket = io(window.location.origin, {
+    transports: ['websocket', 'polling'],
+    reconnection: true,
+    reconnectionAttempts: 5,
+    reconnectionDelay: 1000
+});
+
+console.log('[Socket.IO] Connecting to:', window.location.origin);
 
 // Get user ID from URL parameter (for testing: ?user=1 or ?user=2)
 // In production, this would come from the session
 const urlParams = new URLSearchParams(window.location.search);
 const CURRENT_USER_ID = parseInt(urlParams.get('user')) || 1;
+
+console.log('[Socket.IO] Current user ID:', CURRENT_USER_ID);
 
 // Default contact based on who we're logged in as
 // User 1 (Jeremy) defaults to chatting with User 2 (Mdm Lim)
@@ -39,11 +48,22 @@ const sendBtn = document.getElementById('send-btn');
  * When we connect to the server
  */
 socket.on('connect', () => {
-    console.log('[Socket.IO] Connected to server as user', CURRENT_USER_ID);
+    console.log('[Socket.IO] ✅ Connected to server as user', CURRENT_USER_ID, 'Socket ID:', socket.id);
     // Register ourselves with the server
     socket.emit('register_user', { user_id: CURRENT_USER_ID });
     // Join the current chat room
     socket.emit('join_chat', { user_id: CURRENT_USER_ID, contact_id: currentContactId });
+});
+
+/**
+ * Connection error handling
+ */
+socket.on('connect_error', (error) => {
+    console.error('[Socket.IO] ❌ Connection error:', error);
+});
+
+socket.on('disconnect', (reason) => {
+    console.log('[Socket.IO] ⚠️ Disconnected:', reason);
 });
 // Track processed message IDs to avoid duplicates
 const processedMessageIds = new Set();
