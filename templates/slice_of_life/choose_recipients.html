@@ -47,24 +47,17 @@
         <form id="recipientsForm" action="{{ url_for('slice_of_life.send_invites') }}" method="POST">
             <div class="row g-4 mb-4">
                 <!-- Recipient Cards -->
-                {% set recipients = [
-                {'id': 1, 'name': 'Grandma Rose', 'type': 'Senior', 'location': 'Bishan', 'img': 25},
-                {'id': 2, 'name': 'Uncle Ben', 'type': 'Senior', 'location': 'Tampines', 'img': 20},
-                {'id': 3, 'name': 'Mdm Lim', 'type': 'Senior', 'location': 'Jurong', 'img': 30},
-                {'id': 4, 'name': 'Mr. Tan', 'type': 'Senior', 'location': 'Clementi', 'img': 35},
-                {'id': 5, 'name': 'Aunt May', 'type': 'Senior', 'location': 'Yishun', 'img': 1},
-                {'id': 6, 'name': 'Sarah', 'type': 'Youth', 'location': 'Woodlands', 'img': 7}
-                ] %}
-
-                {% for person in recipients %}
+                {% for person in friends %}
                 <div class="col-md-4 col-6">
                     <label class="d-block" style="cursor: pointer;">
-                        <input type="checkbox" name="recipients" value="{{ person.id }}" class="recipient-checkbox"
+                        <input type="checkbox" name="recipients" value="{{ person.user_id }}" class="recipient-checkbox"
                             style="display: none;">
                         <div class="recipient-card"
                             style="background: white; border-radius: 20px; padding: 1.5rem; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.05); border: 3px solid transparent; transition: all 0.2s;">
                             <div style="position: relative; display: inline-block; margin-bottom: 1rem;">
-                                <img src="https://i.pravatar.cc/80?img={{ person.img }}" alt="{{ person.name }}"
+                                <!-- Random Avatar based on ID -->
+                                <img src="https://i.pravatar.cc/80?img={{ (person.user_id * 5) % 70 }}"
+                                    alt="{{ person.username }}"
                                     style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid #e2e8f0;">
                                 <div class="check-badge"
                                     style="position: absolute; bottom: 0; right: 0; width: 28px; height: 28px; border-radius: 50%; background: #22c55e; color: white; display: none; align-items: center; justify-content: center; border: 2px solid white;">
@@ -72,9 +65,9 @@
                                 </div>
                             </div>
                             <h5 style="font-size: 1.1rem; font-weight: 600; color: #1e3a5f; margin-bottom: 0.25rem;">{{
-                                person.name }}</h5>
-                            <p style="font-size: 0.9rem; color: #6b7280; margin: 0;">{{ person.type }} • {{
-                                person.location }}</p>
+                                person.username }}</h5>
+                            <p style="font-size: 0.9rem; color: #6b7280; margin: 0;">{{ person.user_type|capitalize }} •
+                                Online</p>
                         </div>
                     </label>
                 </div>

@@ -3,13 +3,19 @@
 {% block title %}JomGather - Connect & Share{% endblock %}
 
 {% block content %}
+{% if session.get('user_id') %}
+<!-- ============================================ -->
+<!-- LOGGED IN DASHBOARD -->
+<!-- ============================================ -->
+
 <!-- Hero Section - Navy Gradient -->
 <div
     style="background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%); border-radius: 0 0 30px 30px; padding: 3rem 2rem 2rem; color: white;">
     <div class="container">
-        <h1 style="font-size: 2.5rem; font-weight: 700; margin-bottom: 0.5rem;">Connect & Share</h1>
+        <h1 style="font-size: 2.5rem; font-weight: 700; margin-bottom: 0.5rem;">Hello, {{ session.get('username') }}!
+        </h1>
         <p style="font-size: 1.1rem; opacity: 0.9; margin-bottom: 1.5rem;">
-            Join a community where every generation has a story to tell. Start sharing your slice of life today.
+            Ready to connect with your community today?
         </p>
         <a href="{{ url_for('activities.activity_list') }}" class="btn"
             style="background: white; color: #1e3a5f; border-radius: 25px; padding: 0.75rem 2rem; font-weight: 600; font-size: 1rem;">
@@ -20,15 +26,28 @@
 
 <div class="container">
     <!-- Search Bar -->
-    <div class="mx-auto" style="max-width: 600px; margin-top: -1.5rem; margin-bottom: 2rem;">
-        <div
+    <div class="mx-auto position-relative"
+        style="max-width: 600px; margin-top: -1.5rem; margin-bottom: 2rem; z-index: 1000;">
+        <form action="{{ url_for('social.search_results_page') }}" method="GET" id="dashboardSearchContainer"
             style="background: white; border-radius: 30px; padding: 0.75rem 1.25rem; display: flex; align-items: center; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
             <i class="bi bi-search text-muted me-2"></i>
-            <input type="text" placeholder="Search for activities, friends..."
-                style="border: none; outline: none; flex: 1; font-size: 1rem;">
-            <div
-                style="background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); color: #1a1a2e; padding: 0.5rem 1rem; border-radius: 20px; font-weight: 600; font-size: 0.95rem;">
-                <i class="bi bi-coin me-1"></i> 5,000
+            <input type="text" name="q" id="dashboardSearchInput" placeholder="Search for friends or activities..."
+                style="border: none; outline: none; flex: 1; font-size: 1rem;" autocomplete="off">
+        </form>
+
+        <!-- Search Dropdown Results -->
+        <div id="searchDropdown"
+            class="position-absolute w-100 bg-white shadow-lg rounded-4 mt-2 overflow-hidden d-none"
+            style="top: 100%; left: 0;">
+            <!-- Tabs for People/Activities -->
+            <div class="d-flex border-bottom">
+                <button class="btn flex-fill py-2 fw-bold text-primary active-tab" id="tabPeople">People</button>
+                <button class="btn flex-fill py-2 fw-bold text-muted" id="tabActivities">Activities</button>
+            </div>
+
+            <div id="searchResultsContent" class="p-0">
+                <!-- Dynamic Results will go here -->
+                <div class="p-3 text-center text-muted">Start typing to search...</div>
             </div>
         </div>
     </div>
@@ -36,65 +55,66 @@
     <!-- Friends Section -->
     <div class="mb-4">
         <div class="d-flex justify-content-between align-items-center mb-3">
-            <span style="font-size: 1.1rem; font-weight: 600; color: #1a1a2e;">Friends (3 Online)</span>
+            <span style="font-size: 1.1rem; font-weight: 600; color: #1a1a2e;">Friends ({{ online_friends|length }}
+                Online)</span>
             <a href="#" style="color: #1e3a5f; font-size: 1rem; text-decoration: none;">See All</a>
         </div>
         <div class="d-flex gap-3" style="overflow-x: auto; padding-bottom: 0.5rem;">
             <!-- Add Friend -->
             <div class="text-center" style="flex-shrink: 0;">
-                <div
+                <div data-bs-toggle="modal" data-bs-target="#searchUsersModal"
                     style="width: 65px; height: 65px; border-radius: 50%; border: 2px dashed #1e3a5f; display: flex; align-items: center; justify-content: center; cursor: pointer;">
                     <i class="bi bi-plus" style="font-size: 1.5rem; color: #1e3a5f;"></i>
                 </div>
                 <p style="font-size: 0.9rem; color: #6b7280; margin-top: 0.5rem;">Add</p>
             </div>
 
-            <!-- Friend Avatars -->
+            <!-- Online Friends Loop -->
+            {% for friend in online_friends %}
             <div class="text-center position-relative" style="flex-shrink: 0;">
-                <img src="https://i.pravatar.cc/65?img=1" alt="Aunt May"
-                    style="width: 65px; height: 65px; border-radius: 50%; object-fit: cover; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                <div
+                    style="width: 65px; height: 65px; background: #e0f2fe; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #1e3a5f; font-weight: 600; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                    {{ friend.username[0] | upper }}
+                </div>
                 <span
                     style="position: absolute; bottom: 22px; right: 0; width: 14px; height: 14px; background: #22c55e; border-radius: 50%; border: 2px solid white;"></span>
-                <p style="font-size: 0.9rem; color: #6b7280; margin-top: 0.5rem;">Aunt May</p>
+                <p style="font-size: 0.9rem; color: #6b7280; margin-top: 0.5rem;">{{ friend.username }}</p>
             </div>
+            {% endfor %}
 
-            <div class="text-center position-relative" style="flex-shrink: 0;">
-                <img src="https://i.pravatar.cc/65?img=20" alt="Uncle Ben"
-                    style="width: 65px; height: 65px; border-radius: 50%; object-fit: cover; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-                <span
-                    style="position: absolute; bottom: 22px; right: 0; width: 14px; height: 14px; background: #22c55e; border-radius: 50%; border: 2px solid white;"></span>
-                <p style="font-size: 0.9rem; color: #6b7280; margin-top: 0.5rem;">Uncle Ben</p>
+            {% if not online_friends %}
+            {% if recent_friends %}
+            {% for friend in recent_friends %}
+            <a href="{{ url_for('profile.view_profile', user_id=friend['user_id']) }}" class="text-decoration-none"
+                title="Offline">
+                <div class="text-center position-relative" style="flex-shrink: 0;">
+                    <div
+                        style="width: 65px; height: 65px; background: #f1f5f9; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #64748b; font-weight: 600; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                        {{ friend['username'][0] | upper }}
+                    </div>
+                    <span
+                        style="position: absolute; bottom: 22px; right: 0; width: 14px; height: 14px; background: #94a3b8; border-radius: 50%; border: 2px solid white;"></span>
+                    <p style="font-size: 0.9rem; color: #6b7280; margin-top: 0.5rem;">{{ friend['username'] }}</p>
+                </div>
+            </a>
+            {% endfor %}
+            {% else %}
+            <div class="d-flex align-items-center text-muted ms-2">
+                <small>No friends online.</small>
             </div>
-
-            <div class="text-center" style="flex-shrink: 0;">
-                <img src="https://i.pravatar.cc/65?img=25" alt="Grandma Rose"
-                    style="width: 65px; height: 65px; border-radius: 50%; object-fit: cover; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-                <p style="font-size: 0.9rem; color: #6b7280; margin-top: 0.5rem;">Grandma...</p>
-            </div>
-
-            <div class="text-center position-relative" style="flex-shrink: 0;">
-                <img src="https://i.pravatar.cc/65?img=7" alt="Sarah"
-                    style="width: 65px; height: 65px; border-radius: 50%; object-fit: cover; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-                <span
-                    style="position: absolute; bottom: 22px; right: 0; width: 14px; height: 14px; background: #22c55e; border-radius: 50%; border: 2px solid white;"></span>
-                <p style="font-size: 0.9rem; color: #6b7280; margin-top: 0.5rem;">Sarah</p>
-            </div>
-
-            <div class="text-center" style="flex-shrink: 0;">
-                <img src="https://i.pravatar.cc/65?img=30" alt="Mdm Lim"
-                    style="width: 65px; height: 65px; border-radius: 50%; object-fit: cover; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-                <p style="font-size: 0.9rem; color: #6b7280; margin-top: 0.5rem;">Mdm Lim</p>
-            </div>
+            {% endif %}
+            {% endif %}
         </div>
     </div>
 
-    <!-- Top Activities Section -->
+    <!-- Top Activities & Other Dashboard Items -->
+    <!-- (Reusing existing layout structure) -->
     <div class="mb-3">
-        <span style="font-size: 1.1rem; font-weight: 600; color: #1a1a2e;">Top Activities</span>
+        <span style="font-size: 1.1rem; font-weight: 600; color: #1a1a2e;">Your Daily Picks</span>
     </div>
 
     <div class="row g-3 mb-4">
-        <!-- Slice of Life - Large Featured Card -->
+        <!-- Slice of Life -->
         <div class="col-md-6">
             <a href="{{ url_for('slice_of_life.prompt') }}" class="text-decoration-none">
                 <div
@@ -109,10 +129,12 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <span style="font-size: 1.25rem; font-weight: 600;">Slice of Life</span>
                         <div class="d-flex">
-                            <img src="https://i.pravatar.cc/30?img=11" alt=""
-                                style="width: 30px; height: 30px; border-radius: 50%; border: 2px solid white; margin-left: -8px;">
-                            <img src="https://i.pravatar.cc/30?img=15" alt=""
-                                style="width: 30px; height: 30px; border-radius: 50%; border: 2px solid white; margin-left: -8px;">
+                            <div
+                                style="width: 30px; height: 30px; background: white; border-radius: 50%; opacity: 0.3; margin-left: -8px;">
+                            </div>
+                            <div
+                                style="width: 30px; height: 30px; background: white; border-radius: 50%; opacity: 0.5; margin-left: -8px;">
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -122,125 +144,210 @@
         <!-- Right Column Cards -->
         <div class="col-md-6">
             <div class="row g-3">
-                <div class="col-12">
-                    <a href="{{ url_for('support_swap.support_library') }}" class="text-decoration-none">
+                <!-- Support Swap (Top Left) -->
+                <div class="col-6">
+                    <a href="{{ url_for('support_swap.ss_profile') }}" class="text-decoration-none">
                         <div
-                            style="background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border-radius: 16px; padding: 1.25rem; display: flex; justify-content: space-between; align-items: center;">
-                            <span style="font-size: 1.1rem; font-weight: 600; color: #1e3a5f;">Support Swap
-                                Marketplace</span>
-                            <i class="bi bi-lightbulb" style="font-size: 1.5rem; color: #f59e0b;"></i>
+                            style="background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border-radius: 16px; padding: 1.25rem; height: 100%; display: flex; flex-direction: column; justify-content: pointer; min-height: 140px;">
+                            <i class="bi bi-lightbulb mb-2" style="font-size: 1.75rem; color: #f59e0b;"></i>
+                            <span style="font-size: 1rem; font-weight: 600; color: #1e3a5f;">Support Swap</span>
+                            <small class="text-muted mt-1">Learn & Teach</small>
                         </div>
                     </a>
                 </div>
-                <div class="col-12">
+
+                <!-- Jukebox (Top Right) -->
+                <div class="col-6">
+                    <a href="{{ url_for('activities.activity_list') }}" class="text-decoration-none">
+                        <div
+                            style="background: linear-gradient(135deg, #3B5BDB 0%, #5B7BFB 100%); border-radius: 16px; padding: 1.25rem; height: 100%; display: flex; flex-direction: column; justify-content: pointer; min-height: 140px; color: white;">
+                            <i class="bi bi-music-note-beamed mb-2" style="font-size: 1.75rem; color: #ffffff;"></i>
+                            <span style="font-size: 1rem; font-weight: 600;">Jukebox</span>
+                            <small style="opacity: 0.8;" class="mt-1">Share a Song</small>
+                        </div>
+                    </a>
+                </div>
+
+                <!-- Cyber Challenge (Bottom Left) -->
+                <div class="col-6">
                     <a href="{{ url_for('activities.puzzle_challenge') }}" class="text-decoration-none">
                         <div
-                            style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-radius: 16px; padding: 1.25rem; display: flex; justify-content: space-between; align-items: center;">
-                            <span style="font-size: 1.1rem; font-weight: 600; color: #92400e;">Cyber Challenge</span>
-                            <i class="bi bi-shield-check" style="font-size: 1.5rem; color: #ef4444;"></i>
+                            style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-radius: 16px; padding: 1.25rem; height: 100%; display: flex; flex-direction: column; justify-content: pointer; min-height: 140px;">
+                            <i class="bi bi-shield-check mb-2" style="font-size: 1.75rem; color: #ef4444;"></i>
+                            <span style="font-size: 1rem; font-weight: 600; color: #92400e;">Cyber Smart</span>
+                            <small class="text-muted mt-1">Quiz of the Day</small>
+                        </div>
+                    </a>
+                </div>
+
+                <!-- BOOMERang (Bottom Right) -->
+                <div class="col-6">
+                    <a href="{{ url_for('messaging.boomerang') }}" class="text-decoration-none">
+                        <div
+                            style="background: linear-gradient(135deg, #e0e5ec 0%, #f5f7fa 100%); border-radius: 16px; padding: 1.25rem; height: 100%; display: flex; flex-direction: column; justify-content: pointer; min-height: 140px;">
+                            <i class="bi bi-camera-video mb-2" style="font-size: 1.75rem; color: #1e3a5f;"></i>
+                            <span style="font-size: 1rem; font-weight: 600; color: #1e3a5f;">BOOMERang</span>
+                            <small class="text-muted mt-1">Video Chat</small>
+                        </div>
+                    </a>
+                </div>
+
+                <div class="col-6">
+                    <a href="{{ url_for('community.ask_grandfriend') }}" class="text-decoration-none">
+                        <div
+                            style="background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%); border-radius: 16px; padding: 1.25rem;">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <span style="font-size: 1rem; font-weight: 600; color: #166534;">Ask
+                                    A<br>Grandfriend</span>
+                                <i class="bi bi-chat-dots" style="font-size: 1.5rem; color: #22c55e;"></i>
+                            </div>
                         </div>
                     </a>
                 </div>
             </div>
-        </div>
-    </div>
 
-    <!-- Boomerang Section -->
-    <div class="mb-4">
-        <a href="{{ url_for('messaging.boomerang') }}" class="text-decoration-none">
-            <div
-                style="background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%); border-radius: 16px; padding: 1.5rem; color: white;">
-                <h5 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem;">
-                    <i class="bi bi-camera-video me-2"></i>Boomerang
-                </h5>
-                <p style="font-size: 1rem; opacity: 0.9; margin: 0;">Quick fun video challenges to send back and forth
+            <!-- People You May Know -->
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <span style="font-size: 1.1rem; font-weight: 600; color: #1a1a2e;">People You May Know</span>
+                <a href="#" style="color: #1e3a5f; font-size: 1rem; text-decoration: none;">See All</a>
+            </div>
+
+            <div class="row g-3 mb-4">
+                <div class="col-6 col-md-3">
+                    <div
+                        style="background: white; border-radius: 16px; padding: 1.25rem; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
+                        <img src="https://i.pravatar.cc/60?img=20" alt="Mr. Tan"
+                            style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover; margin-bottom: 0.75rem;">
+                        <p style="font-size: 1rem; font-weight: 600; color: #1a1a2e; margin-bottom: 0.25rem;">Mr. Tan
+                        </p>
+                        <p style="font-size: 0.85rem; color: #6b7280; margin-bottom: 0.75rem;">Senior, Tampines</p>
+                        <button
+                            style="background: #1e3a5f; color: white; border: none; border-radius: 20px; padding: 0.5rem 1.25rem; font-size: 0.9rem; cursor: pointer;">Connect</button>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div
+                        style="background: white; border-radius: 16px; padding: 1.25rem; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
+                        <img src="https://i.pravatar.cc/60?img=25" alt="Dr. Chloe"
+                            style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover; margin-bottom: 0.75rem;">
+                        <p style="font-size: 1rem; font-weight: 600; color: #1a1a2e; margin-bottom: 0.25rem;">Dr. Chloe
+                        </p>
+                        <p style="font-size: 0.85rem; color: #6b7280; margin-bottom: 0.75rem;">Youth, Clementi</p>
+                        <button
+                            style="background: white; color: #1e3a5f; border: 2px solid #1e3a5f; border-radius: 20px; padding: 0.5rem 1.25rem; font-size: 0.9rem; cursor: pointer;">Connect</button>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div
+                        style="background: white; border-radius: 16px; padding: 1.25rem; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
+                        <img src="https://i.pravatar.cc/60?img=30" alt="Grandma Rose"
+                            style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover; margin-bottom: 0.75rem;">
+                        <p style="font-size: 1rem; font-weight: 600; color: #1a1a2e; margin-bottom: 0.25rem;">Grandma
+                            Rose</p>
+                        <p style="font-size: 0.85rem; color: #6b7280; margin-bottom: 0.75rem;">Senior, Bishan</p>
+                        <button
+                            style="background: #1e3a5f; color: white; border: none; border-radius: 20px; padding: 0.5rem 1.25rem; font-size: 0.9rem; cursor: pointer;">Connect</button>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div
+                        style="background: white; border-radius: 16px; padding: 1.25rem; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
+                        <img src="https://i.pravatar.cc/60?img=35" alt="Uncle David"
+                            style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover; margin-bottom: 0.75rem;">
+                        <p style="font-size: 1rem; font-weight: 600; color: #1a1a2e; margin-bottom: 0.25rem;">Uncle
+                            David</p>
+                        <p style="font-size: 0.85rem; color: #6b7280; margin-bottom: 0.75rem;">Senior, Yishun</p>
+                        <button
+                            style="background: white; color: #1e3a5f; border: 2px solid #1e3a5f; border-radius: 20px; padding: 0.5rem 1.25rem; font-size: 0.9rem; cursor: pointer;">Connect</button>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% else %}
+        <!-- ============================================ -->
+        <!-- PUBLIC LANDING PAGE (GUEST) -->
+        <!-- ============================================ -->
+
+        <!-- Hero Section -->
+        <div
+            style="background: linear-gradient(135deg, #1e3a5f 0%, #0f172a 100%); border-radius: 0 0 50px 50px; padding: 5rem 2rem 4rem; color: white; text-align: center; margin-bottom: 3rem;">
+            <div class="container" style="max-width: 800px;">
+                <div
+                    style="width: 80px; height: 80px; background: rgba(255,255,255,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
+                    <i class="bi bi-heart-pulse-fill" style="font-size: 2.5rem; color: #60a5fa;"></i>
+                </div>
+                <h1 style="font-size: 3.5rem; font-weight: 800; margin-bottom: 1rem; line-height: 1.2;">
+                    Connecting Generations,<br>Sharing Wisdom
+                </h1>
+                <p
+                    style="font-size: 1.25rem; opacity: 0.8; margin-bottom: 2.5rem; max-width: 600px; margin-left: auto; margin-right: auto;">
+                    Join our community to bridge the gap between youth and seniors through stories, skills, and fun
+                    activities.
                 </p>
+                <div class="d-flex gap-3 justify-content-center flex-wrap">
+                    <a href="{{ url_for('auth.login') }}" class="btn btn-light btn-lg"
+                        style="border-radius: 16px; padding: 1rem 2.5rem; font-weight: 700; color: #1e3a5f;">
+                        Log In
+                    </a>
+                    <a href="{{ url_for('auth.register') }}" class="btn btn-outline-light btn-lg"
+                        style="border-radius: 16px; padding: 1rem 2.5rem; font-weight: 600;">
+                        Sign Up
+                    </a>
+                </div>
             </div>
-        </a>
-    </div>
+        </div>
 
-    <!-- Recently Played Section -->
-    <div class="mb-3">
-        <span style="font-size: 1.1rem; font-weight: 600; color: #1a1a2e;">Recently Played</span>
-    </div>
-
-    <div class="row g-3 mb-4">
-        <div class="col-6">
-            <a href="#" class="text-decoration-none">
-                <div
-                    style="background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); border-radius: 16px; padding: 1.25rem;">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <span
-                            style="font-size: 1rem; font-weight: 600; color: #1e3a5f;">Intergenerational<br>Jukebox</span>
-                        <i class="bi bi-music-note-beamed" style="font-size: 1.5rem; color: #3b82f6;"></i>
+        <!-- Feature Highlights -->
+        <div class="container mb-5">
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div
+                        style="background: white; border-radius: 24px; padding: 2rem; height: 100%; box-shadow: 0 4px 20px rgba(0,0,0,0.05); text-align: center;">
+                        <div
+                            style="width: 60px; height: 60px; background: #e0f2fe; border-radius: 16px; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
+                            <i class="bi bi-camera" style="font-size: 1.75rem; color: #0284c7;"></i>
+                        </div>
+                        <h3 style="font-size: 1.35rem; font-weight: 700; color: #1e3a5f; margin-bottom: 0.75rem;">Slice
+                            of Life
+                        </h3>
+                        <p style="color: #64748b;">Share detailed photo stories from your daily life and discover how
+                            other
+                            generations live.</p>
                     </div>
                 </div>
-            </a>
-        </div>
-        <div class="col-6">
-            <a href="{{ url_for('community.ask_grandfriend') }}" class="text-decoration-none">
-                <div
-                    style="background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%); border-radius: 16px; padding: 1.25rem;">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <span style="font-size: 1rem; font-weight: 600; color: #166534;">Ask A<br>Grandfriend</span>
-                        <i class="bi bi-chat-dots" style="font-size: 1.5rem; color: #22c55e;"></i>
+                <div class="col-md-4">
+                    <div
+                        style="background: white; border-radius: 24px; padding: 2rem; height: 100%; box-shadow: 0 4px 20px rgba(0,0,0,0.05); text-align: center;">
+                        <div
+                            style="width: 60px; height: 60px; background: #fef3c7; border-radius: 16px; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
+                            <i class="bi bi-lightbulb" style="font-size: 1.75rem; color: #d97706;"></i>
+                        </div>
+                        <h3 style="font-size: 1.35rem; font-weight: 700; color: #1e3a5f; margin-bottom: 0.75rem;">
+                            Support Swap
+                        </h3>
+                        <p style="color: #64748b;">Exchange skills and help. Elders teach life wisdom, youth teach
+                            digital
+                            skills.</p>
                     </div>
                 </div>
-            </a>
-        </div>
-    </div>
-
-    <!-- People You May Know -->
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <span style="font-size: 1.1rem; font-weight: 600; color: #1a1a2e;">People You May Know</span>
-        <a href="#" style="color: #1e3a5f; font-size: 1rem; text-decoration: none;">See All</a>
-    </div>
-
-    <div class="row g-3 mb-4">
-        <div class="col-6 col-md-3">
-            <div
-                style="background: white; border-radius: 16px; padding: 1.25rem; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
-                <img src="https://i.pravatar.cc/60?img=20" alt="Mr. Tan"
-                    style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover; margin-bottom: 0.75rem;">
-                <p style="font-size: 1rem; font-weight: 600; color: #1a1a2e; margin-bottom: 0.25rem;">Mr. Tan</p>
-                <p style="font-size: 0.85rem; color: #6b7280; margin-bottom: 0.75rem;">Senior, Tampines</p>
-                <button
-                    style="background: #1e3a5f; color: white; border: none; border-radius: 20px; padding: 0.5rem 1.25rem; font-size: 0.9rem; cursor: pointer;">Connect</button>
+                <div class="col-md-4">
+                    <div
+                        style="background: white; border-radius: 24px; padding: 2rem; height: 100%; box-shadow: 0 4px 20px rgba(0,0,0,0.05); text-align: center;">
+                        <div
+                            style="width: 60px; height: 60px; background: #dcfce7; border-radius: 16px; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
+                            <i class="bi bi-controller" style="font-size: 1.75rem; color: #16a34a;"></i>
+                        </div>
+                        <h3 style="font-size: 1.35rem; font-weight: 700; color: #1e3a5f; margin-bottom: 0.75rem;">Fun
+                            Activities
+                        </h3>
+                        <p style="color: #64748b;">Play intergenerational games, solve puzzles, and bridge the gap
+                            through fun.
+                        </p>
+                    </div>
+                </div>
             </div>
         </div>
-        <div class="col-6 col-md-3">
-            <div
-                style="background: white; border-radius: 16px; padding: 1.25rem; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
-                <img src="https://i.pravatar.cc/60?img=25" alt="Dr. Chloe"
-                    style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover; margin-bottom: 0.75rem;">
-                <p style="font-size: 1rem; font-weight: 600; color: #1a1a2e; margin-bottom: 0.25rem;">Dr. Chloe</p>
-                <p style="font-size: 0.85rem; color: #6b7280; margin-bottom: 0.75rem;">Youth, Clementi</p>
-                <button
-                    style="background: white; color: #1e3a5f; border: 2px solid #1e3a5f; border-radius: 20px; padding: 0.5rem 1.25rem; font-size: 0.9rem; cursor: pointer;">Connect</button>
-            </div>
-        </div>
-        <div class="col-6 col-md-3">
-            <div
-                style="background: white; border-radius: 16px; padding: 1.25rem; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
-                <img src="https://i.pravatar.cc/60?img=30" alt="Grandma Rose"
-                    style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover; margin-bottom: 0.75rem;">
-                <p style="font-size: 1rem; font-weight: 600; color: #1a1a2e; margin-bottom: 0.25rem;">Grandma Rose</p>
-                <p style="font-size: 0.85rem; color: #6b7280; margin-bottom: 0.75rem;">Senior, Bishan</p>
-                <button
-                    style="background: #1e3a5f; color: white; border: none; border-radius: 20px; padding: 0.5rem 1.25rem; font-size: 0.9rem; cursor: pointer;">Connect</button>
-            </div>
-        </div>
-        <div class="col-6 col-md-3">
-            <div
-                style="background: white; border-radius: 16px; padding: 1.25rem; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
-                <img src="https://i.pravatar.cc/60?img=35" alt="Uncle David"
-                    style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover; margin-bottom: 0.75rem;">
-                <p style="font-size: 1rem; font-weight: 600; color: #1a1a2e; margin-bottom: 0.25rem;">Uncle David</p>
-                <p style="font-size: 0.85rem; color: #6b7280; margin-bottom: 0.75rem;">Senior, Yishun</p>
-                <button
-                    style="background: white; color: #1e3a5f; border: 2px solid #1e3a5f; border-radius: 20px; padding: 0.5rem 1.25rem; font-size: 0.9rem; cursor: pointer;">Connect</button>
-            </div>
-        </div>
-    </div>
-</div>
-{% endblock %}
+        {% endif %}
+        {% endblock %}

@@ -47,7 +47,8 @@
         </div>
 
         <!-- Upload Form -->
-        <form id="storyForm" action="{{ url_for('slice_of_life.choose_recipients') }}" method="GET">
+        <form id="storyForm" action="{{ url_for('slice_of_life.create_display') }}" method="POST"
+            enctype="multipart/form-data">
             <div class="row g-4">
                 <!-- Upload Photo -->
                 <div class="col-md-6">

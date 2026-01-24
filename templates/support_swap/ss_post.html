@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block title %}History - Support Swap{% endblock %}
+
+{% block content %}
+<nav class="navbar navbar-expand-lg skillnav">
+    <div class="container">
+        <div class="navbar-nav">
+            <a href="{{ url_for('activities.activity_list') }}" class="nav-link">Back to activity</a>
+        </div>
+        <a class="navbar-brand fw-bold ms-3" href="#">
+            <i class="bi bi-people-fill me-2"></i>Support Swap
+            <small class="fw-normal">(North Region)</small>
+        </a>
+        <!-- Toggler for mobile -->
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+            <div class="navbar-nav nav-pills">
+                <a href="{{ url_for('support_swap.ss_profile') }}" class="nav-link">My Profile</a>
+                <a href="{{ url_for('support_swap.ss_market') }}" class="nav-link">Skills Market</a>
+                <a href="{{ url_for('support_swap.ss_post') }}" class="nav-link"><span class="underlined">+ Post
+                        Request</span></a>
+                <a href="{{ url_for('support_swap.ss_match') }}" class="nav-link">Matchings</a>
+            </div>
+        </div>
+    </div>
+</nav>
+<main>
+    <div class="container">
+        <div class="card">
+            <div class="card-body">
+                <form action="/send-message" method="POST">
+                    <h2>Post a Request</h2>
+                    <div class="mb-3">
+                        <label for="skillName" class="form-label fw-bold">Title / Title</label>
+                        <input type="text" class="form-control" id="skillName"
+                            placeholder="e.g., Teach me how to use Zoom">
+                    </div>
+                    <div class="mb-3">
+                        <label for="skillName" class="form-label fw-bold">Description</label>
+                        <input type="text" class="form-control" id="skillName" placeholder="Describe the help you need">
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Type</label>
+                            <select class="form-control">
+                                <option>I need Assistance (Elderly)</option>
+                                <option>I want to Learn (Youth)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Duration (Hours)</label>
+                            <input type="number" class="form-control" placeholder="1">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="skillName" class="form-label fw-bold">Location</label>
+                        <input type="text" class="form-control" id="skillName"
+                            placeholder="e.g., Yishun Community Centre">
+                    </div>
+                    <div class="mb-3">
+                        <label for="skillName" class="form-label fw-bold">Date</label>
+                        <input type="date" class="form-control" id="skillName" placeholder="e.g., Weekdays 2pm-4pm">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Post Request</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="container pt-4">
+        <div class="card">
+            <h2 class="card-header">Requested List</h2>
+            <div class="card-body">
+                <h5 class="card-title">Request: Learn to Code</h5>
+                <p class="card-text">I need assistance learning to code.</p>
+                <div class="deletebtn">
+                    <button type="button" class="btn btn-danger">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+<footer></footer>
+{% endblock %}
