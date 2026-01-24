@@ -156,22 +156,6 @@ def register_boomerang_events(socketio):
             
             print(f"[BOOMERang] User {sid} ended call in room {room_id}")
     
-    @socketio.on('disconnect')
-    def handle_boomerang_disconnect():
-        """Clean up when user disconnects."""
-        sid = request.sid
-        
-        # Remove from queue if waiting
-        if sid in boomerang_queue:
-            del boomerang_queue[sid]
-        
-        # End any active call
-        room_id = user_room_map.get(sid)
-        if room_id:
-            emit('boomerang_partner_left', {}, room=room_id, include_self=False)
-            if sid in user_room_map:
-                del user_room_map[sid]
-            if room_id in active_rooms:
-                active_rooms[room_id].discard(sid)
-                if len(active_rooms[room_id]) == 0:
-                    del active_rooms[room_id]
+    # NOTE: We don't add a @socketio.on('disconnect') here because
+    # chat_events.py already has one, and having two causes conflicts.
+    # BOOMERang cleanup is handled by boomerang_end_call event instead.
