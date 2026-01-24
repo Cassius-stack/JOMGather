@@ -68,6 +68,11 @@ def prompt():
 @login_required
 def create_display():
     """Step 1: Create submission with image + story."""
+    # Fetch prompt for display
+    today = datetime.now().date().isoformat()
+    prompts = fetch_all('sol_prompts', active_date=today)
+    prompt = prompts[0] if prompts else {'prompt_text': 'What is your story for today?'}
+
     if request.method == 'POST':
         story = request.form.get('story')
         image_url = request.form.get('image_url') # Optional URL input if we had one
@@ -97,11 +102,15 @@ def create_display():
                 'story': story,
                 'image_url': image_url
             }
+            # Ensure prompt ID is set if user jumped straight here
+            if 'sol_prompt_id' not in session and 'prompt_id' in prompt:
+                session['sol_prompt_id'] = prompt['prompt_id']
+                
             return redirect(url_for('slice_of_life.choose_recipients'))
         else:
             flash('Please provide a story.', 'warning')
     
-    return render_template('slice_of_life/create_display.html')
+    return render_template('slice_of_life/create_display.html', prompt=prompt)
 
 
 @slice_of_life_bp.route('/choose-recipients', methods=['GET'])
@@ -133,64 +142,82 @@ def send_invites():
         return redirect(url_for('slice_of_life.prompt'))
 
     try:
-        # 1. Create DISPLAY Record
-        recipient_id = int(recipients[0]) 
-
-        display = insert('sol_displays', {
-            'prompt_id': prompt_id,
-            'creator_id': sender_id,
-            'partner_id': recipient_id,
-            'status': 'pending',
-            'is_public': False,
-            'is_private': True
-        })
+        display_ids = []
         
-        display_id = display['display_id']
+        # Loop through ALL recipients
+        for recipient_id_str in recipients:
+            recipient_id = int(recipient_id_str)
+            
+            # 1. Create DISPLAY Record (One per pair)
+            display = insert('sol_displays', {
+                'prompt_id': prompt_id,
+                'creator_id': sender_id,
+                'partner_id': recipient_id,
+                'status': 'pending',
+                'is_public': False,
+                'is_private': True
+            })
+            
+            display_id = display['display_id']
+            display_ids.append(display_id)
 
-        # 2. Save SENDER's Submission
-        insert('sol_submissions', {
-            'display_id': display_id,
-            'user_id': sender_id,
-            'image_url': submission_data['image_url'],
-            'thought': submission_data['story']
-        })
+            # 2. Save SENDER's Submission (Duplicate entry per display to link correctly)
+            insert('sol_submissions', {
+                'display_id': display_id,
+                'user_id': sender_id,
+                'image_url': submission_data['image_url'],
+                'thought': submission_data['story']
+            })
 
-        # 3. Create INVITE
-        invite = insert('sol_invites', {
-            'sender_id': sender_id,
-            'recipient_id': recipient_id,
-            'prompt_id': prompt_id,
-            'display_id': display_id,
-            'status': 'pending'
-        })
-        
-        # 4. Create NOTIFICATION for Recipient
-        insert('notifications', {
-            'user_id': recipient_id,
-            'type': 'sol_invite',
-            'message': f"You have been invited to a Slice of Life conversation!",
-            'link': url_for('slice_of_life.receiver_respond', invite_id=invite['invite_id'])
-        })
-        
-        # 5. [NEW] Send Chat Message
-        msg_content = f"Hey! I just invited you to a daily Slice of Life conversation. Check your notifications or click here to join: {url_for('slice_of_life.receiver_respond', invite_id=invite['invite_id'], _external=True)}"
-        insert('messages', {
-            'sender_id': sender_id,
-            'receiver_id': recipient_id,
-            'content': msg_content,
-            'read': False
-        })
+            # 3. Create INVITE
+            invite = insert('sol_invites', {
+                'sender_id': sender_id,
+                'recipient_id': recipient_id,
+                'prompt_id': prompt_id,
+                'display_id': display_id,
+                'status': 'pending'
+            })
+            
+            # 4. Create NOTIFICATION for Recipient
+            insert('notifications', {
+                'user_id': recipient_id,
+                'type': 'sol_invite',
+                'message': f"You have been invited to a Slice of Life conversation!",
+                'link': url_for('slice_of_life.receiver_respond', invite_id=invite['invite_id'])
+            })
+            
+            # 5. Send Chat Message (Rich Card)
+            msg_content = (
+                f'<div style="background: white; border: 1px solid #cbd5e1; border-radius: 16px; padding: 16px; width: 100%; max-width: 280px; font-family: sans-serif; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">'
+                f'<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">'
+                f'<span style="font-size: 1.2rem;">🎨</span>'
+                f'<strong style="color: #1e3a5f; font-size: 1rem;">Slice of Life Invite</strong>'
+                f'</div>'
+                f'<p style="margin: 0 0 12px; font-size: 0.9rem; color: #475569; line-height: 1.4;">I wanted to share a moment with you for today\'s prompt.</p>'
+                f'<a href="{url_for("slice_of_life.receiver_respond", invite_id=invite["invite_id"], _external=True)}"'
+                f' style="display: block; text-align: center; background: #3b82f6; color: white; text-decoration: none; padding: 10px; border-radius: 50px; font-size: 0.9rem; font-weight: 600; transition: background 0.2s;">View & Respond</a>'
+                f'</div>'
+            )
+            insert('messages', {
+                'sender_id': sender_id,
+                'receiver_id': recipient_id,
+                'content': msg_content,
+                'read': False
+            })
 
         # 6. Clear Session & Update State
         session.pop('sol_submission', None)
-        session['sol_active_display_id'] = display_id
+        # We store the LAST display ID or just flag that we are waiting
+        session['sol_active_display_id'] = display_ids[0] 
         session['sol_state'] = 'waiting'
         
-        flash(f'Invite sent! Waiting for response.', 'success')
+        flash(f'Invites sent to {len(display_ids)} friends!', 'success')
         return redirect(url_for('slice_of_life.waiting_room'))
 
     except Exception as e:
         print(f"Error sending invites: {e}")
+        import traceback
+        traceback.print_exc()
         flash('An error occurred. Please try again.', 'danger')
         return redirect(url_for('slice_of_life.prompt'))
 
@@ -198,26 +225,49 @@ def send_invites():
 @slice_of_life_bp.route('/waiting-room')
 @login_required
 def waiting_room():
-    """Step 4: Sender waits for response."""
-    display_id = session.get('sol_active_display_id')
-    if not display_id:
+    """Step 4: Sender or Partner waits for response."""
+    current_uid = get_current_user_id()
+    prompt_id = session.get('sol_prompt_id')
+    
+    # Fetch all relevant invites: where I am Sender (waiting for them) OR Recipient (I replied)
+    invites = []
+    
+    # 1. Fetch where I am SENDER
+    if prompt_id:
+        sent = fetch_all('sol_invites', sender_id=current_uid, prompt_id=prompt_id)
+        # 2. Fetch where I am RECIPIENT
+        received = fetch_all('sol_invites', recipient_id=current_uid, prompt_id=prompt_id)
+        invites = sent + received
+    
+    # Fallback to session display_id if prompt_id missing or no results
+    if not invites:
+        display_id = session.get('sol_active_display_id')
+        if display_id:
+            invites = fetch_all('sol_invites', display_id=display_id)
+    
+    if not invites:
         return redirect(url_for('slice_of_life.prompt'))
-        
-    # Check Invite Status in Supabase
-    # We query sol_invites for this display
-    # (In real app, we'd use a more specific query)
-    # Using raw SQL might be easier for joins, but let's do two fetches
-    
-    invites = fetch_all('sol_invites', display_id=display_id)
-    invite = invites[0] if invites else None
-    
-    if invite and invite['status'] == 'accepted':
-        # Check if partner has submitted
-        submissions = fetch_all('sol_submissions', display_id=display_id)
-        if len(submissions) >= 2:
-             return redirect(url_for('slice_of_life.review', display_id=display_id))
 
-    return render_template('slice_of_life/waiting_room.html', invite=invite, display_id=display_id)
+    # Enrich invites for the view (Identify who the "Partner" is)
+    view_data = []
+    for invite in invites:
+        is_me_sender = (invite['sender_id'] == current_uid)
+        partner_id = invite['recipient_id'] if is_me_sender else invite['sender_id']
+        
+        view_data.append({
+            'invite': invite,
+            'partner_id': partner_id,
+            'is_me_sender': is_me_sender,
+            'display_id': invite['display_id']
+        })
+
+    # Fetch My Submission (from the first relevant display)
+    # If I am recipient, I check if I have submitted to ANY of these displays
+    my_display_id = invites[0]['display_id']
+    my_subs = fetch_all('sol_submissions', display_id=my_display_id, user_id=current_uid)
+    my_submission = my_subs[0] if my_subs else {'thought': 'Waiting for your input...', 'image_url': ''}
+    
+    return render_template('slice_of_life/waiting_room.html', invites=view_data, my_submission=my_submission)
 
 
 @slice_of_life_bp.route('/review/<int:display_id>', methods=['GET', 'POST'])

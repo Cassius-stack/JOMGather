@@ -31,16 +31,14 @@
             </h3>
             <div class="row align-items-center">
                 <div class="col-md-4">
-                    <img src="https://images.unsplash.com/photo-1472745942893-4b9f730c7668?w=400&h=280&fit=crop"
+                    <img src="{{ my_submission.image_url }}"
                         style="width: 100%; height: 200px; border-radius: 16px; object-fit: cover; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
                 </div>
                 <div class="col-md-8">
                     <div style="background: #f8fafc; border-radius: 16px; padding: 1.5rem; height: 100%;">
                         <p
                             style="font-size: 1.15rem; color: #374151; margin: 0; line-height: 1.7; overflow-wrap: break-word;">
-                            "After school, I love going to the playground near my HDB. This photo is from last week -
-                            I was just sitting on the swing, watching the sunset and decompressing from the day.
-                            It's my peaceful escape where I can think about life and enjoy the simple moments."
+                            "{{ my_submission.thought }}"
                         </p>
                     </div>
                 </div>
@@ -49,43 +47,49 @@
 
         <!-- Invite Status -->
         <h3 style="font-size: 1.75rem; font-weight: 600; color: #1e3a5f; margin-bottom: 1.5rem;">
-            <i class="bi bi-people me-2"></i>Invite Status
+            <i class="bi bi-people me-2"></i>Invite Status ({{ invites|length }})
         </h3>
 
         <div class="row g-4">
-            {% if invite %}
+            {% if invites %}
+            {% for item in invites %}
             <div class="col-md-4">
                 <div
                     style="background: white; border-radius: 24px; padding: 2rem; box-shadow: 0 8px 30px rgba(0,0,0,0.08);">
                     <!-- Person Info -->
                     <div class="text-center mb-4">
-                        <img src="https://i.pravatar.cc/100?img={{ (invite.recipient_id * 5) % 70 }}" alt="Recipient"
+                        <img src="https://i.pravatar.cc/100?img={{ (item.partner_id * 5) % 70 }}" alt="Partner"
                             style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 4px solid #e2e8f0; margin-bottom: 1rem;">
                         <h4 style="font-size: 1.35rem; font-weight: 600; color: #1e3a5f; margin-bottom: 0.25rem;">
-                            Partner (ID: {{ invite.recipient_id }})
+                            {% if item.is_me_sender %}
+                            Partner (ID: {{ item.partner_id }})
+                            {% else %}
+                            Sender (ID: {{ item.partner_id }})
+                            {% endif %}
                         </h4>
-                        <p style="font-size: 1.05rem; color: #6b7280; margin: 0;">Status: {{ invite.status|capitalize }}
+                        <p style="font-size: 1.05rem; color: #6b7280; margin: 0;">Status: {{
+                            item.invite.status|capitalize }}
                         </p>
                     </div>
 
                     <!-- Status Badge -->
                     <div class="text-center mb-4">
-                        {% if invite.status == 'accepted' %}
+                        {% if item.invite.status == 'accepted' %}
                         <span
                             style="display: inline-block; background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%); color: #16a34a; padding: 0.5rem 1.25rem; border-radius: 25px; font-size: 1.1rem; font-weight: 600;">
-                            <i class="bi bi-check-circle-fill me-2"></i>Responded!
+                            <i class="bi bi-check-circle-fill me-2"></i>Ready!
                         </span>
                         {% else %}
                         <span
                             style="display: inline-block; background: #e2e8f0; color: #64748b; padding: 0.5rem 1.25rem; border-radius: 25px; font-size: 1.1rem; font-weight: 600;">
-                            <i class="bi bi-clock me-2"></i>Pending...
+                            <i class="bi bi-clock me-2"></i>Waiting...
                         </span>
                         {% endif %}
                     </div>
 
                     <!-- Review Button -->
-                    {% if invite.status == 'accepted' %}
-                    <a href="{{ url_for('slice_of_life.review', display_id=display_id) }}"
+                    {% if item.invite.status == 'accepted' %}
+                    <a href="{{ url_for('slice_of_life.review', display_id=item.display_id) }}"
                         style="display: block; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white; text-align: center; border-radius: 16px; padding: 1rem 1.5rem; font-weight: 600; text-decoration: none; font-size: 1.15rem; box-shadow: 0 4px 15px rgba(34, 197, 94, 0.3);">
                         <i class="bi bi-eye me-2"></i>Enter Review Mode
                     </a>
@@ -97,6 +101,7 @@
                     {% endif %}
                 </div>
             </div>
+            {% endfor %}
             {% else %}
             <div class="col-12 text-center">
                 <p class="text-muted">No active invites found.</p>

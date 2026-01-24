@@ -18,7 +18,7 @@
         <div
             style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-radius: 20px; padding: 1.5rem 2rem; margin-bottom: 2rem; border-left: 5px solid #f59e0b;">
             <div class="d-flex align-items-center gap-3">
-                <img src="https://i.pravatar.cc/60?img=12"
+                <img src="https://i.pravatar.cc/60?img={{ (sender.user_id * 5) % 70 }}"
                     style="width: 60px; height: 60px; border-radius: 50%; border: 3px solid white;">
                 <div>
                     <p style="font-size: 1rem; color: #92400e; margin-bottom: 0.25rem;">You've been invited!</p>
@@ -34,7 +34,7 @@
             <h1 style="font-size: 2.25rem; font-weight: 700; color: #1e3a5f; margin-bottom: 0.5rem;">
                 <i class="bi bi-reply me-2"></i>Share Your Response
             </h1>
-            <p style="font-size: 1.15rem; color: #475569;">Add your photo and comment on Jeremy's submission</p>
+            <p style="font-size: 1.15rem; color: #475569;">Add your photo and reply to {{ sender.username }}</p>
         </div>
 
         <!-- Prompt Card -->
@@ -46,7 +46,7 @@
             <p style="font-size: 1.4rem; font-style: italic; margin: 0;">"{{ prompt.prompt_text }}"</p>
         </div>
 
-        <!-- Jeremy's Submission (Hidden / Blind Box) -->
+        <!-- {{ sender.username }}'s Submission (Hidden / Blind Box) -->
         <div
             style="background: white; border-radius: 24px; padding: 2rem; margin-bottom: 2rem; box-shadow: 0 8px 30px rgba(0,0,0,0.08); position: relative; overflow: hidden;">
             <h3 style="font-size: 1.35rem; font-weight: 600; color: #1e3a5f; margin-bottom: 1.5rem;">
@@ -60,8 +60,10 @@
                     </div>
                     <div class="col-md-7">
                         <div style="background: #f8fafc; border-radius: 16px; padding: 1.5rem; margin-bottom: 1rem;">
-                            <p style="font-size: 1.1rem; color: #374151; margin: 0; line-height: 1.7;">
-                                "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Secret message hidden..."
+                            <p
+                                style="font-size: 1.1rem; color: #64748b; margin: 0; line-height: 1.7; font-style: italic;">
+                                "This content is hidden until you share your own response. Join the conversation to
+                                unlock it!"
                             </p>
                         </div>
                     </div>
@@ -173,16 +175,14 @@
 
     function checkFormValidity() {
         const hasThought = document.getElementById('yourThought').value.trim().length > 10;
-        const hasComment = document.getElementById('commentOnSender').value.trim().length > 5;
         const submitBtn = document.getElementById('submitBtn');
 
-        const isValid = imageSelected && hasThought && hasComment;
+        const isValid = imageSelected && hasThought;
         submitBtn.disabled = !isValid;
         submitBtn.style.opacity = isValid ? '1' : '0.5';
     }
 
     document.getElementById('yourThought').addEventListener('input', checkFormValidity);
-    document.getElementById('commentOnSender').addEventListener('input', checkFormValidity);
 
     function submitResponse() {
         document.getElementById('successModal').style.display = 'flex';
