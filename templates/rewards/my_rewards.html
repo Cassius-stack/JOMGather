@@ -11,14 +11,6 @@
         <span class="breadcrumb-current">My Rewards</span>
     </div>
 
-    <div class="balance-card">
-        <img src="{{ url_for('static', filename='images/credit.svg') }}" class="credit-icon">
-        <div class="balance-info">
-            <span class="label">Your coins</span>
-            <span class="value">{{ '{:,}'.format(coins | default(0)) }}</span>
-        </div>
-    </div>
-
     {% if rewards %}
     <div class="rewards-grid my-rewards-grid">
         {% for reward in rewards %}
