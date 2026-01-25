@@ -12,7 +12,7 @@
 
         <a class="navbar-brand fw-bold ms-3" href="#">
             <i class="bi bi-people-fill me-2"></i>Support Swap
-            <small class="fw-normal">(North Region)</small>
+            <small class="fw-normal">({{ user_region or 'Region not set' }})</small>
         </a>
 
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -21,8 +21,7 @@
 
         <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
             <div class="navbar-nav nav-pills">
-                <a href="{{ url_for('support_swap.ss_profile') }}" class="nav-link">My Profile</a>
-                <a href="{{ url_for('support_swap.ss_market') }}" class="nav-link">Skills Market</a>
+                <a href="{{ url_for('support_swap.ss_dashboard') }}" class="nav-link">Dashboard</a>
                 <a href="{{ url_for('support_swap.ss_post') }}" class="nav-link">+ Post Request</a>
                 <a href="{{ url_for('support_swap.ss_match') }}" class="nav-link"><span
                         class="underlined">Matchings</span></a>
@@ -79,7 +78,7 @@
             <div class="card-body text-center py-4">
                 <i class="bi bi-inbox display-4 text-muted"></i>
                 <p class="text-muted mt-2">No active matches. Browse the <a
-                        href="{{ url_for('support_swap.ss_market') }}">Skills Market</a> to find help requests!</p>
+                        href="{{ url_for('support_swap.ss_dashboard') }}">Skills Market</a> to find help requests!</p>
             </div>
         </div>
         {% endif %}

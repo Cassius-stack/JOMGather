@@ -10,7 +10,7 @@
         </div>
         <a class="navbar-brand fw-bold ms-3" href="#">
             <i class="bi bi-people-fill me-2"></i>Support Swap
-            <small class="fw-normal">(North Region)</small>
+            <small class="fw-normal">({{ user_region or 'Region not set' }})</small>
         </a>
         <!-- Toggler for mobile -->
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -18,8 +18,7 @@
         </button>
         <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
             <div class="navbar-nav nav-pills">
-                <a href="{{ url_for('support_swap.ss_profile') }}" class="nav-link">My Profile</a>
-                <a href="{{ url_for('support_swap.ss_market') }}" class="nav-link">Skills Market</a>
+                <a href="{{ url_for('support_swap.ss_dashboard') }}" class="nav-link">Dashboard</a>
                 <a href="{{ url_for('support_swap.ss_post') }}" class="nav-link"><span class="underlined">+ Post
                         Request</span></a>
                 <a href="{{ url_for('support_swap.ss_match') }}" class="nav-link">Matchings</a>
@@ -46,24 +45,46 @@
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <label class="form-label fw-bold">Type</label>
-                            <select class="form-control" name="request_type">
-                                <option value="assistance">I need Assistance (Elderly)</option>
-                                <option value="learning">I want to Learn (Youth)</option>
+                            <select class="form-control" id="request_type" name="request_type">
+                                <option value="assistance">I need Assistance</option>
+                                <option value="learning">I want to Learn</option>
                             </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="skills_needed" class="form-label fw-bold">Skills Needed</label>
+                            <input type="text" class="form-control" id="skills_needed" name="skills_needed"
+                                placeholder="e.g., Reading, Writing" required>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="region" class="form-label fw-bold">Region</label>
+                            <select class="form-control" id="region" name="region" required>
+                                <option value="">-- Select Region --</option>
+                                <option value="North" {{ 'selected' if user_region=='North' else '' }}>North</option>
+                                <option value="South" {{ 'selected' if user_region=='South' else '' }}>South</option>
+                                <option value="East" {{ 'selected' if user_region=='East' else '' }}>East</option>
+                                <option value="West" {{ 'selected' if user_region=='West' else '' }}>West</option>
+                                <option value="Central" {{ 'selected' if user_region=='Central' else '' }}>Central
+                                </option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="location" class="form-label fw-bold">Community Centre</label>
+                            <select class="form-control" id="location" name="location" required>
+                                <option value="">-- Select Region First --</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="scheduled_date" class="form-label fw-bold">Date</label>
+                            <input type="date" class="form-control" id="scheduled_date" name="scheduled_date">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-bold">Duration (Hours)</label>
                             <input type="number" class="form-control" name="duration_hours" value="1" min="1" max="8">
                         </div>
-                    </div>
-                    <div class="mb-3">
-                        <label for="location" class="form-label fw-bold">Location</label>
-                        <input type="text" class="form-control" id="location" name="location"
-                            placeholder="e.g., Yishun Community Centre">
-                    </div>
-                    <div class="mb-3">
-                        <label for="scheduled_date" class="form-label fw-bold">Date</label>
-                        <input type="date" class="form-control" id="scheduled_date" name="scheduled_date">
                     </div>
                     <button type="submit" class="btn btn-primary">Post Request</button>
                 </form>
@@ -103,4 +124,136 @@
     </div>
 </main>
 <footer></footer>
+
+<script>
+    // Community Centres by Region
+    const ccByRegion = {
+        "North": [
+            "Woodlands Galaxy Community Club",
+            "Nee Soon East Community Club",
+            "Nee Soon South Community Club",
+            "Nee Soon Central Community Club",
+            "Canberra Community Club",
+            "Chong Pang Community Club",
+            "Marsiling Community Club",
+            "Sembawang Community Club",
+            "Woodlands Community Club",
+            "ACE The Place Community Club"
+        ],
+        "South": [
+            "Telok Blangah Community Club",
+            "Radin Mas Community Club",
+            "Tanjong Pagar Community Club",
+            "Bukit Merah Community Club",
+            "Henderson Community Club",
+            "Kim Seng Community Club",
+            "Kreta Ayer Community Club",
+            "Leng Kee Community Club",
+            "Queenstown Community Club",
+            "Tiong Bahru Community Club"
+        ],
+        "East": [
+            "Kampong Chai Chee Community Club (at Heartbeat @ Bedok)",
+            "Tampines Central Community Club (at Our Tampines Hub)",
+            "Tampines West Community Club",
+            "Tampines North Community Club",
+            "Tampines Changkat Community Club",
+            "Pasir Ris Elias Community Club",
+            "Bedok Community Centre",
+            "Fengshan Community Club",
+            "Kaki Bukit Community Club",
+            "Siglap Community Club",
+            "Changi Simei Community Club",
+            "Eunos Community Club",
+            "Marine Parade Community Club",
+            "Mountbatten Community Club"
+        ],
+        "West": [
+            "Clementi Community Centre",
+            "Jurong Green Community Club",
+            "Taman Jurong Community Club",
+            "Jurong Spring Community Club",
+            "Gek Poh Ville Community Club",
+            "Nanyang Community Club",
+            "Boon Lay Community Club",
+            "The Frontier Community Club",
+            "Bukit Batok Community Club",
+            "Bukit Batok East Community Club",
+            "Hong Kah North Community Club",
+            "Yew Tee Community Club",
+            "Limbang Community Club",
+            "Keat Hong Community Club",
+            "Senja-Cashew Community Club",
+            "Bukit Panjang Community Club",
+            "Zhenghua Community Club",
+            "West Coast Community Centre",
+            "Ayer Rajah Community Club",
+            "Dover Community Centre"
+        ],
+        "Central": [
+            "Toa Payoh Central Community Club",
+            "Toa Payoh East Community Club",
+            "Toa Payoh South Community Club",
+            "Toa Payoh West Community Club",
+            "Bishan Community Club",
+            "Marymount Community Club",
+            "Thomson Community Club",
+            "Tanglin Community Club",
+            "Pek Kio Community Club",
+            "Whampoa Community Club",
+            "Kolam Ayer Community Club",
+            "Geylang West Community Club",
+            "MacPherson Community Club",
+            "Potong Pasir Community Club",
+            "Jalan Besar Community Club",
+            "Kampong Glam Community Club",
+            "Buona Vista Community Club",
+            "Ulu Pandan Community Club"
+        ]
+    };
+
+    // Function to populate CC dropdown based on region
+    function populateCCDropdown(region) {
+        const locationSelect = document.getElementById('location');
+        locationSelect.innerHTML = '';
+
+        if (!region) {
+            locationSelect.innerHTML = '<option value="">-- Select Region First --</option>';
+            return;
+        }
+
+        locationSelect.innerHTML = '<option value="">-- Select Community Centre --</option>';
+
+        const ccs = ccByRegion[region] || [];
+        ccs.forEach(cc => {
+            const option = document.createElement('option');
+            option.value = cc;
+            option.textContent = cc;
+            locationSelect.appendChild(option);
+        });
+    }
+
+    // Update CC dropdown when region changes
+    document.getElementById('region').addEventListener('change', function () {
+        populateCCDropdown(this.value);
+    });
+
+    // Auto-populate CC dropdown on page load if user has a region set
+    document.addEventListener('DOMContentLoaded', function () {
+        const regionSelect = document.getElementById('region');
+        if (regionSelect.value) {
+            populateCCDropdown(regionSelect.value);
+        }
+    });
+
+    // Dynamic placeholder for Skills Needed based on Type selection
+    document.getElementById('request_type').addEventListener('change', function () {
+        const skillsInput = document.getElementById('skills_needed');
+        if (this.value === 'assistance') {
+            skillsInput.placeholder = 'e.g., Reading, Writing';
+        } else if (this.value === 'learning') {
+            skillsInput.placeholder = 'e.g., Teaching, Baking';
+        }
+    });
+</script>
 {% endblock %}

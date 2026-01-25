@@ -8,87 +8,128 @@ from utils.supabase_db import get_supabase
 
 support_swap_bp = Blueprint('support_swap', __name__)
 
-@support_swap_bp.route('/ss_profile', methods=['GET', 'POST'])
-def ss_profile():
-    """View and manage user's skills profile."""
+def get_user_region(user_id):
+    """Helper function to fetch user's region from database."""
+    if not user_id:
+        return None
+    try:
+        supabase = get_supabase()
+        response = supabase.table('users').select('region').eq('user_id', user_id).limit(1).execute()
+        if response.data:
+            return response.data[0].get('region')
+    except Exception as e:
+        print(f"Error fetching user region: {e}")
+    return None
+
+@support_swap_bp.route('/ss_dashboard', methods=['GET', 'POST'])
+def ss_dashboard():
+    """Combined dashboard - Profile and Skills Market."""
     user_id = session.get('user_id')
     if not user_id:
         return redirect(url_for('auth.login'))
     
     supabase = get_supabase()
+    
+    # Fetch current user profile (including skills)
+    user_profile = None
+    skills = []
+    try:
+        profile_response = supabase.table('users').select('username, skills, region').eq('user_id', user_id).limit(1).execute()
+        if profile_response.data:
+            user_profile = profile_response.data[0]
+            skills = user_profile.get('skills') or []
+    except Exception as e:
+        print(f"Error fetching user profile: {e}")
     
     # Handle adding a new skill
     if request.method == 'POST':
         skill_name = request.form.get('skill_name')
-        category = request.form.get('category', 'general')
         
-        if skill_name:
+        if skill_name and skill_name not in skills:
             try:
-                supabase.table('user_skills').insert({
-                    'user_id': user_id,
-                    'skill_name': skill_name,
-                    'category': category
-                }).execute()
+                # Add new skill to the existing skills array
+                updated_skills = skills + [skill_name]
+                supabase.table('users').update({'skills': updated_skills}).eq('user_id', user_id).execute()
                 flash('Skill added successfully!', 'success')
             except Exception as e:
                 flash(f'Error adding skill: {str(e)}', 'error')
+        elif skill_name in skills:
+            flash('This skill already exists!', 'warning')
         
-        return redirect(url_for('support_swap.ss_profile'))
+        return redirect(url_for('support_swap.ss_dashboard'))
     
-    # Fetch user's skills
+    # Calculate VIA hours from completed support sessions (where user was the helper)
+    via_hours = 0
     try:
-        response = supabase.table('user_skills').select('*').eq('user_id', user_id).execute()
-        skills = response.data
+        # Get completed matches where user is the helper, join with help_requests to get duration
+        completed_response = supabase.table('support_matches').select(
+            'help_requests(duration_hours)'
+        ).eq('helper_id', user_id).eq('status', 'completed').execute()
+        
+        if completed_response.data:
+            for match in completed_response.data:
+                if match.get('help_requests') and match['help_requests'].get('duration_hours'):
+                    via_hours += match['help_requests']['duration_hours']
     except Exception as e:
-        skills = []
-        flash(f'Error fetching skills: {str(e)}', 'error')
+        print(f"Error calculating VIA hours: {e}")
     
-    return render_template('support_swap/ss_profile.html', skills=skills)
-
-@support_swap_bp.route('/delete_skill/<int:skill_id>', methods=['POST'])
-def delete_skill(skill_id):
-    """Delete a user skill."""
-    user_id = session.get('user_id')
-    if not user_id:
-        return redirect(url_for('auth.login'))
-    
-    supabase = get_supabase()
-    
+    # Fetch help requests for Skills Market (from OTHER users)
+    requests = []
     try:
-        # Only delete if user owns the skill
-        supabase.table('user_skills').delete().eq('id', skill_id).eq('user_id', user_id).execute()
-        flash('Skill deleted successfully!', 'success')
-    except Exception as e:
-        flash(f'Error deleting skill: {str(e)}', 'error')
-    
-    return redirect(url_for('support_swap.ss_profile'))
-
-@support_swap_bp.route('/ss_activity')
-def ss_activity():
-    """Browse available support swaps."""
-    # TODO: Fetch support swaps from database
-    return render_template('support_swap/ss_activity.html')
-
-@support_swap_bp.route('/ss_market')
-def ss_market():
-    """Skills Market - Browse available help requests from other users."""
-    user_id = session.get('user_id')
-    if not user_id:
-        return redirect(url_for('auth.login'))
-    
-    supabase = get_supabase()
-    
-    try:
-        # Fetch all open requests from OTHER users (not current user)
         response = supabase.table('help_requests').select(
             '*, users(username)'
         ).neq('user_id', user_id).eq('status', 'open').order('created_at', desc=True).execute()
         requests = response.data
     except Exception as e:
-        requests = []
-        flash(f'Error fetching requests: {str(e)}', 'error')
+        print(f"Error fetching requests: {e}")
     
-    return render_template('support_swap/ss_market.html', requests=requests)
+    return render_template('support_swap/ss_dashboard.html', 
+                          skills=skills, 
+                          user_profile=user_profile,
+                          user_region=get_user_region(user_id),
+                          via_hours=via_hours,
+                          requests=requests)
+
+@support_swap_bp.route('/delete_skill', methods=['POST'])
+def delete_skill():
+    """Delete a user skill from the users.skills array."""
+    user_id = session.get('user_id')
+    if not user_id:
+        return redirect(url_for('auth.login'))
+    
+    # Get skill name from form
+    skill_name = request.form.get('skill_name')
+    if not skill_name:
+        flash('No skill specified', 'error')
+        return redirect(url_for('support_swap.ss_dashboard'))
+    
+    supabase = get_supabase()
+    
+    try:
+        # Fetch current skills
+        response = supabase.table('users').select('skills').eq('user_id', user_id).limit(1).execute()
+        if response.data:
+            current_skills = response.data[0].get('skills') or []
+            # Remove the skill from the list
+            if skill_name in current_skills:
+                current_skills.remove(skill_name)
+                supabase.table('users').update({'skills': current_skills}).eq('user_id', user_id).execute()
+                flash('Skill deleted successfully!', 'success')
+            else:
+                flash('Skill not found', 'warning')
+    except Exception as e:
+        flash(f'Error deleting skill: {str(e)}', 'error')
+    
+    return redirect(url_for('support_swap.ss_dashboard'))
+
+@support_swap_bp.route('/ss_activity')
+def ss_activity():
+    """Browse available support swaps."""
+    user_id = session.get('user_id')
+    user_region = get_user_region(user_id)
+    return render_template('support_swap/ss_activity.html', user_region=user_region)
+
+    return redirect(url_for('support_swap.ss_dashboard'))
 
 @support_swap_bp.route('/ss_post', methods=['GET', 'POST'])
 def ss_post():
@@ -106,6 +147,7 @@ def ss_post():
         duration_hours = request.form.get('duration_hours', 1)
         location = request.form.get('location')
         scheduled_date = request.form.get('scheduled_date')
+        skills_needed = request.form.get('skills_needed')
         
         if title:
             try:
@@ -116,7 +158,8 @@ def ss_post():
                     'request_type': request_type,
                     'duration_hours': int(duration_hours) if duration_hours else 1,
                     'location': location,
-                    'scheduled_date': scheduled_date if scheduled_date else None
+                    'scheduled_date': scheduled_date if scheduled_date else None,
+                    'skills_needed': skills_needed
                 }).execute()
                 flash('Request posted successfully!', 'success')
             except Exception as e:
@@ -132,7 +175,7 @@ def ss_post():
         my_requests = []
         flash(f'Error fetching your requests: {str(e)}', 'error')
     
-    return render_template('support_swap/ss_post.html', my_requests=my_requests)
+    return render_template('support_swap/ss_post.html', my_requests=my_requests, user_region=get_user_region(user_id))
 
 @support_swap_bp.route('/ss_match', methods=['GET', 'POST'])
 def ss_match():
@@ -172,7 +215,8 @@ def ss_match():
     
     return render_template('support_swap/ss_match.html', 
                          active_matches=active_matches, 
-                         completed_matches=completed_matches)
+                         completed_matches=completed_matches,
+                         user_region=get_user_region(user_id))
 
 @support_swap_bp.route('/offer/<int:request_id>', methods=['POST'])
 def offer_help(request_id):
@@ -199,7 +243,7 @@ def offer_help(request_id):
     except Exception as e:
         flash(f'Error offering help: {str(e)}', 'error')
     
-    return redirect(url_for('support_swap.ss_market'))
+    return redirect(url_for('support_swap.ss_match'))
 
 @support_swap_bp.route('/delete/<int:request_id>', methods=['POST'])
 def delete_request(request_id):

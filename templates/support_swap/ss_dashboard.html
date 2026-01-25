@@ -1,0 +1,305 @@
+{% extends "base.html" %}
+
+{% block title %}Skills Dashboard - Support Swap{% endblock %}
+
+{% block content %}
+<nav class="navbar navbar-expand-lg skillnav">
+    <div class="container">
+        <div class="navbar-nav">
+            <a href="{{ url_for('activities.activity_list') }}" class="nav-link">Back to activity</a>
+        </div>
+        <a class="navbar-brand fw-bold ms-3" href="#">
+            <i class="bi bi-people-fill me-2"></i>Support Swap
+            <small class="fw-normal">({{ user_region or 'Region not set' }})</small>
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+            <div class="navbar-nav nav-pills">
+                <a href="{{ url_for('support_swap.ss_dashboard') }}" class="nav-link"><span
+                        class="underlined">Dashboard</span></a>
+                <a href="{{ url_for('support_swap.ss_post') }}" class="nav-link">+ Post Request</a>
+                <a href="{{ url_for('support_swap.ss_match') }}" class="nav-link">Matchings</a>
+            </div>
+        </div>
+    </div>
+</nav>
+<main>
+    <div class="container">
+        <div class="text-center mb-4">
+            <h1>Skills Dashboard</h1>
+            <p>Manage your profile and browse available requests</p>
+        </div>
+
+        <!-- Side by Side Layout -->
+        <div class="row">
+            <!-- Left Column: My Profile -->
+            <div class="col-lg-4">
+                <h4 class="mb-3"><i class="bi bi-person-circle me-2"></i>My Profile</h4>
+
+                <!-- User Profile Info -->
+                {% if user_profile %}
+                <div class="card shadow-sm mb-3">
+                    <div class="card-header bg-primary text-white">
+                        <i class="bi bi-person-circle me-2"></i>{{ user_profile.username }}
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-2"><strong>Region:</strong> {{ user_profile.region or 'Not set' }}</p>
+                        <p class="mb-0"><strong>VIA hours:</strong> {{ via_hours }} hour(s)</p>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Add Skill Form -->
+                <div class="card shadow-sm mb-3">
+                    <div class="card-header">
+                        <i class="bi bi-plus-circle me-2"></i>Add a New Skill
+                    </div>
+                    <div class="card-body">
+                        <form method="POST" action="{{ url_for('support_swap.ss_dashboard') }}">
+                            <div class="input-group">
+                                <input type="text" class="form-control" name="skill_name"
+                                    placeholder="e.g., Cooking, Music" required>
+                                <button type="submit" class="btn btn-primary">Add</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- My Skills -->
+                <div class="card shadow-sm mb-3">
+                    <div class="card-header">My Skills</div>
+                    <div class="card-body d-flex flex-wrap gap-2" style="min-height: 50px;">
+                        {% if skills %}
+                        {% for skill in skills %}
+                        <span class="badge bg-primary p-2 d-flex align-items-center gap-2">
+                            {{ skill }}
+                            <form action="{{ url_for('support_swap.delete_skill') }}" method="POST"
+                                class="d-inline m-0">
+                                <input type="hidden" name="skill_name" value="{{ skill }}">
+                                <button type="submit" class="btn btn-sm btn-close btn-close-white" aria-label="Delete"
+                                    style="font-size: 0.5rem;"></button>
+                            </form>
+                        </span>
+                        {% endfor %}
+                        {% else %}
+                        <p class="text-muted mb-0">No skills added yet.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Skills Market -->
+            <div class="col-lg-8">
+                <h4 class="mb-3"><i class="bi bi-shop me-2"></i>Skills Market</h4>
+
+                <!-- Search -->
+                <div class="card shadow-sm mb-3">
+                    <div class="card-body py-2">
+                        <div class="row g-2">
+                            <div class="col-md-8">
+                                <input type="text" class="form-control form-control-sm"
+                                    placeholder="Search for skills...">
+                            </div>
+                            <div class="col-md-4">
+                                <select class="form-select form-select-sm">
+                                    <option selected>All Categories</option>
+                                    <option>Technology</option>
+                                    <option>Languages</option>
+                                    <option>Arts & Crafts</option>
+                                    <option>Music</option>
+                                    <option>Cooking</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Help Requests Grid -->
+                <div class="row g-3">
+                    {% if requests %}
+                    {% for req in requests %}
+                    <div class="col-md-6">
+                        <div class="card shadow-sm h-100">
+                            <div class="card-body py-3">
+                                <h6 class="card-title mb-1">{{ req.title }}</h6>
+                                <p class="card-text text-muted small text-truncate mb-2">{{ req.description or 'No
+                                    description' }}</p>
+                                <span
+                                    class="badge bg-{{ 'primary' if req.request_type == 'learning' else 'success' }} small">
+                                    {{ 'Learn' if req.request_type == 'learning' else 'Assistance' }}
+                                </span>
+                                <div class="mt-2">
+                                    <small class="text-muted">
+                                        <i class="bi bi-geo-alt"></i> {{ req.location or 'TBD' }} |
+                                        <i class="bi bi-clock"></i> {{ req.duration_hours }}h
+                                    </small>
+                                </div>
+                            </div>
+                            <div
+                                class="card-footer bg-transparent py-2 d-flex justify-content-between align-items-center">
+                                <small class="text-muted">{{ req.users.username if req.users else 'Unknown' }}</small>
+                                <button type="button" class="btn btn-primary btn-sm"
+                                    onclick="showDetails({{ req.id }})">
+                                    <i class="bi bi-eye"></i> View
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <div class="col-12">
+                        <div class="card shadow-sm">
+                            <div class="card-body text-center py-4">
+                                <i class="bi bi-inbox display-4 text-muted"></i>
+                                <h5 class="mt-3">No Help Requests Yet</h5>
+                                <p class="text-muted">Be the first to <a
+                                        href="{{ url_for('support_swap.ss_post') }}">post a request</a>!</p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Hidden Details Modal/Panel -->
+        {% if requests %}
+        {% for req in requests %}
+        <div id="details-{{ req.id }}" class="details-overlay" style="display: none;">
+            <div class="details-panel">
+                <div class="card shadow-lg">
+                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>Request Details</h5>
+                        <button type="button" class="btn-close btn-close-white"
+                            onclick="hideDetails({{ req.id }})"></button>
+                    </div>
+                    <div class="card-body">
+                        <h4 class="card-title mb-3">{{ req.title }}</h4>
+
+                        <div class="mb-3">
+                            <strong><i class="bi bi-person me-2"></i>Requested By:</strong>
+                            <span>{{ req.users.username if req.users else 'Unknown' }}</span>
+                        </div>
+
+                        <div class="mb-3">
+                            <strong><i class="bi bi-card-text me-2"></i>Description:</strong>
+                            <p class="mt-2 p-3 bg-light rounded">{{ req.description or 'No description provided' }}</p>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <strong><i class="bi bi-tag me-2"></i>Type:</strong><br>
+                                <span
+                                    class="badge bg-{{ 'primary' if req.request_type == 'learning' else 'success' }} mt-1">
+                                    {{ 'Want to Learn' if req.request_type == 'learning' else 'Need Assistance' }}
+                                </span>
+                            </div>
+                            <div class="col-6">
+                                <strong><i class="bi bi-clock me-2"></i>Skills Needed:</strong><br>
+                                <span class="mt-1 d-inline-block">{{ req.skills_needed }}</span>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <strong><i class="bi bi-geo-alt me-2"></i>Location:</strong>
+                            <span>{{ req.location or 'Location TBD' }}</span>
+                        </div>
+
+                        {% if req.scheduled_date %}
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <strong><i class="bi bi-calendar me-2"></i>Scheduled Date:</strong><br>
+                                <span>{{ req.scheduled_date }}</span>
+                            </div>
+                            <div class="col-6">
+                                <strong><i class="bi bi-clock me-2"></i>Duration:</strong><br>
+                                <span>{{ req.duration_hours }} hour(s)</span>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="card-footer d-flex justify-content-between">
+                        <button type="button" class="btn btn-secondary" onclick="hideDetails({{ req.id }})">
+                            <i class="bi bi-x-circle me-1"></i>Close
+                        </button>
+                        <form action="{{ url_for('support_swap.offer_help', request_id=req.id) }}" method="POST">
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-hand-thumbs-up me-1"></i>Offer Help
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+        {% endif %}
+    </div>
+</main>
+<footer></footer>
+
+<style>
+    .details-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.6);
+        z-index: 1050;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        backdrop-filter: blur(3px);
+    }
+
+    .details-panel {
+        width: 90%;
+        max-width: 600px;
+        max-height: 90vh;
+        overflow-y: auto;
+        animation: slideIn 0.3s ease-out;
+    }
+
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(-30px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
+
+<script>
+    function showDetails(requestId) {
+        document.getElementById('details-' + requestId).style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+
+    function hideDetails(requestId) {
+        document.getElementById('details-' + requestId).style.display = 'none';
+        document.body.style.overflow = 'auto';
+    }
+
+    document.addEventListener('click', function (e) {
+        if (e.target.classList.contains('details-overlay')) {
+            e.target.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+    });
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') {
+            document.querySelectorAll('.details-overlay').forEach(overlay => {
+                overlay.style.display = 'none';
+            });
+            document.body.style.overflow = 'auto';
+        }
+    });
+</script>
+{% endblock %}

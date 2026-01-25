@@ -10,7 +10,7 @@
         </div>
         <a class="navbar-brand fw-bold ms-3" href="#">
             <i class="bi bi-people-fill me-2"></i>Support Swap
-            <small class="fw-normal">(North Region)</small>
+            <small class="fw-normal">({{ user_region or 'Region not set' }})</small>
         </a>
         <!-- Toggler for mobile -->
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -18,8 +18,8 @@
         </button>
         <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
             <div class="navbar-nav nav-pills">
-                <a href="{{ url_for('support_swap.ss_profile') }}" class="nav-link">My Profile</a>
-                <a href="{{ url_for('support_swap.ss_market') }}" class="nav-link"><span class="underlined">Skills
+                <a href="{{ url_for('support_swap.ss_dashboard') }}" class="nav-link">My Profile</a>
+                <a href="{{ url_for('support_swap.ss_activity') }}" class="nav-link"><span class="underlined">Skills
                         Market</span></a>
                 <a href="{{ url_for('support_swap.ss_post') }}" class="nav-link">+ Post Request</a>
                 <a href="{{ url_for('support_swap.ss_match') }}" class="nav-link">Matchings</a>

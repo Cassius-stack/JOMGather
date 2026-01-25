@@ -65,7 +65,7 @@ def search_activities_logic(query):
     """Search for activities matching the query."""
     activities = [
         {'name': 'Slice of Life', 'description': 'Share daily photo stories', 'url': url_for('slice_of_life.prompt'), 'icon': 'bi-camera', 'color': 'primary'},
-        {'name': 'Support Swap', 'description': 'Exchange skills and help', 'url': url_for('support_swap.ss_profile'), 'icon': 'bi-lightbulb', 'color': 'warning'},
+        {'name': 'Support Swap', 'description': 'Exchange skills and help', 'url': url_for('support_swap.ss_dashboard'), 'icon': 'bi-lightbulb', 'color': 'warning'},
         {'name': 'Jukebox', 'description': 'Share songs and playlists', 'url': url_for('social.social_hub'), 'icon': 'bi-music-note-beamed', 'color': 'info'},
         {'name': 'Cyber Challenge', 'description': 'Digital literacy quiz', 'url': url_for('activities.puzzle_challenge'), 'icon': 'bi-shield-check', 'color': 'danger'},
         {'name': 'BOOMERang', 'description': 'Quick video chat', 'url': url_for('activities.boomerang'), 'icon': 'bi-camera-video', 'color': 'secondary'},

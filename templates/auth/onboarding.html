@@ -15,24 +15,18 @@
             <p style="color: #64748b;">Tell us a bit about yourself</p>
         </div>
 
-        <!-- Progress Dots -->
+        <!-- Progress Dots (2 steps now) -->
         <div style="display: flex; justify-content: center; gap: 0.5rem; margin-bottom: 2rem;">
             <div id="dot-1"
-                style="height: 10px; width: 10px; border-radius: 50%; background: #22c55e; transition: all 0.3s;"></div>
-            <div id="dot-2"
                 style="height: 10px; width: 10px; border-radius: 50%; background: #1e3a5f; transition: all 0.3s;"></div>
-            <div id="dot-3"
+            <div id="dot-2"
                 style="height: 10px; width: 10px; border-radius: 50%; background: #e2e8f0; transition: all 0.3s;"></div>
         </div>
 
-        <p id="step-label" style="text-align: center; color: #64748b; font-size: 0.9rem; margin-bottom: 1.5rem;">Step 2
-            of 3: About You</p>
+        <p id="step-label" style="text-align: center; color: #64748b; font-size: 0.9rem; margin-bottom: 1.5rem;">Step 1
+            of 2: About You</p>
 
         <form id="onboarding-form" method="POST" action="{{ url_for('auth.onboarding') }}">
-            <!-- Hidden fields for account info -->
-            <input type="hidden" id="hidden-username" name="username">
-            <input type="hidden" id="hidden-email" name="email">
-            <input type="hidden" id="hidden-password" name="password">
 
             <!-- STEP 1: DEMOGRAPHICS (Step 2 of overall flow) -->
             <div id="step-1" style="display: block;">
@@ -58,10 +52,10 @@
                     </div>
                 </div>
                 <div style="margin-top: 2rem; display: flex; justify-content: space-between;">
-                    <button type="button" onclick="goBack()"
-                        style="padding: 0.75rem 1.5rem; background: none; color: #64748b; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 1rem; cursor: pointer;">
-                        &larr; Back
-                    </button>
+                    <a href="{{ url_for('index') }}"
+                        style="padding: 0.75rem 1.5rem; background: none; color: #64748b; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 1rem; cursor: pointer; text-decoration: none;">
+                        Skip for now
+                    </a>
                     <button type="button" onclick="nextStep(2)"
                         style="padding: 0.75rem 2rem; background: #1e3a5f; color: white; border: none; border-radius: 12px; font-size: 1rem; font-weight: 600; cursor: pointer;">
                         Next &rarr;
@@ -118,45 +112,9 @@
     const skillsList = [];
     let currentStep = 1;
 
-    // Load saved data on page load
+    // Initialize hobbies on page load
     document.addEventListener('DOMContentLoaded', function () {
-        const savedData = sessionStorage.getItem('registrationData');
-
-        // Check if we have registration data
-        if (!savedData) {
-            // No registration data, redirect back to register
-            window.location.href = "{{ url_for('auth.register') }}";
-            return;
-        }
-
-        const data = JSON.parse(savedData);
-
-        // Populate hidden fields with account info
-        document.getElementById('hidden-username').value = data.username || '';
-        document.getElementById('hidden-email').value = data.email || '';
-        document.getElementById('hidden-password').value = data.password || '';
-
-        // Restore onboarding data if exists
-        if (data.age) document.getElementById('age').value = data.age;
-        if (data.region) document.getElementById('region').value = data.region;
-
-        // Initialize hobbies
         initHobbies();
-
-        // Restore selected hobbies
-        if (data.hobbies) {
-            data.hobbies.forEach(hobby => {
-                selectedHobbies.add(hobby);
-            });
-            updateHobbyButtons();
-        }
-
-        // Restore skills
-        if (data.skills) {
-            data.skills.forEach(skill => {
-                addSkillToList(skill);
-            });
-        }
     });
 
     function initHobbies() {
@@ -186,7 +144,6 @@
             btn.style.borderColor = '#1e3a5f';
             btn.style.color = 'white';
         }
-        saveOnboardingData();
         updateHobbiesInput();
     }
 
@@ -219,8 +176,6 @@
     }
 
     function nextStep(step) {
-        saveOnboardingData();
-
         // Hide all steps
         document.getElementById('step-1').style.display = 'none';
         document.getElementById('step-2').style.display = 'none';
@@ -229,40 +184,20 @@
         document.getElementById('step-' + step).style.display = 'block';
         currentStep = step;
 
-        // Update progress dots and label
+        // Update progress dots and label (2 steps now)
         const dot1 = document.getElementById('dot-1');
         const dot2 = document.getElementById('dot-2');
-        const dot3 = document.getElementById('dot-3');
         const label = document.getElementById('step-label');
 
         if (step === 1) {
-            dot1.style.background = '#22c55e';
-            dot2.style.background = '#1e3a5f';
-            dot3.style.background = '#e2e8f0';
-            label.textContent = 'Step 2 of 3: About You';
+            dot1.style.background = '#1e3a5f';
+            dot2.style.background = '#e2e8f0';
+            label.textContent = 'Step 1 of 2: About You';
         } else {
             dot1.style.background = '#22c55e';
-            dot2.style.background = '#22c55e';
-            dot3.style.background = '#1e3a5f';
-            label.textContent = 'Step 3 of 3: Interests & Skills';
+            dot2.style.background = '#1e3a5f';
+            label.textContent = 'Step 2 of 2: Interests & Skills';
         }
-    }
-
-    function goBack() {
-        saveOnboardingData();
-        window.location.href = "{{ url_for('auth.register') }}";
-    }
-
-    function saveOnboardingData() {
-        const savedData = sessionStorage.getItem('registrationData');
-        let data = savedData ? JSON.parse(savedData) : {};
-
-        data.age = document.getElementById('age').value;
-        data.region = document.getElementById('region').value;
-        data.hobbies = Array.from(selectedHobbies);
-        data.skills = skillsList.slice();
-
-        sessionStorage.setItem('registrationData', JSON.stringify(data));
     }
 
     function addSkill() {
