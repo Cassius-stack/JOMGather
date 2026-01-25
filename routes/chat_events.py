@@ -99,12 +99,27 @@ def register_chat_events(socketio):
         """
         sender_id = data.get('sender_id')
         receiver_id = data.get('receiver_id')
-        content = data.get('content')
+        content = data.get('content', '').strip()  # Trim whitespace
         is_cyber_challenge = data.get('is_cyber_challenge', False)
         scenario_id = data.get('scenario_id', 1)  # Default to scenario 1
         
-        if not sender_id or not receiver_id or not content:
+        # Validation with user-friendly error messages
+        if not sender_id or not receiver_id:
+            emit('validation_error', {'error': 'Invalid sender or receiver'})
             return
+        
+        if not content:
+            emit('validation_error', {'error': 'Message cannot be empty'})
+            return
+        
+        if len(content) > 500:
+            emit('validation_error', {'error': 'Message cannot exceed 500 characters'})
+            return
+        
+        if len(content) < 1:
+            emit('validation_error', {'error': 'Message is too short'})
+            return
+
         
         # Save to Supabase
         new_message = insert('messages', {
@@ -294,11 +309,30 @@ def register_chat_events(socketio):
         """
         challenge_id = data.get('challenge_id')
         user_id = data.get('user_id')
-        answer = data.get('answer')  # 'safe' or 'scam'
+        answer = data.get('answer', '').strip().lower()  # 'safe' or 'scam'
         
-        if not challenge_id or not user_id or not answer:
-            print(f"[Socket.IO] Invalid cyber answer data: {data}")
+        # Validation with user-friendly error messages
+        if not challenge_id:
+            emit('validation_error', {'error': 'Challenge ID is required'})
+            print(f"[Socket.IO] Invalid cyber answer data: missing challenge_id")
             return
+        
+        if not user_id:
+            emit('validation_error', {'error': 'User ID is required'})
+            print(f"[Socket.IO] Invalid cyber answer data: missing user_id")
+            return
+        
+        if not answer:
+            emit('validation_error', {'error': 'Please select an answer'})
+            print(f"[Socket.IO] Invalid cyber answer data: missing answer")
+            return
+        
+        # Validate answer is one of the allowed values
+        if answer not in ['safe', 'scam']:
+            emit('validation_error', {'error': 'Answer must be either "Safe" or "Scam"'})
+            print(f"[Socket.IO] Invalid cyber answer: {answer}")
+            return
+
         
         user_id = int(user_id)
         

@@ -48,15 +48,35 @@ def redeem_item():
     """API endpoint to redeem a reward."""
     user_id = session.get('user_id')
     if not user_id:
-        return jsonify({'success': False, 'error': 'Not logged in'}), 401
+        return jsonify({'success': False, 'error': 'Please log in to redeem rewards'}), 401
     
     data = request.get_json()
+    if not data:
+        return jsonify({'success': False, 'error': 'Invalid request data'}), 400
+    
     reward_id = data.get('reward_id')
+    
+    # Validation with user-friendly error messages
+    if reward_id is None:
+        return jsonify({'success': False, 'error': 'Please select a reward to redeem'}), 400
+    
+    if not isinstance(reward_id, int) or reward_id < 1:
+        return jsonify({'success': False, 'error': 'Invalid reward selection'}), 400
     
     # Find the reward
     reward = next((r for r in REWARDS if r['id'] == reward_id), None)
     if not reward:
-        return jsonify({'success': False, 'error': 'Reward not found'}), 404
+        return jsonify({'success': False, 'error': 'This reward is no longer available'}), 404
+    
+    # Check if user has enough coins
+    user_coins = get_user_coins(user_id)
+    if user_coins < reward['price']:
+        return jsonify({'success': False, 'error': f'Not enough coins. You need {reward["price"]} coins but only have {user_coins}'}), 400
+    
+    # Check if already redeemed
+    redeemed_ids = get_user_redeemed_reward_ids(user_id)
+    if reward_id in redeemed_ids:
+        return jsonify({'success': False, 'error': 'You have already redeemed this reward'}), 400
     
     # Attempt to redeem
     success, result = redeem_reward(
@@ -72,10 +92,12 @@ def redeem_item():
         return jsonify({
             'success': True, 
             'code': result,
-            'new_balance': new_balance
+            'new_balance': new_balance,
+            'message': f'Successfully redeemed {reward["name"]}!'
         })
     else:
         return jsonify({'success': False, 'error': result}), 400
+
 
 
 @rewards_bp.route('/my')
