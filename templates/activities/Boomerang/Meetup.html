@@ -3,265 +3,312 @@
 {% block title %}Chatroom - BOOMERang | JOMGather{% endblock %}
 
 {% block head %}
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
+    :root {
+        --glass-bg: rgba(25, 25, 35, 0.65);
+        --glass-border: rgba(255, 255, 255, 0.08);
+        --glass-highlight: rgba(255, 255, 255, 0.05);
+        --neon-accent: #00f2fe;
+        --neon-gradient: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
+        --danger-gradient: linear-gradient(135deg, #ff416c 0%, #ff4b2b 100%);
+        --text-primary: #ffffff;
+        --text-secondary: rgba(255, 255, 255, 0.6);
+    }
+
     body {
-        background: #f5f5f5;
-    }
-
-    .chatroom-container {
-        max-width: 1200px;
-        margin: 0 auto;
-        padding: 20px;
-    }
-
-    /* Header */
-    .chatroom-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 20px;
-        padding: 15px 25px;
-        background: white;
-        border-radius: 15px;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
-    }
-
-    .header-left {
-        display: flex;
-        align-items: center;
-        gap: 15px;
-    }
-
-    .chatroom-title {
-        font-size: 1.8rem;
-        font-weight: 700;
-        color: #3949ab;
-        text-decoration: underline;
+        background: #0f0c29;
+        background: linear-gradient(to right, #24243e, #302b63, #0f0c29);
+        color: var(--text-primary);
+        font-family: 'Outfit', sans-serif;
+        height: 100vh;
+        overflow: hidden;
         margin: 0;
     }
 
-    .timer {
-        font-size: 1.1rem;
-        color: #666;
-        font-weight: 500;
+    .navbar-custom {
+        display: none !important;
     }
 
-    .header-actions {
+    .app-container {
         display: flex;
-        gap: 15px;
-        align-items: center;
-    }
-
-    .btn-leave {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        background: white;
-        color: #333;
-        border: 2px solid #ddd;
-        padding: 12px 25px;
-        border-radius: 10px;
-        font-size: 1rem;
-        font-weight: 600;
-        cursor: pointer;
-        text-decoration: none;
-        transition: all 0.2s;
-    }
-
-    .btn-leave:hover {
-        background: #f5f5f5;
-        border-color: #ccc;
-        color: #333;
-    }
-
-    .btn-next {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        background: linear-gradient(135deg, #3949ab 0%, #5c6bc0 100%);
-        color: white;
-        border: none;
-        padding: 12px 25px;
-        border-radius: 10px;
-        font-size: 1rem;
-        font-weight: 600;
-        cursor: pointer;
-        text-decoration: none;
-        transition: all 0.2s;
-    }
-
-    .btn-next:hover {
-        background: linear-gradient(135deg, #303f9f 0%, #3949ab 100%);
-        color: white;
-        transform: translateX(3px);
-    }
-
-    .profile-icon {
-        width: 45px;
-        height: 45px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, #e67e22 0%, #f39c12 100%);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-size: 1.3rem;
-    }
-
-    /* Main Content Layout */
-    .chatroom-content {
-        display: flex;
-        gap: 25px;
-    }
-
-    /* Video Section */
-    .video-section {
-        flex: 1;
-    }
-
-    .video-feed {
+        height: 100vh;
+        padding: 20px;
+        gap: 20px;
         position: relative;
-        width: 100%;
-        height: 250px;
-        border-radius: 15px;
-        overflow: hidden;
-        margin-bottom: 15px;
-        background: #1a1a2e;
+        background-image:
+            radial-gradient(circle at 10% 20%, rgba(79, 172, 254, 0.1) 0%, transparent 40%),
+            radial-gradient(circle at 90% 80%, rgba(255, 65, 108, 0.1) 0%, transparent 40%);
     }
 
-    .video-feed video {
+    .glass-panel {
+        background: var(--glass-bg);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: 1px solid var(--glass-border);
+        border-radius: 24px;
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+    }
+
+    .sidebar-left {
+        width: 260px;
+        display: flex;
+        flex-direction: column;
+        padding: 20px;
+        gap: 20px;
+        flex-shrink: 0;
+    }
+
+    .brand-logo {
+        font-size: 1.5rem;
+        font-weight: 700;
+        background: var(--neon-gradient);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .info-card {
+        background: var(--glass-highlight);
+        border-radius: 16px;
+        padding: 15px;
+        border: 1px solid var(--glass-border);
+    }
+
+    .info-label {
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 5px;
+    }
+
+    .info-value {
+        font-size: 1rem;
+        font-weight: 500;
+        color: var(--text-primary);
+    }
+
+    .history-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%);
+    }
+
+    .main-stage {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        position: relative;
+    }
+
+    .video-grid {
+        flex: 1;
+        display: grid;
+        grid-template-rows: 1fr 1fr;
+        gap: 15px;
+        height: 100%;
+    }
+
+    .video-frame {
+        position: relative;
+        background: #000;
+        border-radius: 20px;
+        overflow: hidden;
+        border: 1px solid var(--glass-border);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .video-frame video {
         width: 100%;
         height: 100%;
         object-fit: cover;
     }
 
-    .video-feed.local video {
+    .video-frame.local video {
         transform: scaleX(-1);
-        /* Mirror local video */
     }
 
-    .video-feed .name-tag {
+    .name-tag {
         position: absolute;
         bottom: 15px;
-        left: 15px;
-        background: rgba(0, 0, 0, 0.7);
-        color: white;
-        padding: 8px 15px;
+        left: 20px;
+        background: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(4px);
+        padding: 6px 12px;
         border-radius: 8px;
-        font-weight: 600;
+        font-size: 0.9rem;
+        font-weight: 500;
         display: flex;
         align-items: center;
         gap: 8px;
     }
 
-    .name-tag .muted-icon {
-        color: #e74c3c;
-    }
-
     .video-placeholder {
-        width: 100%;
-        height: 100%;
+        position: absolute;
+        inset: 0;
         display: flex;
+        flex-direction: column;
         align-items: center;
         justify-content: center;
-        flex-direction: column;
-        color: white;
-        font-size: 1.2rem;
+        background: #121212;
+        z-index: 1;
+        color: var(--text-secondary);
     }
 
-    .video-placeholder i {
-        font-size: 3rem;
-        margin-bottom: 10px;
-    }
-
-    .partner-placeholder {
-        background: linear-gradient(135deg, #e67e22 0%, #f39c12 100%);
-    }
-
-    .local-placeholder {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    }
-
-    /* Video Controls */
-    .video-controls {
+    .control-bar {
+        position: absolute;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(15, 15, 20, 0.85);
+        backdrop-filter: blur(20px);
+        padding: 10px 20px;
+        border-radius: 20px;
         display: flex;
-        justify-content: center;
-        gap: 20px;
-        padding: 20px;
-        background: white;
-        border-radius: 15px;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        gap: 15px;
+        border: 1px solid var(--glass-border);
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+        z-index: 10;
     }
 
     .control-btn {
-        width: 60px;
-        height: 60px;
-        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        border-radius: 16px;
         border: none;
+        background: rgba(255, 255, 255, 0.1);
+        color: var(--text-primary);
+        font-size: 1.2rem;
         cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.5rem;
-        transition: all 0.2s;
-        background: linear-gradient(135deg, #3949ab 0%, #5c6bc0 100%);
-        color: white;
-        box-shadow: 0 4px 15px rgba(57, 73, 171, 0.3);
     }
 
     .control-btn:hover {
-        transform: scale(1.1);
+        background: rgba(255, 255, 255, 0.2);
+        transform: translateY(-2px);
+    }
+
+    .control-btn.active {
+        background: var(--text-primary);
+        color: #000;
     }
 
     .control-btn.muted {
-        background: #e74c3c;
-        box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3);
+        background: rgba(255, 65, 108, 0.2);
+        color: #ff416c;
     }
 
-    .control-btn.add-friend {
-        background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
-        box-shadow: 0 4px 15px rgba(46, 204, 113, 0.3);
+    .control-btn.end-call {
+        background: var(--danger-gradient);
+        color: white;
+        width: 60px;
     }
 
-    /* Chat Section */
-    .chat-section {
-        width: 350px;
+    .control-btn.end-call:hover {
+        box-shadow: 0 0 15px rgba(255, 65, 108, 0.5);
+    }
+
+    .sidebar-right {
+        width: 320px;
         display: flex;
         flex-direction: column;
-        background: white;
-        border-radius: 15px;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
-        overflow: hidden;
+        flex-shrink: 0;
     }
 
     .chat-header {
-        padding: 18px 20px;
-        border-bottom: 1px solid #eee;
+        padding: 20px;
+        border-bottom: 1px solid var(--glass-border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
     }
 
     .chat-header h3 {
+        font-size: 1.1rem;
+        font-weight: 600;
         margin: 0;
-        color: #3949ab;
-        font-size: 1.4rem;
-        font-weight: 700;
+    }
+
+    .next-room-btn {
+        background: white;
+        color: #24243e;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        position: relative;
+        overflow: hidden;
+        z-index: 1;
+    }
+
+    .next-room-btn::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 0;
+        height: 100%;
+        background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
+        transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        z-index: -1;
+        border-radius: 20px;
+    }
+
+    .next-room-btn:hover::before {
+        width: 100%;
+        right: auto;
+        left: 0;
+    }
+
+    .next-room-btn:hover {
+        color: white;
+        transform: scale(1.05);
+        box-shadow: 0 0 20px rgba(0, 242, 254, 0.4);
     }
 
     .chat-messages {
         flex: 1;
         padding: 20px;
         overflow-y: auto;
-        max-height: 400px;
         display: flex;
         flex-direction: column;
-        gap: 15px;
+        gap: 16px;
+    }
+
+    .chat-messages::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .chat-messages::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 3px;
     }
 
     .message {
         max-width: 85%;
+        display: flex;
+        flex-direction: column;
     }
 
     .message.sent {
         align-self: flex-end;
+        align-items: flex-end;
     }
 
     .message.received {
@@ -270,193 +317,212 @@
 
     .message-bubble {
         padding: 12px 16px;
-        border-radius: 18px;
-        font-size: 1rem;
-        line-height: 1.4;
+        font-size: 0.95rem;
+        line-height: 1.5;
+        border-radius: 16px;
+        position: relative;
     }
 
     .message.sent .message-bubble {
-        background: linear-gradient(135deg, #3949ab 0%, #5c6bc0 100%);
-        color: white;
-        border-bottom-right-radius: 5px;
+        background: var(--neon-gradient);
+        color: #000000;
+        border-bottom-right-radius: 4px;
+        font-weight: 500;
     }
 
     .message.received .message-bubble {
-        background: #f0f0f0;
-        color: #333;
-        border-bottom-left-radius: 5px;
+        background: rgba(255, 255, 255, 0.1);
+        color: var(--text-primary);
+        border-bottom-left-radius: 4px;
+        border: 1px solid var(--glass-border);
     }
 
     .message-time {
-        font-size: 0.75rem;
-        color: #999;
-        margin-top: 5px;
-        display: block;
+        font-size: 0.7rem;
+        color: var(--text-secondary);
+        margin-top: 4px;
     }
 
-    .message.sent .message-time {
-        text-align: right;
+    .chat-input-area {
+        padding: 20px;
+        border-top: 1px solid var(--glass-border);
     }
 
-    /* Chat Input */
-    .chat-input {
-        display: flex;
-        gap: 10px;
-        padding: 15px 20px;
-        border-top: 1px solid #eee;
-        background: #fafafa;
+    .input-wrapper {
+        position: relative;
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 14px;
+        overflow: hidden;
+        border: 1px solid var(--glass-border);
+        transition: border-color 0.2s;
     }
 
-    .chat-input input {
-        flex: 1;
-        padding: 12px 18px;
-        border: 2px solid #e0e0e0;
-        border-radius: 25px;
-        font-size: 1rem;
-        transition: all 0.2s;
+    .input-wrapper:focus-within {
+        border-color: rgba(255, 255, 255, 0.3);
     }
 
-    .chat-input input:focus {
-        outline: none;
-        border-color: #3949ab;
-    }
-
-    .chat-input button {
-        width: 45px;
-        height: 45px;
-        border-radius: 50%;
+    .chat-input-field {
+        width: 100%;
+        background: transparent;
         border: none;
-        background: linear-gradient(135deg, #3949ab 0%, #5c6bc0 100%);
+        padding: 14px 50px 14px 16px;
         color: white;
+        font-size: 0.95rem;
+        outline: none;
+    }
+
+    .send-btn {
+        position: absolute;
+        right: 8px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        color: var(--text-secondary);
         cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.2rem;
-        transition: all 0.2s;
+        padding: 8px;
+        transition: color 0.2s;
     }
 
-    .chat-input button:hover {
-        transform: scale(1.1);
+    .send-btn:hover {
+        color: var(--neon-accent);
     }
 
-    /* Connection Status */
-    .connection-status {
-        text-align: center;
-        padding: 10px;
-        background: #fff3cd;
-        color: #856404;
-        border-radius: 10px;
-        margin-bottom: 15px;
+    .status-toast {
+        position: absolute;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(10px);
+        padding: 10px 20px;
+        border-radius: 30px;
+        font-size: 0.9rem;
+        color: white;
         display: none;
+        z-index: 100;
+        border: 1px solid var(--glass-border);
+        align-items: center;
+        gap: 8px;
     }
 
-    .connection-status.show {
-        display: block;
+    .status-toast.show {
+        display: flex;
     }
 
-    .connection-status.connected {
-        background: #d4edda;
-        color: #155724;
-    }
-
-    .connection-status.error {
-        background: #f8d7da;
-        color: #721c24;
-    }
-
-    /* Responsive */
-    @media (max-width: 900px) {
-        .chatroom-content {
+    @media (max-width: 1000px) {
+        .app-container {
             flex-direction: column;
+            height: auto;
+            overflow: auto;
         }
 
-        .chat-section {
+        .sidebar-left,
+        .sidebar-right {
             width: 100%;
+            height: auto;
+        }
+
+        .main-stage {
+            height: 600px;
         }
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="chatroom-container">
-    <!-- Header -->
-    <div class="chatroom-header">
-        <div class="header-left">
-            <h1 class="chatroom-title">Chatroom</h1>
-            <span class="timer" id="timer">(00:00:00)</span>
+<div class="app-container">
+    <div class="sidebar-left glass-panel">
+        <div class="brand-logo">
+            <i class="bi bi-infinity"></i> BOOMERang
         </div>
-        <div class="header-actions">
-            <button class="btn-leave" id="leaveBtn">
-                <i class="bi bi-x-lg"></i> Leave Room
-            </button>
-            <button class="btn-next" id="nextBtn">
-                Next Room <i class="bi bi-arrow-right"></i>
-            </button>
-            <div class="profile-icon">
-                <i class="bi bi-person-fill"></i>
+
+        <div class="info-card">
+            <div class="info-label">Active Session</div>
+            <div class="info-value" id="timer">00:00:00</div>
+        </div>
+
+        <div class="info-card">
+            <div class="info-label">Your Partner</div>
+            <div class="info-value" style="display: flex; align-items: center; gap: 8px; margin-top: 5px;">
+                <div class="history-avatar"></div>
+                <span id="partnerNameDisplay">Connecting...</span>
             </div>
         </div>
+
+        <div style="flex: 1;"></div>
+        <div id="micStatus" style="display: none;"></div>
     </div>
 
-    <!-- Connection Status -->
-    <div class="connection-status" id="connectionStatus">
-        Connecting to partner...
-    </div>
+    <div class="main-stage">
+        <div class="status-toast" id="connectionStatus">
+            <span id="statusText">Connecting...</span>
+        </div>
 
-    <!-- Main Content -->
-    <div class="chatroom-content">
-        <!-- Video Section -->
-        <div class="video-section">
-            <!-- Partner Video -->
-            <div class="video-feed" id="remoteVideoContainer">
+        <div class="video-grid">
+            <div class="video-frame">
                 <video id="remoteVideo" autoplay playsinline></video>
-                <div class="video-placeholder partner-placeholder" id="remotePlaceholder">
-                    <i class="bi bi-person-fill"></i>
+                <div class="video-placeholder" id="remotePlaceholder">
+                    <div
+                        style="width: 80px; height: 80px; border-radius: 50%; background: rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; margin-bottom: 15px;">
+                        <i class="bi bi-person-fill" style="font-size: 2.5rem; color: rgba(255,255,255,0.5);"></i>
+                    </div>
                     <span>Waiting for partner...</span>
                 </div>
-                <div class="name-tag" id="partnerName">Partner</div>
+                <div class="name-tag">
+                    <span style="background: #00f2fe; width: 8px; height: 8px; border-radius: 50%;"></span>
+                    <span id="partnerName">Partner</span>
+                </div>
             </div>
 
-            <!-- Your Video -->
-            <div class="video-feed local" id="localVideoContainer">
+            <div class="video-frame local">
                 <video id="localVideo" autoplay muted playsinline></video>
-                <div class="video-placeholder local-placeholder" id="localPlaceholder">
-                    <i class="bi bi-person-fill"></i>
+                <div class="video-placeholder" id="localPlaceholder" style="z-index: 2;">
                     <span>Loading camera...</span>
                 </div>
                 <div class="name-tag">
-                    <i class="bi bi-mic-mute-fill muted-icon" id="micStatus" style="display: none;"></i>
                     <span id="userName">You</span>
                 </div>
             </div>
+        </div>
 
-            <!-- Video Controls -->
-            <div class="video-controls">
-                <button class="control-btn" id="micBtn" title="Toggle Microphone">
-                    <i class="bi bi-mic-fill"></i>
-                </button>
-                <button class="control-btn" id="camBtn" title="Toggle Camera">
-                    <i class="bi bi-camera-video-fill"></i>
-                </button>
-                <button class="control-btn add-friend" id="addFriendBtn" title="Add as Friend">
-                    <i class="bi bi-person-plus-fill"></i>
-                </button>
+        <div class="control-bar">
+            <button class="control-btn" id="micBtn" title="Toggle Mic">
+                <i class="bi bi-mic-fill"></i>
+            </button>
+            <button class="control-btn" id="camBtn" title="Toggle Camera">
+                <i class="bi bi-camera-video-fill"></i>
+            </button>
+            <button class="control-btn" id="addFriendBtn" title="Add Friend">
+                <i class="bi bi-person-plus"></i>
+            </button>
+            <button class="control-btn end-call" id="leaveBtn" title="End Call">
+                <i class="bi bi-telephone-x-fill"></i>
+            </button>
+        </div>
+    </div>
+
+    <div class="sidebar-right glass-panel">
+        <div class="chat-header">
+            <h3>Chat</h3>
+            <button class="next-room-btn" id="nextBtn">
+                Next Room <i class="bi bi-arrow-right"></i>
+            </button>
+        </div>
+
+        <div class="chat-messages" id="chatMessages">
+            <div class="message received">
+                <div class="message-bubble">
+                    👋 You are connected! Say hi to your new friend.
+                </div>
             </div>
         </div>
 
-        <!-- Chat Section -->
-        <div class="chat-section">
-            <div class="chat-header">
-                <h3>Chat</h3>
-            </div>
-            <div class="chat-messages" id="chatMessages">
-                <!-- Messages will be added here -->
-            </div>
-            <div class="chat-input">
-                <input type="text" id="messageInput" placeholder="😊 Type a message..."
+        <div class="chat-input-area">
+            <div class="input-wrapper">
+                <input type="text" class="chat-input-field" id="messageInput" placeholder="Type a message..."
                     onkeypress="handleKeyPress(event)">
-                <button onclick="sendMessage()">
+                <button class="send-btn" onclick="sendMessage()">
                     <i class="bi bi-send-fill"></i>
                 </button>
             </div>
@@ -464,21 +530,21 @@
     </div>
 </div>
 
-<!-- Socket.IO -->
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 
 <script>
-    // Get session data
     const roomId = sessionStorage.getItem('boomerang_room');
     const partnerName = sessionStorage.getItem('boomerang_partner');
     const isInitiator = sessionStorage.getItem('boomerang_initiator') === 'true';
     const userName = sessionStorage.getItem('boomerang_user') || 'You';
 
-    // Update UI with names
     document.getElementById('userName').textContent = userName;
-    document.getElementById('partnerName').textContent = partnerName || 'Partner';
+    const partnerNameEl = document.getElementById('partnerName');
+    const partnerNameDisplay = document.getElementById('partnerNameDisplay');
 
-    // WebRTC configuration
+    if (partnerNameEl) partnerNameEl.textContent = partnerName || 'Partner';
+    if (partnerNameDisplay) partnerNameDisplay.textContent = partnerName || 'Connecting...';
+
     const rtcConfig = {
         iceServers: [
             { urls: 'stun:stun.l.google.com:19302' },
@@ -486,7 +552,6 @@
         ]
     };
 
-    // State
     let socket = null;
     let peerConnection = null;
     let localStream = null;
@@ -494,16 +559,14 @@
     let videoEnabled = true;
     let seconds = 0;
 
-    // Timer
     setInterval(() => {
         seconds++;
         const hrs = Math.floor(seconds / 3600).toString().padStart(2, '0');
         const mins = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
         const secs = (seconds % 60).toString().padStart(2, '0');
-        document.getElementById('timer').textContent = `(${hrs}:${mins}:${secs})`;
+        document.getElementById('timer').textContent = `${hrs}:${mins}:${secs}`;
     }, 1000);
 
-    // Initialize
     async function init() {
         if (!roomId) {
             showStatus('No room found. Redirecting...', 'error');
@@ -513,26 +576,23 @@
             return;
         }
 
-        showStatus('Setting up camera and microphone...', '');
+        showStatus('Setting up camera...', '');
 
         try {
-            // Get local media
             localStream = await navigator.mediaDevices.getUserMedia({
                 video: true,
                 audio: true
             });
 
-            // Show local video
             const localVideo = document.getElementById('localVideo');
             localVideo.srcObject = localStream;
             document.getElementById('localPlaceholder').style.display = 'none';
 
-            // Connect to Socket.IO
             connectSocket();
 
         } catch (err) {
             console.error('Media error:', err);
-            showStatus('Camera/mic access denied. Please allow access.', 'error');
+            showStatus('Camera access denied.', 'error');
         }
     }
 
@@ -541,16 +601,12 @@
 
         socket.on('connect', () => {
             console.log('[Meetup] Connected to server');
-            showStatus('Connected! Setting up video call...', '');
+            showStatus('Connected! Waiting for partner...', '');
 
-            // Join the existing room (not queue!)
             socket.emit('boomerang_join_room', { name: userName, room_id: roomId });
 
-            // Create peer connection
             createPeerConnection();
 
-            // If we're the initiator, create and send offer after a short delay
-            // (to allow both users to join the room first)
             if (isInitiator) {
                 setTimeout(() => {
                     createOffer();
@@ -558,18 +614,15 @@
             }
         });
 
-        // Handle when partner joins room
         socket.on('boomerang_user_joined', (data) => {
             console.log('[Meetup] Partner joined room:', data);
             showStatus('Partner connected! Starting video...', '');
 
-            // If we're the initiator and partner just joined, send offer
             if (isInitiator && peerConnection) {
                 createOffer();
             }
         });
 
-        // Handle WebRTC signaling
         socket.on('boomerang_offer', async (data) => {
             console.log('[Meetup] Received offer');
             if (peerConnection) {
@@ -598,57 +651,46 @@
             }
         });
 
-        // Handle chat messages
         socket.on('boomerang_chat', (data) => {
             addMessage(data.message, false, data.name);
         });
 
-        // Partner left
         socket.on('boomerang_partner_left', () => {
-            showStatus('Partner has left the room.', 'error');
+            showStatus('Partner disconnected', 'error');
             document.getElementById('remotePlaceholder').style.display = 'flex';
             document.getElementById('remotePlaceholder').innerHTML = `
-                <i class="bi bi-person-x"></i>
-                <span>Partner disconnected</span>
+                <div style="text-align:center; color: #ff416c;">
+                    <i class="bi bi-person-x" style="font-size: 3rem;"></i><br>
+                    <span>Partner left</span>
+                </div>
             `;
         });
 
         socket.on('disconnect', () => {
-            showStatus('Connection lost. Trying to reconnect...', 'error');
+            showStatus('Connection lost', 'error');
         });
     }
 
     function createPeerConnection() {
         peerConnection = new RTCPeerConnection(rtcConfig);
 
-        // Add local tracks
         localStream.getTracks().forEach(track => {
             peerConnection.addTrack(track, localStream);
         });
 
-        // Handle remote stream
         peerConnection.ontrack = (event) => {
             console.log('[Meetup] Received remote track');
             const remoteVideo = document.getElementById('remoteVideo');
-            remoteVideo.srcObject = event.streams[0];
-            document.getElementById('remotePlaceholder').style.display = 'none';
-            showStatus('Connected!', 'connected');
-        };
-
-        // Handle ICE candidates
-        peerConnection.onicecandidate = (event) => {
-            if (event.candidate) {
-                socket.emit('boomerang_ice_candidate', { candidate: event.candidate });
+            if (remoteVideo.srcObject !== event.streams[0]) {
+                remoteVideo.srcObject = event.streams[0];
+                document.getElementById('remotePlaceholder').style.display = 'none';
+                showStatus('You are live!', 'connected');
             }
         };
 
-        // Connection state changes
-        peerConnection.onconnectionstatechange = () => {
-            console.log('[Meetup] Connection state:', peerConnection.connectionState);
-            if (peerConnection.connectionState === 'connected') {
-                showStatus('Video call connected!', 'connected');
-            } else if (peerConnection.connectionState === 'failed') {
-                showStatus('Connection failed. Try refreshing.', 'error');
+        peerConnection.onicecandidate = (event) => {
+            if (event.candidate) {
+                socket.emit('boomerang_ice_candidate', { candidate: event.candidate });
             }
         };
     }
@@ -658,25 +700,26 @@
             const offer = await peerConnection.createOffer();
             await peerConnection.setLocalDescription(offer);
             socket.emit('boomerang_offer', { offer: offer });
-            console.log('[Meetup] Sent offer');
         } catch (e) {
             console.error('Error creating offer:', e);
         }
     }
 
     function showStatus(message, type) {
-        const status = document.getElementById('connectionStatus');
-        status.textContent = message;
-        status.className = 'connection-status show';
+        const statusToast = document.getElementById('connectionStatus');
+        const statusText = document.getElementById('statusText');
+
+        statusText.textContent = message;
+        statusToast.classList.add('show');
+
         if (type === 'connected') {
-            status.classList.add('connected');
-            setTimeout(() => { status.classList.remove('show'); }, 3000);
+            statusToast.style.borderColor = '#00f2fe';
+            setTimeout(() => { statusToast.classList.remove('show'); }, 3000);
         } else if (type === 'error') {
-            status.classList.add('error');
+            statusToast.style.borderColor = '#ff416c';
         }
     }
 
-    // Toggle microphone
     document.getElementById('micBtn').addEventListener('click', function () {
         if (localStream) {
             audioEnabled = !audioEnabled;
@@ -687,11 +730,9 @@
             this.classList.toggle('muted', !audioEnabled);
             const icon = this.querySelector('i');
             icon.className = audioEnabled ? 'bi bi-mic-fill' : 'bi bi-mic-mute-fill';
-            document.getElementById('micStatus').style.display = audioEnabled ? 'none' : 'inline';
         }
     });
 
-    // Toggle camera
     document.getElementById('camBtn').addEventListener('click', function () {
         if (localStream) {
             videoEnabled = !videoEnabled;
@@ -705,25 +746,20 @@
         }
     });
 
-    // Add friend button
     document.getElementById('addFriendBtn').addEventListener('click', function () {
-        alert('Friend request sent to ' + partnerName + '! (Demo)');
-        this.disabled = true;
+        this.classList.add('active');
         this.innerHTML = '<i class="bi bi-check-lg"></i>';
     });
 
-    // Chat functions
     function sendMessage() {
         const input = document.getElementById('messageInput');
         const message = input.value.trim();
         if (!message) return;
 
-        // Send via socket
         if (socket) {
             socket.emit('boomerang_chat', { message: message, name: userName });
         }
 
-        // Add to local UI
         addMessage(message, true);
         input.value = '';
     }
@@ -750,16 +786,13 @@
         }
     }
 
-    // Leave room
     document.getElementById('leaveBtn').addEventListener('click', function () {
         cleanup();
         window.location.href = "{{ url_for('activities.boomerang') }}";
     });
 
-    // Next room
     document.getElementById('nextBtn').addEventListener('click', function () {
         cleanup();
-        // Clear session and go back to loading
         sessionStorage.removeItem('boomerang_room');
         sessionStorage.removeItem('boomerang_partner');
         sessionStorage.removeItem('boomerang_initiator');
@@ -779,10 +812,7 @@
         }
     }
 
-    // Cleanup on page unload
     window.addEventListener('beforeunload', cleanup);
-
-    // Start
     init();
 </script>
 {% endblock %}
