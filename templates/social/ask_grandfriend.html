@@ -5,6 +5,240 @@
 {% block head %}
 <!-- Ask A Grandfriend Styles -->
 <link rel="stylesheet" href="{{ url_for('static', filename='css/askagrandfriend.css') }}">
+<style>
+    /* Specific Replies CSS matching mockup */
+    .replies-section {
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        margin-top: 15px;
+        padding-top: 15px;
+        animation: fadeIn 0.3s ease;
+    }
+
+    .replies-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+        color: var(--text-primary);
+    }
+
+    .btn-hide-replies {
+        background: none;
+        border: none;
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+        cursor: pointer;
+    }
+
+    .reply-card {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 12px;
+        padding: 15px;
+        margin-bottom: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        position: relative;
+    }
+
+    .reply-card.best-answer {
+        background: rgba(85, 88, 218, 0.15);
+        /* Light blue/purple tint */
+        border: 2px solid #6c5dd3;
+        /* Strong purple/blue border */
+        border-left: 5px solid #6c5dd3;
+    }
+
+    .best-answer-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        color: #6c5dd3;
+        font-weight: 700;
+        font-size: 0.9rem;
+        margin-bottom: 10px;
+    }
+
+    .coin-badge {
+        background: #fff3cd;
+        color: #856404;
+        padding: 2px 10px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 700;
+        border: 1px solid #ffeeba;
+    }
+
+    .reply-content {
+        font-size: 0.95rem;
+        color: var(--text-primary);
+        line-height: 1.5;
+        margin-bottom: 8px;
+    }
+
+    .reply-footer {
+        display: flex;
+        align-items: center;
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+    }
+
+    .btn-add-friend {
+        background: none;
+        border: none;
+        color: #6c5dd3;
+        cursor: pointer;
+        padding: 0;
+        font-weight: 600;
+        font-size: 0.85rem;
+    }
+
+    .reply-input-container {
+        margin-top: 15px;
+        position: relative;
+    }
+
+    .reply-textarea {
+        background: #f8f9fa !important;
+        border: 1px solid #dee2e6 !important;
+        color: #212529 !important;
+        border-radius: 12px !important;
+    }
+
+    .btn-send-reply {
+        position: absolute;
+        bottom: 8px;
+        right: 10px;
+        background: none;
+        border: none;
+        color: #6c5dd3;
+        font-size: 1.2rem;
+        z-index: 10;
+    }
+
+    /* Reaction Buttons */
+    .btn-reaction {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        border: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-left: 5px;
+        cursor: pointer;
+        transition: transform 0.2s;
+        opacity: 0.8;
+    }
+
+    .btn-reaction:hover {
+        transform: scale(1.1);
+        opacity: 1;
+    }
+
+    .btn-fav {
+        background: #6c5dd3;
+        color: white;
+        box-shadow: 0 2px 5px rgba(108, 93, 211, 0.3);
+    }
+
+    .btn-love {
+        background: #ff4081;
+        color: white;
+        box-shadow: 0 2px 5px rgba(255, 64, 129, 0.3);
+    }
+
+    .btn-like {
+        background: #2196f3;
+        color: white;
+        box-shadow: 0 2px 5px rgba(33, 150, 243, 0.3);
+    }
+
+    /* Card Styles based on Reaction */
+    .reply-card.favourite {
+        background: rgba(85, 88, 218, 0.15);
+        border: 2px solid #6c5dd3;
+        border-left: 5px solid #6c5dd3;
+    }
+
+    .reply-card.love {
+        background: rgba(255, 64, 129, 0.1);
+        border: 2px solid #ff4081;
+        border-left: 5px solid #ff4081;
+    }
+
+    .reply-card.like {
+        background: rgba(33, 150, 243, 0.1);
+        border: 1px solid #2196f3;
+        border-left: 3px solid #2196f3;
+    }
+
+    /* Sub-Reply Styles */
+    .sub-replies-container {
+        margin-left: 15px;
+        padding-left: 15px;
+        border-left: 2px solid rgba(255, 255, 255, 0.1);
+        margin-top: 10px;
+    }
+
+    .sub-reply-card {
+        margin-bottom: 10px;
+        padding: 5px 0;
+    }
+
+    .btn-reply-text {
+        background: none;
+        border: none;
+        color: var(--text-secondary);
+        font-size: 0.85rem;
+        cursor: pointer;
+        margin-left: 10px;
+        font-weight: 600;
+    }
+
+    .btn-reply-text:hover {
+        color: #6c5dd3;
+    }
+
+    .view-replies-btn {
+        color: #6c5dd3;
+        background: none;
+        border: none;
+        font-size: 0.9rem;
+        margin-top: 5px;
+        padding: 0;
+        cursor: pointer;
+        font-weight: 600;
+    }
+
+    .view-replies-btn:hover {
+        text-decoration: underline;
+    }
+
+    .btn-delete-reply {
+        background: none;
+        border: none;
+        color: #dc3545;
+        font-size: 0.8rem;
+        cursor: pointer;
+        margin-left: 10px;
+        opacity: 0.7;
+    }
+
+    .btn-delete-reply:hover {
+        opacity: 1;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(-5px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
 {% endblock %}
 
 {% block content %}
@@ -46,7 +280,7 @@
                     <i class="bi bi-people"></i> See Post By
                 </div>
                 <div class="toggle-btn-group">
-                    <button class="toggle-btn active" id="btnGrandparents">Grandparents</button>
+                    <button class="toggle-btn" id="btnGrandparents">Grandparents</button>
                     <button class="toggle-btn" id="btnStudents">Students</button>
                 </div>
             </div>
@@ -83,7 +317,7 @@
                 {% if questions %}
                 {% for q in questions %}
                 <div class="question-card" data-category="{{ q.category }}"
-                    data-author="{% if q.author_name == 'Jeremy Khoo' %}you{% else %}other{% endif %}"
+                    data-author="{% if q.user_id == current_user_id or (not q.user_id and q.author_name == current_username) %}you{% else %}other{% endif %}"
                     data-author-type="{{ q.author_type }}">
                     <div class="question-title">{{ q.title }}</div>
                     <div class="question-meta">
@@ -102,7 +336,8 @@
                             <i class="bi bi-tag me-1"></i> {{ q.category|capitalize }}
                             {% endif %}
                         </span>
-                        {% if q.author_name == 'Jeremy Khoo' %}
+                        {% if q.user_id == current_user_id or (not q.user_id and q.author_name == current_username and
+                        not q.is_anonymous) %}
                         <span class="badge-posted-by-you">Posted By You</span>
                         {% endif %}
                     </div>
@@ -116,10 +351,12 @@
                         %}...{% endif %}
                     </div>
                     <div class="question-footer">
-                        <a href="#" class="see-replies-link">
+                        <a href="javascript:void(0)" class="see-replies-link"
+                            onclick="toggleReplies(event, 'replies-{{ q.id }}')">
                             <i class="bi bi-chat-dots"></i> See Replies ({{ q.replies_count or 0 }})
                         </a>
-                        {% if q.author_name == 'Jeremy Khoo' %}
+                        {% if q.user_id == current_user_id or (not q.user_id and q.author_name == current_username and
+                        not q.is_anonymous) %}
                         <form action="{{ url_for('social.delete_question_route', question_id=q.id) }}" method="POST"
                             style="display: inline;"
                             onsubmit="return confirm('Are you sure you want to delete this question?');">
@@ -128,6 +365,162 @@
                             </button>
                         </form>
                         {% endif %}
+                    </div>
+
+                    <!-- Replies Section -->
+                    <div id="replies-{{ q.id }}" class="replies-section" style="display: none;">
+                        <div class="replies-header">
+                            <h6>{{ q.replies_count or 0 }} Replies</h6>
+                            <button class="btn-hide-replies" onclick="toggleReplies(event, 'replies-{{ q.id }}')">
+                                <i class="bi bi-chevron-up"></i> Hide Replies
+                            </button>
+                        </div>
+
+                        <!-- Replies List -->
+                        <div class="replies-list" style="max-height: 400px; overflow-y: auto;">
+                            {% if q.replies %}
+                            {% for reply in q.replies %}
+                            <div class="reply-card {{ reply.reaction }}">
+                                {% if reply.reaction == 'favourite' %}
+                                <div class="best-answer-header">
+                                    <span><i class="bi bi-check-circle-fill"></i> GRANDFRIEND APPROVED BEST
+                                        ANSWER</span>
+                                    <span class="coin-badge"><i class="bi bi-coin"></i> 20</span>
+                                </div>
+                                {% elif reply.reaction == 'love' %}
+                                <div class="love-header"
+                                    style="color: #d81b60; font-weight: 700; font-size: 0.9rem; margin-bottom: 10px;">
+                                    <span><i class="bi bi-heart-fill"></i> LOVED</span>
+                                    <span class="coin-badge"
+                                        style="background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; padding: 2px 10px; border-radius: 20px; font-size: 0.8rem; margin-left: 5px;"><i
+                                            class="bi bi-coin"></i> 10</span>
+                                </div>
+                                {% elif reply.reaction == 'like' %}
+                                <div class="like-header"
+                                    style="color: #0d47a1; font-weight: 700; font-size: 0.9rem; margin-bottom: 10px;">
+                                    <span><i class="bi bi-hand-thumbs-up-fill"></i> LIKED</span>
+                                    <span class="coin-badge"
+                                        style="background: #cce5ff; color: #004085; border: 1px solid #b8daff; padding: 2px 10px; border-radius: 20px; font-size: 0.8rem; margin-left: 5px;"><i
+                                            class="bi bi-coin"></i> 5</span>
+                                </div>
+                                {% endif %}
+
+                                <div class="reply-content">
+                                    {{ reply.content }}
+                                </div>
+                                <div class="reply-footer d-flex justify-content-between align-items-center">
+                                    <div class="d-flex align-items-center">
+                                        <span class="reply-author text-muted small">{{ reply.author_name }}</span>
+                                        <button class="btn-reply-text"
+                                            onclick="toggleSubReplyForm('{{ reply.reply_id }}')">Reply</button>
+
+                                        <!-- Delete (OP or Author) -->
+                                        {% if current_user_id|string == reply.user_id|string or current_user_id|string
+                                        == q.user_id|string %}
+                                        <form
+                                            action="{{ url_for('social.delete_reply_route', reply_id=reply.reply_id) }}"
+                                            method="POST" class="d-inline"
+                                            onsubmit="return confirm('Delete this reply?')">
+                                            <button type="submit" class="btn-delete-reply"><i
+                                                    class="bi bi-trash"></i></button>
+                                        </form>
+                                        {% endif %}
+                                    </div>
+
+                                    <!-- Reaction Buttons (OP Only) -->
+                                    {% if q.user_id == current_user_id %}
+                                    <div class="reaction-buttons d-flex">
+                                        <!-- FAV (20) -->
+                                        <form
+                                            action="{{ url_for('social.react_to_reply_route', reply_id=reply.reply_id, reaction_type='favourite') }}"
+                                            method="POST" class="d-inline">
+                                            <button type="submit" class="btn-reaction btn-fav"
+                                                title="Best Answer (20 Coins)"><i class="bi bi-gem"></i></button>
+                                        </form>
+                                        <!-- LOVE (10) -->
+                                        <form
+                                            action="{{ url_for('social.react_to_reply_route', reply_id=reply.reply_id, reaction_type='love') }}"
+                                            method="POST" class="d-inline">
+                                            <button type="submit" class="btn-reaction btn-love"
+                                                title="Love (10 Coins)"><i class="bi bi-heart-fill"></i></button>
+                                        </form>
+                                        <!-- LIKE (5) -->
+                                        <form
+                                            action="{{ url_for('social.react_to_reply_route', reply_id=reply.reply_id, reaction_type='like') }}"
+                                            method="POST" class="d-inline">
+                                            <button type="submit" class="btn-reaction btn-like"
+                                                title="Like (5 Coins)"><i
+                                                    class="bi bi-hand-thumbs-up-fill"></i></button>
+                                        </form>
+                                    </div>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Sub Reply Form -->
+                                <div id="sub-reply-form-{{ reply.reply_id }}" style="display: none; margin-top: 10px;">
+                                    <form action="{{ url_for('social.post_reply', question_id=q.id) }}" method="POST">
+                                        <input type="hidden" name="parent_reply_id" value="{{ reply.reply_id }}">
+                                        <div class="input-group">
+                                            <textarea name="content" class="form-control reply-textarea"
+                                                placeholder="Write a reply..." rows="1"
+                                                style="font-size: 0.9rem;"></textarea>
+                                            <button class="btn btn-sm btn-primary" type="submit">Post</button>
+                                        </div>
+                                    </form>
+                                </div>
+
+                                <!-- Sub Replies List -->
+                                {% if reply.sub_replies %}
+                                <div class="sub-replies-wrapper mt-2">
+                                    <button class="view-replies-btn" onclick="toggleSubReplies('{{ reply.reply_id }}')">
+                                        <i class="bi bi-caret-down-fill"></i> {{ reply.sub_replies|length }} replies
+                                    </button>
+                                    <div id="sub-replies-list-{{ reply.reply_id }}" class="sub-replies-container"
+                                        style="display: none;">
+                                        {% for sub in reply.sub_replies %}
+                                        <div class="sub-reply-card">
+                                            <div class="d-flex align-items-center mb-1">
+                                                <span class="text-primary small fw-bold">{{ sub.author_name }}</span>
+                                                <span class="text-muted small ms-2" style="font-size: 0.75rem;">{{
+                                                    sub.created_at[:10] }}</span>
+                                            </div>
+                                            <div class="text-dark small mb-1">{{ sub.content }}</div>
+                                            <!-- Delete Sub Reply (OP or Author) -->
+                                            {% if current_user_id|string == sub.user_id|string or current_user_id|string
+                                            == q.user_id|string %}
+                                            <form
+                                                action="{{ url_for('social.delete_reply_route', reply_id=sub.reply_id) }}"
+                                                method="POST" class="d-inline"
+                                                onsubmit="return confirm('Delete this reply?')">
+                                                <button type="submit" class="btn-delete-reply ps-0 text-muted"
+                                                    style="font-size: 0.7rem;">Delete</button>
+                                            </form>
+                                            {% endif %}
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                            {% else %}
+                            <div class="text-center text-muted py-3 small">No replies yet. Be the first!</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Reply Input -->
+                        <div class="reply-input-container">
+                            <form action="{{ url_for('social.post_reply', question_id=q.id) }}" method="POST">
+                                <div class="input-group">
+                                    <textarea name="content" class="form-control reply-textarea"
+                                        placeholder="Post your reply here..." required rows="2"
+                                        style="border-radius: 15px; resize: none;"></textarea>
+                                    <button class="btn btn-send-reply" type="submit">
+                                        <i class="bi bi-send-fill"></i>
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
                     </div>
                 </div>
                 {% endfor %}
@@ -195,8 +588,6 @@
                     </div>
 
                     <!-- Hidden fields -->
-                    <input type="hidden" name="author_name" value="Jeremy Khoo">
-                    <input type="hidden" name="author_type" value="grandparent">
                     <input type="hidden" name="content" value="">
 
                     <!-- Submit Button -->
@@ -228,31 +619,86 @@
         }
     }
 
-    btnMyQuestions.addEventListener('click', function () {
-        btnMyQuestions.classList.add('active');
-        btnAllQuestions.classList.remove('active');
-        if (headerTitle) headerTitle.textContent = 'My Questions';
+    // Filter Logic
+    const filterState = {
+        view: 'all', // 'all' or 'my'
+        type: 'all' // 'all', 'grandparent' or 'student'
+    };
 
+    function filterQuestions() {
+        let count = 0;
         questionCards.forEach(card => {
-            if (card.dataset.author === 'you') {
-                card.style.display = 'block';
-            } else {
-                card.style.display = 'none';
-            }
-        });
-        updateQuestionCount();
-    });
+            const isMyQuestion = card.dataset.author === 'you';
+            const rawType = card.dataset.authorType || '';
+            const authorType = rawType.toLowerCase();
 
+            let show = true;
+
+            // 1. Check My vs All
+            if (filterState.view === 'my' && !isMyQuestion) show = false;
+
+            // 2. Check Author Type
+            // Only apply type filter if we are in "All Questions" mode? 
+            // Or apply it always? Usually sidebar filters apply always.
+            if (filterState.type === 'grandparent' && authorType !== 'grandparent') show = false;
+            if (filterState.type === 'student' && authorType !== 'student') show = false;
+
+            // Update visibility
+            card.style.display = show ? 'block' : 'none';
+            if (show) count++;
+        });
+
+        updateQuestionCount();
+
+        // Update empty state if needed
+        const emptyState = document.querySelector('.text-center.py-5');
+        // We might need to add empty state HTML if missing, but let's just leave it for now
+    }
+
+    // Tab Listeners
     btnAllQuestions.addEventListener('click', function () {
         btnAllQuestions.classList.add('active');
         btnMyQuestions.classList.remove('active');
         if (headerTitle) headerTitle.textContent = 'All Questions';
-
-        questionCards.forEach(card => {
-            card.style.display = 'block';
-        });
-        updateQuestionCount();
+        filterState.view = 'all';
+        filterQuestions();
     });
+
+    btnMyQuestions.addEventListener('click', function () {
+        btnMyQuestions.classList.add('active');
+        btnAllQuestions.classList.remove('active');
+        if (headerTitle) headerTitle.textContent = 'My Questions';
+        filterState.view = 'my';
+        filterQuestions();
+    });
+
+    // Sidebar Listeners
+    const btnGrandparents = document.getElementById('btnGrandparents');
+    const btnStudents = document.getElementById('btnStudents');
+
+    if (btnGrandparents && btnStudents) {
+        btnGrandparents.addEventListener('click', function () {
+            btnStudents.classList.remove('active');
+            this.classList.add('active');
+            filterState.type = 'grandparent';
+            filterQuestions();
+        });
+
+        btnStudents.addEventListener('click', function () {
+            btnGrandparents.classList.remove('active');
+            this.classList.add('active');
+            filterState.type = 'student';
+            filterQuestions();
+        });
+    }
+
+    // Initialize with default state
+    // Check which buttons are active in HTML
+    if (btnMyQuestions.classList.contains('active')) filterState.view = 'my';
+    if (btnGrandparents && btnGrandparents.classList.contains('active')) filterState.type = 'grandparent';
+    if (btnStudents && btnStudents.classList.contains('active')) filterState.type = 'student';
+
+    filterQuestions();
 
     // Category Filtering
     const categoryBtns = document.querySelectorAll('.category-btn');
@@ -301,5 +747,31 @@
 
     // Initialize count
     updateQuestionCount();
+
+    // Replies Toggle Logic
+    function toggleReplies(event, elementId) {
+        event.preventDefault();
+        const el = document.getElementById(elementId);
+        if (el) {
+            if (el.style.display === 'none') {
+                el.style.display = 'block';
+            } else {
+                el.style.display = 'none';
+            }
+        }
+    }
+    function toggleSubReplies(id) {
+        const el = document.getElementById('sub-replies-list-' + id);
+        if (el) {
+            el.style.display = (el.style.display === 'none') ? 'block' : 'none';
+        }
+    }
+
+    function toggleSubReplyForm(id) {
+        const el = document.getElementById('sub-reply-form-' + id);
+        if (el) {
+            el.style.display = (el.style.display === 'none') ? 'block' : 'none';
+        }
+    }
 </script>
 {% endblock %}

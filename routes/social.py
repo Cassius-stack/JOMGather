@@ -368,39 +368,296 @@ def ask_grandfriend():
     questions = []
     try:
         supabase = get_supabase()
-        result = supabase.table('questions').select('*').order('created_at', desc=True).execute()
-        questions = result.data if result.data else []
+        # Fetch Questions
+        q_res = supabase.table('questions').select('*').order('created_at', desc=True).execute()
+        questions = q_res.data if q_res.data else []
+        
+        # Fetch Replies
+        r_res = supabase.table('replies').select('*').order('created_at').execute() 
+        all_raw_replies = r_res.data if r_res.data else []
+        
+        # Organize Nesting
+        reply_map = {r['reply_id']: r for r in all_raw_replies}
+        for r in all_raw_replies: r['sub_replies'] = [] # Init
+        
+        top_level_replies = []
+        for r in all_raw_replies:
+            pid = r.get('parent_reply_id')
+            if pid and pid in reply_map:
+                reply_map[pid]['sub_replies'].append(r)
+            elif not pid:
+                top_level_replies.append(r)
+        
+        # Attach to questions (Top Level Only)
+        for q in questions:
+            q['replies'] = [r for r in top_level_replies if r['question_id'] == q['id']]
+            # Sort by coins desc
+            q['replies'].sort(key=lambda x: x.get('coins_awarded', 0), reverse=True)
+            # Count total (including subs)? The current UI shows "X Replies". 
+            # q.replies_count is usually just top level or total? 
+            # Typically total. Let's count properly.
+            total_count = 0
+            for r in q['replies']:
+                total_count += 1 + len(r['sub_replies'])
+            q['replies_count'] = total_count
+            
     except Exception as e:
-        print(f"Error fetching questions: {e}")
-    return render_template('social/ask_grandfriend.html', questions=questions)
+        print(f"Error fetching data: {e}")
+        
+    current_user_id = get_current_user_id()
+    current_username = "Jeremy Khoo" # Default fallback
+    if current_user_id:
+        try:
+            u = fetch_one('users', user_id=current_user_id)
+            if u: current_username = u.get('username')
+        except: pass
+        
+    return render_template('social/ask_grandfriend.html', questions=questions, current_user_id=current_user_id, current_username=current_username)
 
 @social_bp.route('/ask-grandfriend/post', methods=['GET', 'POST'])
 def post_question():
     """Post a question to AskAGrandfriend."""
     if request.method == 'POST':
+        user_id = get_current_user_id()
+        if not user_id:
+            from flask import flash
+            flash("Please log in to ask a question.", "warning")
+            return redirect(url_for('auth.login'))
+            
         title = request.form.get('title', '').strip()
         content = request.form.get('content', '').strip()
         category = request.form.get('category', 'tech')
         is_anonymous = request.form.get('is_anonymous') == 'on'
-        author_name = request.form.get('author_name', 'Jeremy Khoo')
-        author_type = request.form.get('author_type', 'grandparent')
         
+        # Fetch actual user details
+        try:
+            user_data = fetch_one('users', user_id=user_id)
+            if not user_data:
+                from flask import flash
+                flash("User session invalid. Please log in again.", "error")
+                return redirect(url_for('auth.login'))
+                
+            author_name = user_data.get('username', 'Unknown')
+            db_type = str(user_data.get('user_type', 'youth')).lower()
+            # Map 'youth'/'senior' to 'student'/'grandparent' for questions table constraint
+            if db_type == 'senior':
+                author_type = 'grandparent'
+            elif db_type == 'youth':
+                author_type = 'student'
+            else:
+                author_type = 'student' # default fallback
+        except Exception as e:
+            print(f"Error fetching user details: {e}")
+            author_name = "User"
+            author_type = "student"
+
         if title:
+            success = False
             try:
+                # Try inserting with user_id (New Schema)
                 insert('questions', {
                     'title': title,
                     'content': content,
                     'category': category,
                     'author_name': 'Anonymous' if is_anonymous else author_name,
                     'author_type': author_type,
-                    'is_anonymous': is_anonymous
+                    'is_anonymous': is_anonymous,
+                    'user_id': user_id
                 })
+                success = True
             except Exception as e:
-                print(f"Error posting question: {e}")
+                print(f"Error posting with user_id: {e}")
+                # Fallback to Old Schema (no user_id column)
+                try:
+                    insert('questions', {
+                        'title': title,
+                        'content': content,
+                        'category': category,
+                        'author_name': 'Anonymous' if is_anonymous else author_name,
+                        'author_type': author_type,
+                        'is_anonymous': is_anonymous
+                    })
+                    success = True
+                except Exception as e2:
+                    print(f"Error posting fallback: {e2}")
+                    from flask import flash
+                    flash(f"Error posting question: {str(e2)}", "error")
+            
+            if success:
+                from flask import flash
+                flash("Question posted successfully!", "success")
         
         return redirect(url_for('social.ask_grandfriend'))
     
     return render_template('social/ask_grandfriend.html')
+
+
+@social_bp.route('/ask-grandfriend/react/<reply_id>/<reaction_type>', methods=['POST'])
+def react_to_reply_route(reply_id, reaction_type):
+    """React to a reply (favourite, love, like). Only OP can do this."""
+    user_id = get_current_user_id()
+    if not user_id: return redirect(url_for('auth.login'))
+    
+    allowed_reactions = {
+        'favourite': 20,
+        'love': 10,
+        'like': 5,
+        'none': 0
+    }
+    
+    if reaction_type not in allowed_reactions:
+        return redirect(url_for('social.ask_grandfriend'))
+
+    try:
+        supabase = get_supabase()
+        
+        # 1. Fetch Reply and Question to verify ownership
+        # We need question_id to check who owns the question
+        reply_res = supabase.table('replies').select('*, question_id').eq('reply_id', reply_id).execute()
+        if not reply_res.data: return redirect(url_for('social.ask_grandfriend'))
+        reply = reply_res.data[0]
+        question_id = reply['question_id']
+        
+        q_res = supabase.table('questions').select('user_id').eq('id', question_id).execute()
+        if not q_res.data: return redirect(url_for('social.ask_grandfriend'))
+        question = q_res.data[0]
+        
+        # Verify OP Check
+        # Ensure we compare strings properly if UUIDs
+        if str(question.get('user_id')) != str(user_id):
+            from flask import flash
+            flash("Only the question author can react.", "error")
+            return redirect(url_for('social.ask_grandfriend'))
+
+        # 2. Calculate Coin Diff
+        old_coins = reply.get('coins_awarded', 0)
+        new_coins = allowed_reactions[reaction_type]
+        coin_diff = new_coins - old_coins
+        
+        # 3. Update Reply
+        new_reaction = None if reaction_type == 'none' else reaction_type
+        supabase.table('replies').update({
+            'reaction': new_reaction,
+            'coins_awarded': new_coins
+        }).eq('reply_id', reply_id).execute()
+        
+        # 4. Award/Revoke Coins from Replier
+        replier_id = reply.get('user_id')
+        if replier_id and coin_diff != 0:
+            # Check if user exists in coins table
+            # This requires 'coins' table to be setup for the user. 
+            # If not, we might need to insert.
+            # For prototype, we attempt update.
+            try:
+                # Fetch current coins
+                c_res = supabase.table('coins').select('total_coins').eq('user_id', replier_id).execute()
+                if c_res.data:
+                    curr = c_res.data[0]['total_coins']
+                    supabase.table('coins').update({'total_coins': curr + coin_diff}).eq('user_id', replier_id).execute()
+                else:
+                    # Insert
+                    supabase.table('coins').insert({'user_id': replier_id, 'total_coins': coin_diff}).execute()
+            except Exception as e:
+                print(f"Coin update failed: {e}")
+
+        from flask import flash
+        flash(f"Reaction updated! Awarded {new_coins} coins.", "success")
+        
+    except Exception as e:
+        print(f"Reaction Error: {e}")
+        from flask import flash
+        flash(f"Error reacting: {e}", "error")
+
+    return redirect(url_for('social.ask_grandfriend'))
+
+
+@social_bp.route('/ask-grandfriend/reply/<question_id>', methods=['POST'])
+def post_reply(question_id):
+    """Post a reply to a question."""
+    user_id = get_current_user_id()
+    if not user_id:
+        from flask import flash
+        flash("Please log in to reply.", "warning")
+        return redirect(url_for('auth.login'))
+
+    content = request.form.get('content', '').strip()
+    parent_reply_id = request.form.get('parent_reply_id')
+    
+    if not content:
+        return redirect(url_for('social.ask_grandfriend'))
+
+    # Determine Author
+    try:
+        user_data = fetch_one('users', user_id=user_id)
+        author_name = user_data.get('username', 'User') if user_data else 'User'
+        
+        db_type = str(user_data.get('user_type', 'youth')).lower() if user_data else 'youth'
+        if db_type == 'senior': author_type = 'grandparent'
+        elif db_type == 'youth': author_type = 'student'
+        else: author_type = 'student'
+    except:
+        author_name = "User"
+        author_type = "student"
+
+    try:
+        data = {
+            'question_id': question_id,
+            'user_id': user_id,
+            'content': content,
+            'author_name': author_name,
+            'author_type': author_type
+        }
+        if parent_reply_id:
+            data['parent_reply_id'] = parent_reply_id
+            
+        insert('replies', data)
+        from flask import flash
+        flash("Reply posted!", "success")
+    except Exception as e:
+        print(f"Error posting reply: {e}")
+        from flask import flash
+        flash(f"Error posting reply: {e}", "error")
+
+    return redirect(url_for('social.ask_grandfriend'))
+
+
+@social_bp.route('/ask-grandfriend/reply/delete/<reply_id>', methods=['POST'])
+def delete_reply_route(reply_id):
+    """Delete a reply (Only OP or Author)."""
+    user_id = get_current_user_id()
+    if not user_id: return redirect(url_for('auth.login'))
+    
+    try:
+        supabase = get_supabase()
+        # Fetch reply to check ownership and question ownership
+        res = supabase.table('replies').select('*, questions(user_id)').eq('reply_id', reply_id).execute()
+        if not res.data: return redirect(url_for('social.ask_grandfriend'))
+        reply = res.data[0]
+        
+        # Check permissions:
+        # 1. Reply Author
+        # 2. Question Author (OP)
+        # Note: join syntax `questions(user_id)` needs setup or simpler separate fetch. 
+        # Supabase-py join can be tricky. Let's do separate fetch.
+        
+        q_res = supabase.table('questions').select('user_id').eq('id', reply['question_id']).execute()
+        q_owner = str(q_res.data[0]['user_id']) if q_res.data else None
+        
+        reply_author = str(reply.get('user_id'))
+        current = str(user_id)
+        
+        if current == reply_author or current == q_owner:
+            supabase.table('replies').delete().eq('reply_id', reply_id).execute()
+            from flask import flash
+            flash("Reply deleted.", "success")
+        else:
+            from flask import flash
+            flash("Unauthorized.", "error")
+            
+    except Exception as e:
+        print(f"Delete error: {e}")
+        
+    return redirect(url_for('social.ask_grandfriend'))
 
 
 @social_bp.route('/ask-grandfriend/delete/<question_id>', methods=['POST'])
