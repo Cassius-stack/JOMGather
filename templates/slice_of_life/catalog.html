@@ -264,7 +264,8 @@
         {% if displays %}
         {% for display in displays %}
         <div class="col-md-6 col-lg-4">
-            <div class="memory-card">
+            <div class="memory-card" data-url="{{ url_for('slice_of_life.review', display_id=display.display_id) }}"
+                onclick="window.location.href=this.getAttribute('data-url');" style="cursor: pointer;">
                 <!-- Combined Image Header -->
                 <div class="card-header-img" style="height: 220px; display: flex; background: #000;">
                     {% if display.submissions|length >= 2 %}
@@ -285,7 +286,7 @@
                     </div>
                     {% endif %}
 
-                    {% if display.is_private %}
+                    {% if display.is_private and current_filter != 'public' %}
                     <span class="card-badge"><i class="bi bi-lock-fill"></i> Private</span>
                     {% endif %}
                 </div>
@@ -339,7 +340,7 @@
                         </div>
                     </div>
                     <a href="{{ url_for('slice_of_life.review', display_id=display.display_id) }}" class="view-link">
-                        View More <i class="bi bi-arrow-right"></i>
+                        View <i class="bi bi-arrow-right"></i>
                     </a>
                 </div>
             </div>

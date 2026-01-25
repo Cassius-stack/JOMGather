@@ -21,6 +21,54 @@ def social_hub():
     """Main social/chat hub."""
     return render_template('social/social_hub.html')
 
+
+@social_bp.route('/friends')
+@login_required
+def friends_list():
+    """The 'See All Friends' page with search and status."""
+    current_uid = get_current_user_id()
+    search_q = request.args.get('q', '').lower().strip()
+    
+    supabase = get_supabase()
+    
+    # 1. Fetch friend IDs
+    friendships = fetch_all('friendships', status='accepted')
+    friend_ids = []
+    for f in friendships:
+        if f['user_id_1'] == current_uid:
+            friend_ids.append(f['user_id_2'])
+        elif f['user_id_2'] == current_uid:
+            friend_ids.append(f['user_id_1'])
+            
+    if not friend_ids:
+        return render_template('social/friends_list.html', friends=[], search_q=search_q)
+
+    # 2. Fetch friend details
+    all_users = fetch_all('users')
+    friends = []
+    import datetime
+    
+    def check_online(u):
+        last_seen = u.get('last_seen')
+        if not last_seen: return False
+        try:
+            five_mins_ago = (datetime.datetime.now() - datetime.timedelta(minutes=5)).isoformat()
+            return last_seen > five_mins_ago
+        except: return False
+
+    for u in all_users:
+        if u['user_id'] in friend_ids:
+            if search_q and search_q not in u['username'].lower():
+                continue
+            
+            u['is_online'] = check_online(u)
+            friends.append(u)
+            
+    # Sort by online status then username
+    friends.sort(key=lambda x: (not x['is_online'], x['username']))
+    
+    return render_template('social/friends_list.html', friends=friends, search_q=search_q)
+
 # === DEBUG ENDPOINT ===
 @social_bp.route('/api/test')
 def test_supabase():
@@ -150,11 +198,20 @@ def send_friend_request():
         if existing.data:
             return jsonify({'error': 'Request already exists or matched'}), 400
             
-        # Insert
+        # Insert friendship
         insert('friendships', {
             'user_id_1': current_user_id,
             'user_id_2': target_id,
             'status': 'pending'
+        })
+
+        # Insert notification
+        insert('notifications', {
+            'user_id': target_id,
+            'type': 'friend_request',
+            'message': f"{session.get('username')} sent you a friend request!",
+            'link': url_for('social.social_hub'),
+            'is_read': False
         })
         
         return jsonify({'success': True})

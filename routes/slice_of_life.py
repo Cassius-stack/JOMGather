@@ -5,7 +5,7 @@ Supabase Integration: Uses sol_ tables in Cloud DB
 """
 
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify
-from utils.supabase_db import fetch_all, fetch_one, insert, update, upload_file
+from utils.supabase_db import fetch_all, fetch_one, insert, update, upload_file, get_supabase
 from utils.deepseek_client import generate_memory_title
 from utils.auth_middleware import login_required
 from datetime import datetime, timedelta
@@ -422,14 +422,57 @@ def publish(display_id):
             'link': url_for('slice_of_life.catalog') # Or direct link to view
         })
 
-    # 3. Award Coins (basic implementation)
-    # real app would check 'coins' table and increment
-    # update('coins', {'total_coins': current_total + 10}, user_id=current_uid)
+    # 3. Award Coins & Update Streaks
+    try:
+        supabase = get_supabase()
+        today_date = datetime.now().date()
+        yesterday_date = today_date - timedelta(days=1)
+        
+        # Award coins to publisher
+        # Check if user has coin record
+        coin_res = supabase.table('coins').select('total_coins').eq('user_id', current_uid).execute()
+        if coin_res.data:
+            new_coins = coin_res.data[0]['total_coins'] + 10
+            supabase.table('coins').update({'total_coins': new_coins}).eq('user_id', current_uid).execute()
+        else:
+            supabase.table('coins').insert({'user_id': current_uid, 'total_coins': 10}).execute()
+            
+        # Update Streak
+        user_data = fetch_one('users', user_id=current_uid)
+        current_streak = user_data.get('sol_streak', 0)
+        last_date_str = user_data.get('last_sol_date')
+        
+        new_streak = current_streak
+        should_update_date = True
+        
+        if not last_date_str:
+            new_streak = 1
+        else:
+            last_date = datetime.fromisoformat(last_date_str).date()
+            if last_date == today_date:
+                # Already done today, keep streak but maybe don't award coins again?
+                # User said: "Just as long as they do it once per day. multiple times a day does not increase it at all."
+                # Coins were already awarded above. I'll stick to 10 per publish for now as incentive unless specified otherwise.
+                should_update_date = False
+            elif last_date == yesterday_date:
+                new_streak += 1
+            else:
+                # Streak broken
+                new_streak = 1
+                
+        if should_update_date:
+            update('users', {
+                'sol_streak': new_streak,
+                'last_sol_date': today_date.isoformat()
+            }, user_id=current_uid)
+            
+    except Exception as e:
+        print(f"Error awarding points/streak: {e}")
     
     session['sol_state'] = 'new'
     session.pop('sol_active_display_id', None)
     
-    flash('Published successfully! +10 points earned.', 'success')
+    flash('Published successfully! +10 coins earned and streak updated.', 'success')
     return redirect(url_for('slice_of_life.catalog'))
 
 

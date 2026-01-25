@@ -85,11 +85,15 @@ def create_app(config_name='default'):
                 response = supabase.table('notifications').select('*').eq('user_id', session.get('user_id')).order('created_at', desc=True).limit(10).execute()
                 notifications = response.data
                 unread_count = sum(1 for n in notifications if not n['is_read'])
-                return dict(notifications=notifications, unread_notifications_count=unread_count)
+                # Fetch total_coins
+                coin_res = supabase.table('coins').select('total_coins').eq('user_id', session.get('user_id')).execute()
+                total_coins = coin_res.data[0]['total_coins'] if coin_res.data else 0
+                
+                return dict(notifications=notifications, unread_notifications_count=unread_count, total_coins=total_coins)
             except Exception as e:
-                print(f"Error fetching notifications: {e}")
-                return dict(notifications=[], unread_notifications_count=0)
-        return dict(notifications=[], unread_notifications_count=0)
+                print(f"Error fetching notifications/coins: {e}")
+                return dict(notifications=[], unread_notifications_count=0, total_coins=0)
+        return dict(notifications=[], unread_notifications_count=0, total_coins=0)
 
     # Home route
     @app.route('/')
@@ -97,6 +101,7 @@ def create_app(config_name='default'):
         from flask import session
         online_friends = []
         recent_friends = []
+        suggested_friends = []
         if session.get('user_id'):
             try:
                 # Get online friends list
@@ -134,16 +139,53 @@ def create_app(config_name='default'):
                     # Sort recent friends by last_seen (most recent first)
                     recent_friends.sort(key=lambda x: x.get('last_seen') or '', reverse=True)
 
+                # --- SUGGESTED FRIENDS LOGIC ---
+                from utils.supabase_db import fetch_one, fetch_all
+                me = fetch_one('users', user_id=current_user_id)
+                if me:
+                    my_hobbies = me.get('hobbies') or []
+                    if isinstance(my_hobbies, str): my_hobbies = [h.strip() for h in my_hobbies.split(',')]
+                    my_region = me.get('region')
+                    
+                    # IDs to exclude (me + friends + pending)
+                    excluded_ids = [current_user_id]
+                    all_f = supabase.table('friendships').select('*').or_(f"user_id_1.eq.{current_user_id},user_id_2.eq.{current_user_id}").execute().data
+                    for f in all_f:
+                        excluded_ids.append(f['user_id_1'] if f['user_id_1'] != current_user_id else f['user_id_2'])
+                    
+                    other_users = fetch_all('users')
+                    for u in other_users:
+                        if u['user_id'] in excluded_ids: continue
+                        
+                        score = 0
+                        if my_region and u.get('region') == my_region: score += 3
+                        
+                        u_hobbies = u.get('hobbies') or []
+                        if isinstance(u_hobbies, str): u_hobbies = [h.strip() for h in u_hobbies.split(',')]
+                        
+                        common = set(my_hobbies) & set(u_hobbies)
+                        score += len(common) * 2
+                        
+                        if score > 0:
+                            u['score'] = score
+                            suggested_friends.append(u)
+                    
+                    suggested_friends.sort(key=lambda x: x['score'], reverse=True)
+                    suggested_friends = suggested_friends[:4]
+                # -------------------------------
                     
             except Exception as e:
-                print(f"Error fetching online friends: {e}")
-                
+                print(f"Error fetching dashboard data: {e}")
                 
         else:
             # Not logged in? Show landing page
             return render_template('landing.html')
                 
-        return render_template('index.html', online_friends=online_friends, recent_friends=recent_friends)
+        return render_template('index.html', 
+                             online_friends=online_friends, 
+                             recent_friends=recent_friends,
+                             suggested_friends=suggested_friends,
+                             sol_streak=me.get('sol_streak', 0) if 'me' in locals() and me else 0)
 
     # Global Access Control Hook
     @app.before_request
