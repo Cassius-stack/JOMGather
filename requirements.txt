@@ -24,3 +24,4 @@ simple-websocket==1.1.0
 # HTTP Client (required by Supabase)
 httpx==0.28.1
 requests==2.32.5
+pyngrok==7.1.0

@@ -4,26 +4,22 @@
 
 {% block head %}
 <style>
-    /* BOOMERang - Warm & Friendly Design for Grandparents */
+    /* BOOMERang - Matching Homepage Blue Theme */
 
     body {
-        background: linear-gradient(135deg, #fff5e6 0%, #ffe4c4 100%);
+        background-color: #E8F4FC;
     }
 
-    .boomerang-container {
-        max-width: 950px;
-        margin: 0 auto;
-        padding: 25px;
-    }
+    /* .boomerang-container removed to use standard .container */
 
-    /* Friendly Back Button */
+    /* Back Button - Blue Theme */
     .back-btn {
         display: inline-flex;
         align-items: center;
         gap: 8px;
         padding: 12px 20px;
         background: white;
-        color: #d35400;
+        color: #3B5BDB;
         border-radius: 25px;
         text-decoration: none;
         margin-bottom: 25px;
@@ -34,20 +30,20 @@
     }
 
     .back-btn:hover {
-        background: #fff5e6;
-        color: #e67e22;
+        background: #f0f4ff;
+        color: #4263EB;
         transform: translateX(-5px);
     }
 
-    /* Welcome Header */
+    /* Welcome Header - Blue Gradient like Homepage */
     .welcome-header {
         text-align: center;
         margin-bottom: 30px;
         padding: 25px;
-        background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+        background: linear-gradient(135deg, #4263EB 0%, #3B5BDB 100%);
         border-radius: 20px;
         color: white;
-        box-shadow: 0 8px 25px rgba(230, 126, 34, 0.3);
+        box-shadow: 0 8px 25px rgba(59, 91, 219, 0.3);
     }
 
     .welcome-header h1 {
@@ -67,7 +63,7 @@
         margin-bottom: 10px;
     }
 
-    /* Tabs - Larger & Friendlier */
+    /* Tabs - Blue Theme */
     .tab-container {
         display: flex;
         gap: 10px;
@@ -89,9 +85,9 @@
     }
 
     .tab-btn.active {
-        background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+        background: linear-gradient(135deg, #4263EB 0%, #3B5BDB 100%);
         color: white;
-        box-shadow: 0 6px 20px rgba(46, 204, 113, 0.4);
+        box-shadow: 0 6px 20px rgba(59, 91, 219, 0.4);
         transform: scale(1.02);
     }
 
@@ -102,7 +98,7 @@
     }
 
     .tab-btn:hover:not(.active) {
-        background: #f0f0f0;
+        background: #f0f4ff;
         transform: scale(1.02);
     }
 
@@ -116,7 +112,7 @@
         border-radius: 25px;
         padding: 35px;
         box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
-        border: 3px solid #fff5e6;
+        border: 3px solid #E8F4FC;
     }
 
     .main-card h2 {
@@ -151,10 +147,10 @@
         flex-shrink: 0;
     }
 
-    /* Form Sections - Larger Text */
+    /* Form Sections - Blue Theme */
     .section-title {
         font-weight: 700;
-        color: #e67e22;
+        color: #3B5BDB;
         margin-bottom: 15px;
         font-size: 1.3rem;
         display: flex;
@@ -183,9 +179,9 @@
 
     .form-control:focus {
         outline: none;
-        border-color: #e67e22;
+        border-color: #3B5BDB;
         background: white;
-        box-shadow: 0 0 0 4px rgba(230, 126, 34, 0.1);
+        box-shadow: 0 0 0 4px rgba(59, 91, 219, 0.1);
     }
 
     .form-control::placeholder {
@@ -223,13 +219,13 @@
     }
 
     .checkbox-item:hover {
-        background: #fff5e6;
+        background: #f0f4ff;
     }
 
     .checkbox-item input[type="checkbox"] {
         width: 24px;
         height: 24px;
-        accent-color: #e67e22;
+        accent-color: #3B5BDB;
         cursor: pointer;
     }
 
@@ -240,9 +236,9 @@
         font-weight: 500;
     }
 
-    /* Big Friendly Join Button */
+    /* Big Friendly Join Button - Blue Theme */
     .btn-join {
-        background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+        background: linear-gradient(135deg, #4263EB 0%, #3B5BDB 100%);
         color: white;
         border: none;
         padding: 20px 50px;
@@ -257,31 +253,31 @@
         justify-content: center;
         gap: 12px;
         width: 100%;
-        box-shadow: 0 8px 25px rgba(46, 204, 113, 0.4);
+        box-shadow: 0 8px 25px rgba(59, 91, 219, 0.4);
     }
 
     .btn-join:hover {
-        background: linear-gradient(135deg, #219a52 0%, #27ae60 100%);
+        background: linear-gradient(135deg, #3B5BDB 0%, #2B4ACB 100%);
         transform: translateY(-3px);
-        box-shadow: 0 12px 35px rgba(46, 204, 113, 0.5);
+        box-shadow: 0 12px 35px rgba(59, 91, 219, 0.5);
     }
 
     .btn-join i {
         font-size: 1.5rem;
     }
 
-    /* Chat History Panel - Warmer */
+    /* Chat History Panel - Blue Theme */
     .history-panel {
-        background: linear-gradient(135deg, #fff5e6 0%, #ffecd2 100%);
+        background: linear-gradient(135deg, #f0f4ff 0%, #e8f4fc 100%);
         border-radius: 20px;
         padding: 25px;
         height: 100%;
-        border: 2px solid #f5d5a8;
+        border: 2px solid #d0e3f4;
     }
 
     .history-title {
         font-weight: 700;
-        color: #d35400;
+        color: #3B5BDB;
         font-size: 1.3rem;
         margin-bottom: 20px;
         display: flex;
@@ -295,7 +291,7 @@
 
     .history-date {
         font-weight: 700;
-        color: #e67e22;
+        color: #4263EB;
         font-size: 1rem;
         margin-bottom: 12px;
         padding-left: 5px;
@@ -503,7 +499,7 @@
     }
 
     .tips-list li::before {
-        content: "✨";
+        content: "•";
     }
 
     /* Responsive */
@@ -529,7 +525,8 @@
 {% endblock %}
 
 {% block content %}
-<div class="boomerang-container">
+
+<div class="container py-4">
     <!-- Back Button -->
     <a href="{{ url_for('activities.activity_list') }}" class="back-btn">
         <i class="bi bi-arrow-left"></i> Back to Activities
@@ -537,10 +534,37 @@
 
     <!-- Welcome Header -->
     <div class="welcome-header">
-        <div class="welcome-emoji">👋🌟</div>
-        <h1>Welcome to BOOMERang!</h1>
+        <h1 class="boomerang-title">BOOMERang</h1>
         <p>Connect with wonderful people across generations in just one click</p>
     </div>
+
+    <style>
+        .boomerang-title {
+            font-size: 3.5rem;
+            font-weight: 900;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin: 10px 0;
+            background: linear-gradient(to right, #ffffff 0%, #ffd700 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+            animation: fadeIn 1s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
 
     <!-- Tabs -->
     <div class="tab-container">
@@ -556,9 +580,9 @@
     <div class="main-card">
         <!-- Call Setup Tab -->
         <div id="call-setup" class="tab-content active">
-            <h2><i class="bi bi-person-hearts" style="color: #e67e22;"></i> Ready to Connect?</h2>
+            <h2><i class="bi bi-person-hearts" style="color: #3B5BDB;"></i> Ready to Connect?</h2>
             <p class="subtitle">Fill in your details below and we'll find you a friendly chat partner!
-                Don't worry, it's easy and fun. 😊</p>
+                Don't worry, it's easy and fun.</p>
 
             <div class="content-layout">
                 <!-- Left Panel - Form -->

@@ -3,40 +3,80 @@
 {% block title %}Finding a Partner - BOOMERang | JOMGather{% endblock %}
 
 {% block head %}
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
+    :root {
+        --glass-bg: rgba(25, 25, 35, 0.65);
+        --glass-border: rgba(255, 255, 255, 0.08);
+        --glass-highlight: rgba(255, 255, 255, 0.05);
+        --neon-accent: #00f2fe;
+        --neon-gradient: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
+        --danger-gradient: linear-gradient(135deg, #ff416c 0%, #ff4b2b 100%);
+        --text-primary: #ffffff;
+        --text-secondary: rgba(255, 255, 255, 0.6);
+    }
+
     body {
-        background: linear-gradient(135deg, #fff5e6 0%, #ffe4c4 100%);
+        background: #0f0c29;
+        background: linear-gradient(to right, #24243e, #302b63, #0f0c29);
+        color: var(--text-primary);
+        font-family: 'Outfit', sans-serif;
+        height: 100vh;
+        overflow: hidden;
+        margin: 0;
     }
 
-    .loading-container {
-        max-width: 700px;
-        margin: 40px auto;
-        padding: 20px;
+    /* Remove navbar for immersion */
+    .navbar-custom {
+        display: none !important;
     }
 
-    /* Main Card */
+    .app-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        width: 100%;
+        position: relative;
+        background-image:
+            radial-gradient(circle at 10% 20%, rgba(79, 172, 254, 0.1) 0%, transparent 40%),
+            radial-gradient(circle at 90% 80%, rgba(255, 65, 108, 0.1) 0%, transparent 40%);
+    }
+
+    /* Main Glass Card */
     .loading-card {
-        background: white;
-        border-radius: 25px;
-        padding: 35px;
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
-        border: 3px solid #3949ab;
+        width: 100%;
+        max-width: 600px;
+        background: var(--glass-bg);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: 1px solid var(--glass-border);
+        border-radius: 24px;
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+        padding: 25px;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
     }
 
     /* User Preview Section */
     .user-preview {
         display: flex;
-        gap: 30px;
-        margin-bottom: 30px;
+        flex-direction: column;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 20px;
     }
 
     .video-preview {
-        width: 200px;
-        height: 150px;
-        border-radius: 15px;
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
         overflow: hidden;
-        background: #1a1a2e;
+        border: 2px solid var(--glass-border);
+        box-shadow: 0 0 20px rgba(0, 242, 254, 0.2);
         position: relative;
+        background: #000;
     }
 
     .video-preview video {
@@ -44,152 +84,198 @@
         height: 100%;
         object-fit: cover;
         transform: scaleX(-1);
-        /* Mirror effect */
     }
 
     .video-placeholder {
-        width: 100%;
-        height: 100%;
+        position: absolute;
+        inset: 0;
         display: flex;
+        flex-direction: column;
         align-items: center;
         justify-content: center;
-        flex-direction: column;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        font-size: 1rem;
-        text-align: center;
-        padding: 10px;
+        background: #121212;
+        color: var(--text-secondary);
     }
 
-    .video-placeholder i {
-        font-size: 2rem;
-        margin-bottom: 10px;
-    }
-
-    .user-info {
-        flex: 1;
-    }
-
-    .user-name {
+    .user-info h2 {
         font-size: 1.8rem;
         font-weight: 700;
-        color: #2c3e50;
-        margin-bottom: 15px;
+        margin: 0 0 10px 0;
+        background: var(--neon-gradient);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
     }
 
     /* Toggle Buttons */
     .toggle-controls {
         display: flex;
+        justify-content: center;
         gap: 15px;
-        margin-bottom: 20px;
+        margin-top: 10px;
     }
 
     .toggle-btn {
-        width: 55px;
-        height: 55px;
+        width: 50px;
+        height: 50px;
         border-radius: 50%;
-        border: none;
+        border: 1px solid var(--glass-border);
+        background: rgba(255, 255, 255, 0.1);
+        color: var(--text-primary);
+        font-size: 1.2rem;
         cursor: pointer;
+        transition: all 0.3s;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.4rem;
-        transition: all 0.2s;
-    }
-
-    .toggle-btn.active {
-        background: linear-gradient(135deg, #3949ab 0%, #5c6bc0 100%);
-        color: white;
-        box-shadow: 0 4px 15px rgba(57, 73, 171, 0.4);
-    }
-
-    .toggle-btn.muted {
-        background: #e74c3c;
-        color: white;
     }
 
     .toggle-btn:hover {
-        transform: scale(1.1);
+        background: rgba(255, 255, 255, 0.2);
+        transform: translateY(-2px);
     }
 
-    /* Status Message */
+    .toggle-btn.active {
+        background: var(--neon-gradient);
+        color: #000;
+        border: none;
+        box-shadow: 0 0 15px rgba(0, 242, 254, 0.3);
+    }
+
+    .toggle-btn.muted {
+        background: rgba(255, 65, 108, 0.2);
+        color: #ff416c;
+    }
+
+    /* Status & Loader */
+    .status-section {
+        margin: 15px 0;
+    }
+
     .status-message {
-        font-size: 1.3rem;
-        color: #3949ab;
-        font-weight: 600;
+        font-size: 1.2rem;
+        color: var(--text-primary);
+        font-weight: 500;
+        margin-bottom: 20px;
+        min-height: 1.5em;
     }
 
-    /* Loading Animation Section */
-    .loading-animation {
-        background: #1a1a2e;
-        border-radius: 20px;
-        overflow: hidden;
-        margin: 25px 0;
+    .loading-pulse {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: var(--neon-accent);
+        margin: 0 auto;
+        animation: pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
         position: relative;
-        height: 200px;
+    }
+
+    .loading-pulse::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: 50%;
+        background: var(--neon-accent);
+        animation: pulse-dot 2s cubic-bezier(0.455, 0.03, 0.515, 0.955) -0.4s infinite;
+    }
+
+    @keyframes pulse-ring {
+        0% {
+            transform: scale(0.33);
+            opacity: 0.8;
+        }
+
+        80%,
+        100% {
+            transform: scale(1);
+            opacity: 0;
+        }
+    }
+
+    @keyframes pulse-dot {
+        0% {
+            transform: scale(0.8);
+        }
+
+        50% {
+            transform: scale(1);
+        }
+
+        100% {
+            transform: scale(0.8);
+        }
+    }
+
+    /* Loading Video */
+    .loading-video-container {
+        width: 100%;
+        max-width: 260px;
+        height: 140px;
+        margin: 15px auto;
+        border-radius: 16px;
+        overflow: hidden;
+        border: 1px solid var(--glass-border);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        background: rgba(0, 0, 0, 0.3);
         display: flex;
         align-items: center;
         justify-content: center;
     }
 
-    .loading-animation video {
+    .loading-video {
         width: 100%;
         height: 100%;
-        object-fit: contain;
+        object-fit: cover;
     }
 
-    /* Leave Room Button */
+    /* Actions */
     .leave-btn {
-        display: flex;
+        display: inline-flex;
         align-items: center;
         justify-content: center;
         gap: 10px;
-        background: #6c757d;
-        color: white;
-        border: none;
-        padding: 15px 30px;
-        border-radius: 12px;
-        font-size: 1.1rem;
-        font-weight: 600;
+        background: transparent;
+        color: var(--text-secondary);
+        border: 1px solid var(--glass-border);
+        padding: 12px 30px;
+        border-radius: 30px;
+        font-size: 1rem;
+        font-weight: 500;
         cursor: pointer;
-        margin-left: auto;
-        transition: all 0.2s;
         text-decoration: none;
+        transition: all 0.2s;
+        margin-top: 10px;
     }
 
     .leave-btn:hover {
-        background: #5a6268;
-        color: white;
+        background: rgba(255, 65, 108, 0.1);
+        color: #ff416c;
+        border-color: rgba(255, 65, 108, 0.3);
     }
 
     /* Tips */
     .loading-tips {
-        background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+        margin-top: 20px;
+        padding: 12px;
+        background: rgba(255, 255, 255, 0.05);
         border-radius: 15px;
-        padding: 20px;
-        margin-top: 25px;
-        text-align: center;
-    }
-
-    .loading-tips p {
-        margin: 0;
-        color: #2c3e50;
-        font-size: 1.1rem;
+        font-size: 0.95rem;
+        color: var(--text-secondary);
+        border: 1px dashed var(--glass-border);
     }
 
     .loading-tips .emoji {
-        font-size: 1.5rem;
-        margin-right: 10px;
+        margin-right: 8px;
     }
 
-    /* Permission Error */
+    /* Error Overlay */
     .permission-error {
-        background: #ffebee;
-        border: 2px solid #e74c3c;
+        background: rgba(255, 65, 108, 0.1);
+        border: 1px solid #ff416c;
         border-radius: 15px;
-        padding: 20px;
+        padding: 15px;
         margin-bottom: 20px;
-        color: #c0392b;
+        color: #ff416c;
         display: none;
     }
 
@@ -200,25 +286,26 @@
 {% endblock %}
 
 {% block content %}
-<div class="loading-container">
+<div class="app-container">
     <div class="loading-card">
         <!-- Permission Error -->
         <div class="permission-error" id="permissionError">
-            <strong>⚠️ Camera/Microphone Access Required</strong>
-            <p>Please allow access to your camera and microphone to use BOOMERang video chat.</p>
+            <strong>⚠️ Access Required</strong>
+            <p style="margin: 5px 0 0 0; font-size: 0.9rem;">Please allow camera & mic access to continue.</p>
         </div>
 
-        <!-- User Preview Section -->
+        <!-- User Preview -->
         <div class="user-preview">
             <div class="video-preview">
                 <video id="localVideo" autoplay muted playsinline></video>
                 <div class="video-placeholder" id="videoPlaceholder">
-                    <i class="bi bi-camera-video-off"></i>
-                    <span>Camera loading...</span>
+                    <i class="bi bi-camera-video-off" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                    <span>Loading...</span>
                 </div>
             </div>
+
             <div class="user-info">
-                <h2 class="user-name" id="userName">You</h2>
+                <h2 id="userName">You</h2>
                 <div class="toggle-controls">
                     <button class="toggle-btn active" id="micBtn" title="Toggle Microphone">
                         <i class="bi bi-mic-fill"></i>
@@ -227,27 +314,32 @@
                         <i class="bi bi-camera-video-fill"></i>
                     </button>
                 </div>
-                <p class="status-message" id="statusMessage">
-                    🔍 Connecting to server...
-                </p>
             </div>
         </div>
 
-        <!-- Loading Animation -->
-        <div class="loading-animation">
-            <video autoplay loop muted playsinline>
-                <source src="{{ url_for('static', filename='videos/Loading.mp4') }}" type="video/mp4">
-            </video>
+        <!-- Status & Animation -->
+        <div class="status-section">
+            <div class="status-message" id="statusMessage">
+                Connecting to server...
+            </div>
+
+            <div class="loading-video-container">
+                <video autoplay loop muted playsinline class="loading-video">
+                    <source src="{{ url_for('static', filename='videos/Loading.mp4') }}" type="video/mp4">
+                    <!-- Fallback if video fails -->
+                    <div class="loading-pulse"></div>
+                </video>
+            </div>
         </div>
 
-        <!-- Leave Button -->
+        <!-- Actions -->
         <a href="{{ url_for('activities.boomerang') }}" class="leave-btn" id="leaveBtn">
-            <i class="bi bi-x-lg"></i> Leave Room
+            Cancel
         </a>
 
         <!-- Tips -->
         <div class="loading-tips">
-            <p><span class="emoji">💡</span>Tip: While waiting, think of a fun topic to chat about!</p>
+            <span class="emoji">💡</span>Tip: Be yourself and have fun!
         </div>
     </div>
 </div>
@@ -288,10 +380,12 @@
             console.error('Media access error:', err);
             document.getElementById('permissionError').classList.add('show');
             document.getElementById('videoPlaceholder').innerHTML = `
-                <i class="bi bi-camera-video-off"></i>
-                <span>Camera access denied</span>
+                <div style="text-align:center; color: #ff416c;">
+                    <i class="bi bi-camera-video-off-fill" style="font-size: 2rem; margin-bottom: 10px;"></i><br>
+                    <span>Access Denied</span>
+                </div>
             `;
-            document.getElementById('statusMessage').textContent = '❌ Please allow camera access';
+            document.getElementById('statusMessage').textContent = 'Please allow camera access';
         }
     }
 
@@ -300,7 +394,7 @@
 
         socket.on('connect', () => {
             console.log('[BOOMERang] Connected to server');
-            document.getElementById('statusMessage').textContent = '🔍 Searching for a pair... Please be patient!';
+            document.getElementById('statusMessage').textContent = 'Searching for a partner...';
 
             // Join the matching queue
             socket.emit('boomerang_join_queue', { name: userName });
@@ -308,12 +402,13 @@
 
         socket.on('boomerang_queue_status', (data) => {
             console.log('[BOOMERang] Queue status:', data);
-            document.getElementById('statusMessage').textContent = '🔍 Searching for a pair... Please be patient!';
+            document.getElementById('statusMessage').textContent = 'Searching for a partner...';
         });
 
         socket.on('boomerang_matched', (data) => {
             console.log('[BOOMERang] Matched!', data);
-            document.getElementById('statusMessage').textContent = '✅ Partner found! Connecting...';
+            document.getElementById('statusMessage').textContent = 'Partner found! Joining room...';
+            document.getElementById('statusMessage').style.color = '#00f2fe';
 
             // Store match data for Meetup page
             sessionStorage.setItem('boomerang_room', data.room_id);
@@ -329,7 +424,8 @@
 
         socket.on('disconnect', () => {
             console.log('[BOOMERang] Disconnected');
-            document.getElementById('statusMessage').textContent = '⚠️ Connection lost. Reconnecting...';
+            document.getElementById('statusMessage').textContent = 'Connection lost. Reconnecting...';
+            document.getElementById('statusMessage').style.color = '#ff416c';
         });
     }
 
@@ -342,6 +438,7 @@
             });
 
             this.classList.toggle('muted', !audioEnabled);
+            this.classList.toggle('active', audioEnabled);
             const icon = this.querySelector('i');
             icon.className = audioEnabled ? 'bi bi-mic-fill' : 'bi bi-mic-mute-fill';
         }
@@ -356,6 +453,7 @@
             });
 
             this.classList.toggle('muted', !videoEnabled);
+            this.classList.toggle('active', videoEnabled);
             const icon = this.querySelector('i');
             icon.className = videoEnabled ? 'bi bi-camera-video-fill' : 'bi bi-camera-video-off-fill';
         }
