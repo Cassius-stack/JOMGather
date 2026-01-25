@@ -36,11 +36,31 @@
         </div>
 
         <!-- Title -->
-        <div class="text-center mb-4">
+        <div class="text-center mb-5">
             <h1 style="font-size: 2rem; font-weight: 700; color: #1e3a5f; margin-bottom: 0.5rem;">
                 <i class="bi bi-people me-2"></i>Who would you like to share with?
             </h1>
-            <p style="font-size: 1.1rem; color: #6b7280;">Select up to 3 people to send your Slice of Life invite</p>
+            <p style="font-size: 1.1rem; color: #6b7280;">Select up to 3 friends to send your Slice of Life invite</p>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="row justify-content-center mb-5">
+            <div class="col-md-6">
+                <form action="{{ url_for('slice_of_life.choose_recipients') }}" method="GET"
+                    class="input-group shadow-sm rounded-pill overflow-hidden">
+                    <input type="text" name="q" class="form-control border-0 px-4" placeholder="Search friends..."
+                        value="{{ search_q }}">
+                    <button class="btn btn-primary px-4 border-0" type="submit">
+                        <i class="bi bi-search"></i>
+                    </button>
+                    {% if search_q %}
+                    <a href="{{ url_for('slice_of_life.choose_recipients') }}"
+                        class="btn btn-light px-3 d-flex align-items-center">
+                        <i class="bi bi-x-lg"></i>
+                    </a>
+                    {% endif %}
+                </form>
+            </div>
         </div>
 
         <!-- Recipients Grid -->
@@ -48,6 +68,8 @@
             <div class="row g-4 mb-4">
                 <!-- Recipient Cards -->
                 {% for person in friends %}
+                {% set status_color = '#22c55e' if person.is_active else '#94a3b8' %}
+                {% set border_color = '#22c55e' if person.is_active else '#e2e8f0' %}
                 <div class="col-md-4 col-6">
                     <label class="d-block" style="cursor: pointer;">
                         <input type="checkbox" name="recipients" value="{{ person.user_id }}" class="recipient-checkbox"
@@ -55,10 +77,14 @@
                         <div class="recipient-card"
                             style="background: white; border-radius: 20px; padding: 1.5rem; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.05); border: 3px solid transparent; transition: all 0.2s;">
                             <div style="position: relative; display: inline-block; margin-bottom: 1rem;">
-                                <!-- Random Avatar based on ID -->
+                                <!-- Avatar with Active Indicator -->
                                 <img src="https://i.pravatar.cc/80?img={{ (person.user_id * 5) % 70 }}"
                                     alt="{{ person.username }}"
-                                    style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid #e2e8f0;">
+                                    style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid {{ border_color }};">
+                                {% if person.is_active %}
+                                <div style="position: absolute; top: 0; right: 5px; width: 14px; height: 14px; border-radius: 50%; background: #22c55e; border: 2px solid white;"
+                                    title="Active Now"></div>
+                                {% endif %}
                                 <div class="check-badge"
                                     style="position: absolute; bottom: 0; right: 0; width: 28px; height: 28px; border-radius: 50%; background: #22c55e; color: white; display: none; align-items: center; justify-content: center; border: 2px solid white;">
                                     <i class="bi bi-check"></i>
@@ -66,13 +92,31 @@
                             </div>
                             <h5 style="font-size: 1.1rem; font-weight: 600; color: #1e3a5f; margin-bottom: 0.25rem;">{{
                                 person.username }}</h5>
-                            <p style="font-size: 0.9rem; color: #6b7280; margin: 0;">{{ person.user_type|capitalize }} •
-                                Online</p>
+                            <p
+                                style="font-size: 0.9rem; color: {{ status_color }}; margin: 0; font-weight: {{ '600' if person.is_active else '400' }};">
+                                {{ 'Active Now' if person.is_active else 'Last seen ' + (person.last_seen[:10] if
+                                person.last_seen else 'long ago') }}
+                            </p>
                         </div>
                     </label>
                 </div>
                 {% endfor %}
+                {% if not friends %}
+                <div class="col-12 text-center py-5">
+                    <p class="text-muted lead">No friends found.</p>
+                </div>
+                {% endif %}
             </div>
+
+            <!-- Pagination / Load More -->
+            {% if has_more %}
+            <div class="text-center mb-5">
+                <a href="{{ url_for('slice_of_life.choose_recipients', q=search_q, page=page+1) }}"
+                    class="btn btn-outline-primary rounded-pill px-5">
+                    Load More Friends
+                </a>
+            </div>
+            {% endif %}
 
             <!-- Bottom Bar -->
             <div

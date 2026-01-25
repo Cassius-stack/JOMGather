@@ -130,4 +130,44 @@ def execute_sql(sql: str, params: dict = None):
     supabase = get_supabase()
     # This requires setting up an RPC function in Supabase
     # For now, use table methods for most operations
-    raise NotImplementedError("Use table methods (fetch_all, insert, etc.) instead")
+
+# ============================================
+# STORAGE HELPERS
+# ============================================
+
+def upload_file(file_storage, bucket: str = 'images', path: str = None) -> str:
+    """
+    Upload a file to Supabase Storage and return the public URL.
+    
+    Args:
+        file_storage: The Flask FileStorage object (from request.files)
+        bucket: Name of the Supabase storage bucket
+        path: Optional specific path/filename. If None, uses original filename.
+    
+    Returns:
+        str: Public URL of the uploaded file
+    """
+    try:
+        supabase = get_supabase()
+        file_bytes = file_storage.read()
+        content_type = file_storage.content_type
+        
+        # Determine path
+        filename = path if path else file_storage.filename
+        
+        # Upload
+        supabase.storage.from_(bucket).upload(
+            path=filename,
+            file=file_bytes,
+            file_options={"content-type": content_type, "upsert": "true"}
+        )
+        
+        # Get Public URL
+        public_url = supabase.storage.from_(bucket).get_public_url(filename)
+        return public_url
+        
+    except Exception as e:
+        print(f"Supabase Storage Error: {e}")
+        # Fallback to returning None or re-raising?
+        # Re-raising allows the caller to handle it (e.g. show flash message)
+        raise e

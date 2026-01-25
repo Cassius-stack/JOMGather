@@ -13,11 +13,12 @@
                     <i class="bi bi-arrow-left me-2"></i>Back to Library
                 </a>
                 <h1 class="fw-bold text-dark mt-2 mb-0">
-                    Review Display #{{ display.display_id }}
+                    Review Slice of Life #{{ display.display_id }}
                 </h1>
             </div>
 
             <div class="d-flex gap-2">
+                {% if display.status != 'pending' %}
                 <!-- Like Button -->
                 <form action="{{ url_for('slice_of_life.like_display', display_id=display.display_id) }}" method="POST"
                     class="d-inline">
@@ -26,14 +27,27 @@
                         <i class="bi {{ 'bi-heart-fill' if has_liked else 'bi-heart' }} me-1"></i> {{ like_count }}
                     </button>
                 </form>
+                {% endif %}
 
                 {% if display.status == 'pending' %}
-                <!-- Publish (Only for Participants) -->
+                <!-- Publish (Only if both have given feedback) -->
+                {% set feedback_count = submissions | selectattr("comment") | list | length %}
+                {% set can_publish = feedback_count >= 2 %}
+
                 {% if display.creator_id == current_user_id or display.partner_id == current_user_id %}
+                {% if can_publish %}
                 <button type="button" class="btn btn-success rounded-pill px-4" data-bs-toggle="modal"
                     data-bs-target="#publishModal">
                     <i class="bi bi-check-lg me-2"></i>Publish
                 </button>
+                {% else %}
+                <button type="button"
+                    class="btn btn-secondary rounded-circle d-flex align-items-center justify-content-center" disabled
+                    style="width: 42px; height: 42px;" data-bs-toggle="tooltip" data-bs-placement="bottom"
+                    title="Waiting for {{ partner.username }} to comment on your part! You can only publish once both of you are done.">
+                    <i class="bi bi-lock-fill"></i>
+                </button>
+                {% endif %}
                 {% endif %}
                 {% endif %}
             </div>
@@ -65,34 +79,107 @@
 
                         <p class="lead" style="font-family: 'Georgia', serif;">{{ sub.thought }}</p>
 
-                        <!-- Private Partner Feedback -->
-                        {% if sub.comment and (display.creator_id == current_user_id or display.partner_id ==
-                        current_user_id) %}
-                        <div class="mt-4 p-3 bg-warning bg-opacity-10 rounded-3 border-start border-4 border-warning">
-                            <small class="text-uppercase text-warning fw-bold d-block mb-1"
-                                style="font-size: 0.7rem;">Partner Feedback</small>
+                        <!-- Review Input -->
+                        {% if sub.user_id != current_user_id and not sub.comment and display.status == 'pending' %}
+                        <div class="mt-4">
+                            <form method="POST" class="d-flex gap-2">
+                                <input type="text" name="comment" class="form-control rounded-pill"
+                                    placeholder="Comment... (Enter to share)" required>
+                                <button type="submit"
+                                    class="btn btn-primary rounded-circle d-flex align-items-center justify-content-center"
+                                    style="width: 40px; height: 40px; padding: 0;">
+                                    <i class="bi bi-arrow-right-short" style="font-size: 1.5rem;"></i>
+                                </button>
+                            </form>
+                            <small class="text-muted ms-2" style="font-size: 0.75rem;">Your partner needs your comment
+                                to publish.</small>
+                        </div>
+                        {% endif %}
+
+                        <!-- Showing your own comment on partner's card -->
+                        {% if sub.user_id != current_user_id and sub.comment and display.status == 'pending' %}
+                        <div class="mt-4 p-3 bg-light rounded-3 border-start border-4 border-success">
+                            <small class="text-uppercase text-success fw-bold d-block mb-1"
+                                style="font-size: 0.7rem;">Your Comment</small>
                             <p class="mb-0 fst-italic text-muted">"{{ sub.comment }}"</p>
                         </div>
                         {% endif %}
 
-                        <!-- Partner Feedback Form -->
-                        {% if sub.user_id != current_user_id and not sub.comment and display.status == 'pending' %}
-                        <hr class="my-4">
-                        <form method="POST">
-                            <div class="mb-2">
-                                <label class="form-label small text-muted fw-bold">Leave private feedback</label>
-                                <textarea name="comment" class="form-control" rows="2"
-                                    placeholder="Send a private note to your partner..."></textarea>
+                        <!-- Waiting status on your own card -->
+                        {% if sub.user_id == current_user_id and display.status == 'pending' %}
+                        <div class="mt-4">
+                            {% if sub.comment %}
+                            <div class="p-3 bg-light rounded-3 border-start border-4 border-primary">
+                                <small class="text-uppercase text-primary fw-bold d-block mb-1"
+                                    style="font-size: 0.7rem;">Partner's Comment</small>
+                                <p class="mb-0 fst-italic text-muted">"{{ sub.comment }}"</p>
                             </div>
-                            <button type="submit" class="btn btn-sm btn-outline-primary rounded-pill">Send
-                                Feedback</button>
-                        </form>
+                            {% else %}
+                            <div class="text-muted small">
+                                <i class="bi bi-hourglass-split me-1"></i> Waiting for {{ partner.username }} to comment
+                                on your part...
+                            </div>
+                            {% endif %}
+                        </div>
                         {% endif %}
                     </div>
                 </div>
             </div>
             {% endfor %}
         </div>
+
+        <!-- PUBLIC COMMENTS SECTION (Only after Publishing) -->
+        {% if display.status == 'completed' %}
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="bg-white rounded-4 p-4 shadow-sm">
+                    <h5 class="fw-bold mb-4 d-flex align-items-center">
+                        <i class="bi bi-chat-left-text me-2 text-primary"></i>
+                        Public Comments
+                        <span class="badge bg-light text-muted ms-2">{{ comments|length }}</span>
+                    </h5>
+
+                    <!-- Comment List -->
+                    <div class="comment-feed mb-4" style="max-height: 400px; overflow-y: auto;">
+                        {% if comments %}
+                        {% for comm in comments %}
+                        <div class="d-flex gap-3 mb-3 pb-3 border-bottom border-light">
+                            <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                                style="width: 40px; height: 40px;">
+                                {{ comm.username[0]|upper if comm.username else '?' }}
+                            </div>
+                            <div>
+                                <div class="d-flex align-items-center gap-2 mb-1">
+                                    <span class="fw-bold small">{{ comm.username }}</span>
+                                    <small class="text-muted" style="font-size: 0.7rem;">{{ comm.created_at[:16]
+                                        }}</small>
+                                </div>
+                                <p class="mb-0 text-dark" style="font-size: 0.95rem;">{{ comm.content }}</p>
+                            </div>
+                        </div>
+                        {% endfor %}
+                        {% else %}
+                        <div class="text-center py-4 text-muted">
+                            <i class="bi bi-chat-dots fs-1 d-block mb-2 opacity-25"></i>
+                            No comments yet. Be the first to say something!
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Post Comment Form -->
+                    <form action="{{ url_for('slice_of_life.post_comment', display_id=display.display_id) }}"
+                        method="POST">
+                        <div class="input-group">
+                            <input type="text" name="content" class="form-control rounded-start-pill px-4"
+                                placeholder="Add a public comment..." required>
+                            <button class="btn btn-primary rounded-end-pill px-4" type="submit">Post</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
 
 
 
@@ -104,7 +191,7 @@
     <div class="modal-dialog">
         <div class="modal-content rounded-4 border-0">
             <div class="modal-header border-0 pb-0">
-                <h5 class="modal-title fw-bold">Publish Display</h5>
+                <h5 class="modal-title fw-bold">Publish Slice of Life</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
