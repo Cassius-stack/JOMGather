@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+
+{% block title %}Choose Recipients - Slice of Life{% endblock %}
+
+{% block content %}
+<div style="background: linear-gradient(180deg, #e8f4fc 0%, #f5f7fa 100%); min-height: calc(100vh - 70px);">
+    <div class="container py-4">
+
+        <!-- Header -->
+        <div class="mb-4">
+            <a href="{{ url_for('slice_of_life.create_display') }}"
+                style="color: #1e3a5f; text-decoration: none; font-size: 1rem;">
+                <i class="bi bi-arrow-left me-2"></i>Back to Create
+            </a>
+        </div>
+
+        <!-- Progress Steps -->
+        <div class="d-flex justify-content-center mb-4">
+            <div class="d-flex align-items-center">
+                <div
+                    style="width: 40px; height: 40px; border-radius: 50%; background: #22c55e; color: white; display: flex; align-items: center; justify-content: center;">
+                    <i class="bi bi-check"></i>
+                </div>
+                <span style="margin-left: 0.5rem; color: #22c55e;">Create</span>
+                <div style="width: 60px; height: 3px; background: #22c55e; margin: 0 1rem;"></div>
+                <div
+                    style="width: 40px; height: 40px; border-radius: 50%; background: #1e3a5f; color: white; display: flex; align-items: center; justify-content: center; font-weight: 600;">
+                    2</div>
+                <span style="margin-left: 0.5rem; font-weight: 600; color: #1e3a5f;">Choose</span>
+                <div style="width: 60px; height: 3px; background: #cbd5e1; margin: 0 1rem;"></div>
+                <div
+                    style="width: 40px; height: 40px; border-radius: 50%; background: #e2e8f0; color: #94a3b8; display: flex; align-items: center; justify-content: center; font-weight: 600;">
+                    3</div>
+                <span style="margin-left: 0.5rem; color: #94a3b8;">Send</span>
+            </div>
+        </div>
+
+        <!-- Title -->
+        <div class="text-center mb-4">
+            <h1 style="font-size: 2rem; font-weight: 700; color: #1e3a5f; margin-bottom: 0.5rem;">
+                <i class="bi bi-people me-2"></i>Who would you like to share with?
+            </h1>
+            <p style="font-size: 1.1rem; color: #6b7280;">Select up to 3 people to send your Slice of Life invite</p>
+        </div>
+
+        <!-- Recipients Grid -->
+        <form id="recipientsForm" action="{{ url_for('slice_of_life.send_invites') }}" method="POST">
+            <div class="row g-4 mb-4">
+                <!-- Recipient Cards -->
+                {% for person in friends %}
+                <div class="col-md-4 col-6">
+                    <label class="d-block" style="cursor: pointer;">
+                        <input type="checkbox" name="recipients" value="{{ person.user_id }}" class="recipient-checkbox"
+                            style="display: none;">
+                        <div class="recipient-card"
+                            style="background: white; border-radius: 20px; padding: 1.5rem; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.05); border: 3px solid transparent; transition: all 0.2s;">
+                            <div style="position: relative; display: inline-block; margin-bottom: 1rem;">
+                                <!-- Random Avatar based on ID -->
+                                <img src="https://i.pravatar.cc/80?img={{ (person.user_id * 5) % 70 }}"
+                                    alt="{{ person.username }}"
+                                    style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid #e2e8f0;">
+                                <div class="check-badge"
+                                    style="position: absolute; bottom: 0; right: 0; width: 28px; height: 28px; border-radius: 50%; background: #22c55e; color: white; display: none; align-items: center; justify-content: center; border: 2px solid white;">
+                                    <i class="bi bi-check"></i>
+                                </div>
+                            </div>
+                            <h5 style="font-size: 1.1rem; font-weight: 600; color: #1e3a5f; margin-bottom: 0.25rem;">{{
+                                person.username }}</h5>
+                            <p style="font-size: 0.9rem; color: #6b7280; margin: 0;">{{ person.user_type|capitalize }} •
+                                Online</p>
+                        </div>
+                    </label>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Bottom Bar -->
+            <div
+                style="background: white; border-radius: 20px; padding: 1.5rem 2rem; box-shadow: 0 4px 20px rgba(0,0,0,0.05);">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <span style="font-size: 1.25rem; font-weight: 600; color: #1e3a5f;">Selected: <span
+                                id="selectedCount">0</span>/3</span>
+                        <p style="font-size: 0.95rem; color: #6b7280; margin: 0;">Choose at least 1 person</p>
+                    </div>
+                    <button type="submit" id="sendBtn" disabled
+                        style="background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%); color: white; border: none; border-radius: 16px; padding: 1rem 2.5rem; font-size: 1.1rem; font-weight: 600; cursor: pointer; opacity: 0.5; transition: all 0.2s; box-shadow: 0 4px 15px rgba(30, 58, 95, 0.3);">
+                        <i class="bi bi-send me-2"></i>Send Invites
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const checkboxes = document.querySelectorAll('.recipient-checkbox');
+    const selectedCount = document.getElementById('selectedCount');
+    const sendBtn = document.getElementById('sendBtn');
+
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function () {
+            const card = this.closest('label').querySelector('.recipient-card');
+            const badge = card.querySelector('.check-badge');
+            const img = card.querySelector('img');
+            const checked = document.querySelectorAll('.recipient-checkbox:checked');
+
+            if (checked.length > 3) {
+                this.checked = false;
+                return;
+            }
+
+            if (this.checked) {
+                card.style.borderColor = '#1e3a5f';
+                card.style.background = '#f0f9ff';
+                badge.style.display = 'flex';
+                img.style.borderColor = '#1e3a5f';
+            } else {
+                card.style.borderColor = 'transparent';
+                card.style.background = 'white';
+                badge.style.display = 'none';
+                img.style.borderColor = '#e2e8f0';
+            }
+
+            selectedCount.textContent = checked.length;
+            sendBtn.disabled = checked.length === 0;
+            sendBtn.style.opacity = checked.length > 0 ? '1' : '0.5';
+        });
+    });
+</script>
+{% endblock %}

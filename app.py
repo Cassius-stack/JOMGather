@@ -10,6 +10,8 @@ from flask import Flask, render_template
 from flask_socketio import SocketIO
 from config import config
 
+
+
 # Import route blueprints
 from routes.auth import auth_bp
 from routes.profile import profile_bp
@@ -19,6 +21,7 @@ from routes.social import social_bp
 from routes.support_swap import support_swap_bp
 from routes.rewards import rewards_bp
 from routes.slice_of_life import slice_of_life_bp
+from routes.community import community_bp
 
 # Create SocketIO instance (initialized later with app)
 socketio = SocketIO()
@@ -42,6 +45,7 @@ def create_app(config_name='default'):
     app.register_blueprint(support_swap_bp, url_prefix='/support-swap')
     app.register_blueprint(rewards_bp, url_prefix='/rewards')
     app.register_blueprint(slice_of_life_bp, url_prefix='/slice-of-life')
+    app.register_blueprint(community_bp, url_prefix='/social/community')
     
     # Import and register socket events
     from routes.chat_events import register_chat_events
@@ -51,10 +55,117 @@ def create_app(config_name='default'):
     from routes.boomerang_events import register_boomerang_events
     register_boomerang_events(socketio)
     
+    # Track user activity
+    @app.before_request
+    def update_last_seen():
+        from flask import session
+        import datetime
+        from utils.supabase_db import get_supabase
+        
+        user_id = session.get('user_id')
+        if user_id:
+            try:
+                # Update last_seen (doing this every request might be heavy in production, but fine for prototype)
+                # Optimization: Could check if last_seen was > 5 mins ago in session
+                now = datetime.datetime.now().isoformat()
+                get_supabase().table('users').update({'last_seen': now}).eq('user_id', user_id).execute()
+            except Exception as e:
+                # Don't break the app if tracking fails
+                print(f"Error updating last_seen: {e}")
+
+    # Context Processor for Notifications
+    @app.context_processor
+    def inject_notifications():
+        from flask import session
+        if session.get('user_id'):
+            try:
+                from utils.supabase_db import get_supabase
+                supabase = get_supabase()
+                # Fetch recent unread notifications
+                response = supabase.table('notifications').select('*').eq('user_id', session.get('user_id')).order('created_at', desc=True).limit(10).execute()
+                notifications = response.data
+                unread_count = sum(1 for n in notifications if not n['is_read'])
+                return dict(notifications=notifications, unread_notifications_count=unread_count)
+            except Exception as e:
+                print(f"Error fetching notifications: {e}")
+                return dict(notifications=[], unread_notifications_count=0)
+        return dict(notifications=[], unread_notifications_count=0)
+
     # Home route
     @app.route('/')
     def index():
-        return render_template('index.html')
+        from flask import session
+        online_friends = []
+        recent_friends = []
+        if session.get('user_id'):
+            try:
+                # Get online friends list
+                from utils.supabase_db import get_supabase
+                import datetime
+                
+                supabase = get_supabase()
+                current_user_id = session.get('user_id')
+                
+                # Fetch accepted friendships
+                friends_ids = []
+                sent = supabase.table('friendships').select('user_id_2').eq('user_id_1', current_user_id).eq('status', 'accepted').execute()
+                for i in sent.data: friends_ids.append(i['user_id_2'])
+                    
+                received = supabase.table('friendships').select('user_id_1').eq('user_id_2', current_user_id).eq('status', 'accepted').execute()
+                for i in received.data: friends_ids.append(i['user_id_1'])
+                
+                if friends_ids:
+                    # Fetch all friends with last_seen
+                    response = supabase.table('users').select('user_id, username, last_seen').in_('user_id', friends_ids).execute()
+                    all_friends = response.data
+                    
+                    five_mins_ago = (datetime.datetime.now() - datetime.timedelta(minutes=5)).isoformat()
+                    
+                    for friend in all_friends:
+                        # Check if online (active in last 5 mins)
+                        is_online = friend.get('last_seen') and friend['last_seen'] > five_mins_ago
+                        friend['is_online'] = is_online
+                        
+                        if is_online:
+                            online_friends.append(friend)
+                        else:
+                            recent_friends.append(friend)
+                    
+                    # Sort recent friends by last_seen (most recent first)
+                    recent_friends.sort(key=lambda x: x.get('last_seen') or '', reverse=True)
+
+                    
+            except Exception as e:
+                print(f"Error fetching online friends: {e}")
+                
+                
+        else:
+            # Not logged in? Show landing page
+            return render_template('landing.html')
+                
+        return render_template('index.html', online_friends=online_friends, recent_friends=recent_friends)
+
+    # Global Access Control Hook
+    @app.before_request
+    def check_access_control():
+        from flask import session, request, redirect, url_for
+        
+        # List of protected path prefixes
+        protected_prefixes = [
+            '/profile', '/activities', '/social', '/rewards', 
+            '/messaging', '/support-swap', '/slice-of-life'
+        ]
+        
+        # Allow static (css/js/img), auth (login/register), and specific open routes
+        if request.path.startswith('/static') or request.path.startswith('/auth') or request.path == '/' or request.path == '/skeleton':
+            return
+            
+        # If user is trying to access a protected area and is NOT logged in
+        if not session.get('user_id'):
+            # Check if current path starts with any of the guarded prefixes
+            for prefix in protected_prefixes:
+                if request.path.startswith(prefix):
+                    return redirect(url_for('index')) # Redirect to landing (which is index route)
     
     # Skeleton template preview (for development only)
     @app.route('/skeleton')
@@ -68,4 +179,6 @@ app = create_app('development')
 
 if __name__ == '__main__':
     # Use socketio.run() instead of app.run() for WebSocket support
-    socketio.run(app, debug=True)
+    # host='0.0.0.0' allows connections from other devices on the same network
+    # Your friend can connect using your computer's IP address (e.g., 192.168.x.x:5000)
+    socketio.run(app, host='0.0.0.0', port=5000, debug=True)

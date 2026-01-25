@@ -1,283 +1,333 @@
 {% extends "base.html" %}
 
-{% block title %}Story Catalog - Slice of Life{% endblock %}
+{% extends "base.html" %}
+
+{% block title %}Memory Library - JomGather{% endblock %}
 
 {% block content %}
-<div class="container py-4">
-    <!-- Header -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h2 class="fw-bold mb-1">
-                <i class="bi bi-collection text-primary me-2"></i>Story Catalog
-            </h2>
-            <p class="text-muted mb-0">Explore stories from different generations</p>
-        </div>
-        <a href="{{ url_for('slice_of_life.prompt') }}" class="btn btn-primary">
-            <i class="bi bi-plus-lg me-1"></i>Create Story
+<style>
+    /* Design Tokens borrowed from Landing Page */
+    :root {
+        --primary-gradient: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+        --accent-gradient: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        --text-dark: #0f172a;
+        --text-muted: #64748b;
+        --card-shadow: 0 10px 40px rgba(0, 0, 0, 0.05);
+        --hover-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+    }
+
+    body {
+        font-family: 'Inter', sans-serif;
+        background: radial-gradient(circle at 10% 20%, #f8fafc 0%, #fff 100%);
+        color: var(--text-dark);
+    }
+
+    h1,
+    h2,
+    h3,
+    h4,
+    .brand-font {
+        font-family: 'Outfit', sans-serif;
+    }
+
+    /* Hero Section */
+    .library-hero {
+        background: linear-gradient(135deg, #1e3a5f 0%, #0f172a 100%);
+        padding: 4rem 2rem 6rem;
+        color: white;
+        text-align: center;
+        border-bottom-left-radius: 50px;
+        border-bottom-right-radius: 50px;
+        margin-bottom: 3rem;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .library-hero::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -10%;
+        width: 600px;
+        height: 600px;
+        background: radial-gradient(circle, rgba(219, 234, 254, 0.1) 0%, transparent 70%);
+        border-radius: 50%;
+        filter: blur(60px);
+    }
+
+    .btn-create-slice {
+        background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+        color: white;
+        border: none;
+        padding: 1rem 2.5rem;
+        border-radius: 50px;
+        font-weight: 600;
+        font-size: 1.1rem;
+        box-shadow: 0 4px 15px rgba(34, 197, 94, 0.3);
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .btn-create-slice:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(34, 197, 94, 0.4);
+        color: white;
+    }
+
+    /* Navigation Tabs */
+    .nav-tabs-custom {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        margin-top: -30px;
+        margin-bottom: 3rem;
+        position: relative;
+        z-index: 10;
+        flex-wrap: wrap;
+    }
+
+    .tab-item {
+        background: white;
+        padding: 1rem 2rem;
+        border-radius: 50px;
+        color: var(--text-muted);
+        text-decoration: none;
+        font-weight: 600;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .tab-item:hover,
+    .tab-item.active {
+        background: #3b82f6;
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3);
+    }
+
+    /* Cards */
+    .memory-card {
+        background: white;
+        border-radius: 24px;
+        overflow: hidden;
+        border: 1px solid rgba(0, 0, 0, 0.03);
+        box-shadow: var(--card-shadow);
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .memory-card:hover {
+        transform: translateY(-8px);
+        box-shadow: var(--hover-shadow);
+    }
+
+    .card-header-img {
+        height: 200px;
+        width: 100%;
+        background: #e2e8f0;
+        /* Default placeholder color */
+        position: relative;
+        overflow: hidden;
+    }
+
+    .card-header-img img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.6s ease;
+    }
+
+    .memory-card:hover .card-header-img img {
+        transform: scale(1.05);
+    }
+
+    .card-badge {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        background: rgba(255, 255, 255, 0.9);
+        backdrop-filter: blur(5px);
+        padding: 0.4rem 0.8rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--text-dark);
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .card-body-custom {
+        padding: 1.5rem;
+        flex-grow: 1;
+    }
+
+    .card-title {
+        font-family: 'Outfit', sans-serif;
+        font-weight: 700;
+        font-size: 1.25rem;
+        margin-bottom: 0.5rem;
+        color: var(--text-dark);
+    }
+
+    .card-meta {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 1rem;
+    }
+
+    .user-avatar-small {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid white;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    .card-footer-custom {
+        padding: 1rem 1.5rem;
+        border-top: 1px solid #f1f5f9;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .action-btn {
+        background: #f1f5f9;
+        color: var(--text-muted);
+        border: none;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+    }
+
+    .action-btn:hover {
+        background: #e0f2fe;
+        color: #3b82f6;
+    }
+
+    .view-link {
+        color: #3b82f6;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.95rem;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .view-link:hover {
+        gap: 8px;
+    }
+</style>
+
+<!-- Hero -->
+<div class="library-hero">
+    <div class="container" style="max-width: 800px;">
+        <h1 style="font-size: 3.5rem; margin-bottom: 1rem;">Memory Library</h1>
+        <p
+            style="font-size: 1.25rem; opacity: 0.8; margin-bottom: 2.5rem; max-width: 600px; margin-left: auto; margin-right: auto;">
+            A curated collection of shared moments, wisdom, and laughter. Explore stories that bridge generations.
+        </p>
+        <a href="{{ url_for('slice_of_life.prompt') }}" class="btn-create-slice">
+            <i class="bi bi-plus-circle-fill"></i> New Slice of Life
+        </a>
+    </div>
+</div>
+
+<div class="container pb-5">
+
+    <!-- Filter Tabs -->
+    <div class="nav-tabs-custom">
+        <a href="{{ url_for('slice_of_life.catalog', filter='public') }}"
+            class="tab-item {{ 'active' if current_filter == 'public' }}">
+            <i class="bi bi-globe-americas"></i> Public Gallery
+        </a>
+        <a href="{{ url_for('slice_of_life.catalog', filter='friends') }}"
+            class="tab-item {{ 'active' if current_filter == 'friends' }}">
+            <i class="bi bi-people-fill"></i> Friends' Circle
+        </a>
+        <a href="{{ url_for('slice_of_life.catalog', filter='private') }}"
+            class="tab-item {{ 'active' if current_filter == 'private' }}">
+            <i class="bi bi-shield-lock-fill"></i> Private Archive
         </a>
     </div>
 
-    <!-- Filter Tabs -->
-    <ul class="nav nav-pills mb-4">
-        <li class="nav-item">
-            <a class="nav-link active" href="#">All Stories</a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" href="#">Most Loved</a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" href="#">This Week</a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" href="#">My Stories</a>
-        </li>
-    </ul>
-
-    <!-- Featured Story of the Week -->
-    <div class="card border-0 shadow-sm mb-4" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-        <div class="card-body p-4 text-white">
-            <div class="d-flex align-items-center mb-3">
-                <span class="badge bg-warning text-dark me-2">
-                    <i class="bi bi-star-fill me-1"></i>Featured
-                </span>
-                <span>Story of the Week</span>
-            </div>
-            <div class="row align-items-center">
-                <div class="col-md-5 mb-3 mb-md-0">
-                    <div class="row g-2">
-                        <div class="col-6">
-                            <img src="https://images.unsplash.com/photo-1491438590914-bc09fcaaf77a?w=200&h=150&fit=crop"
-                                alt="Youth's photo" class="img-fluid rounded-3">
-                            <small class="d-block mt-1 opacity-75">Kevin's photo</small>
-                        </div>
-                        <div class="col-6">
-                            <img src="https://images.unsplash.com/photo-1517457373958-b7bdd4587205?w=200&h=150&fit=crop"
-                                alt="Senior's photo" class="img-fluid rounded-3">
-                            <small class="d-block mt-1 opacity-75">Mdm Lim's photo</small>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-7">
-                    <p class="small opacity-75 mb-2">Prompt: "What brings your community together?"</p>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <div class="bg-white bg-opacity-10 rounded-3 p-3">
-                                <div class="d-flex align-items-center mb-2">
-                                    <img src="https://i.pravatar.cc/30?img=18" alt="Youth" class="rounded-circle me-2">
-                                    <span class="small fw-bold">Kevin (Youth)</span>
-                                </div>
-                                <p class="small mb-0">"Our void deck becomes alive during Mid-Autumn Festival. Kids run
-                                    around with lanterns while aunties share mooncakes..."</p>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="bg-white bg-opacity-10 rounded-3 p-3">
-                                <div class="d-flex align-items-center mb-2">
-                                    <img src="https://i.pravatar.cc/30?img=22" alt="Senior" class="rounded-circle me-2">
-                                    <span class="small fw-bold">Mdm Lim (Senior)</span>
-                                </div>
-                                <p class="small mb-0">"Back in my kampung, we had 'gotong royong' every month. The whole
-                                    village would come together to clean up..."</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="d-flex align-items-center mt-3">
-                        <button class="btn btn-light btn-sm me-3">
-                            <i class="bi bi-heart-fill text-danger me-1"></i>156 likes
-                        </button>
-                        <span class="small opacity-75"><i class="bi bi-chat me-1"></i>23 comments</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Stories Grid -->
+    <!-- Grid -->
     <div class="row g-4">
-        <!-- Story 1 -->
-        <div class="col-md-6">
-            <div class="display-card h-100">
-                <div class="row g-0">
-                    <div class="col-6">
-                        <img src="https://images.unsplash.com/photo-1472745942893-4b9f730c7668?w=200&h=150&fit=crop"
-                            alt="Youth's photo" class="img-fluid h-100 object-fit-cover"
-                            style="border-radius: 20px 0 0 0;">
-                    </div>
-                    <div class="col-6">
-                        <img src="https://images.unsplash.com/photo-1517457373958-b7bdd4587205?w=200&h=150&fit=crop"
-                            alt="Senior's photo" class="img-fluid h-100 object-fit-cover"
-                            style="border-radius: 0 20px 0 0;">
-                    </div>
-                </div>
-                <div class="stories">
-                    <p class="small text-muted mb-2"><i class="bi bi-chat-quote me-1"></i>"Your favourite childhood
-                        memory"</p>
-                    <div class="story-section youth-story">
-                        <div class="story-author">
-                            <img src="https://i.pravatar.cc/30?img=11" alt="Sarah">
-                            <span>Sarah (Youth)</span>
-                        </div>
-                        <p class="story-text">"This playground near my HDB was my second home. Every evening after
-                            school, I'd be here with my neighbors, playing catching until the street lights came on..."
-                        </p>
-                    </div>
-                    <div class="story-section senior-story">
-                        <div class="story-author">
-                            <img src="https://i.pravatar.cc/30?img=20" alt="Mr. Tan">
-                            <span>Mr. Tan (Senior)</span>
-                        </div>
-                        <p class="story-text">"This kampung house picture takes me back. We had no fancy toys - just
-                            gasing, kites, and rubber band games. But we were happy..."</p>
-                    </div>
-                </div>
-                <div class="display-actions">
-                    <button class="like-btn liked">
-                        <i class="bi bi-heart-fill"></i> 47 likes
-                    </button>
-                    <small class="text-muted">2 hours ago</small>
-                </div>
-            </div>
-        </div>
+        {% if displays %}
+        {% for display in displays %}
+        <div class="col-md-6 col-lg-4">
+            <div class="memory-card">
+                <!-- Header Image (Using a placeholder logic for card background if we don't have a display cover) -->
+                <!-- Ideally, we fetch one of the submissions' images to show as cover -->
+                <div class="card-header-img">
+                    <img src="https://images.unsplash.com/photo-1544027993-37dbfe43562a?auto=format&fit=crop&w=600&q=80"
+                        alt="Memory Cover" style="filter: brightness(0.9);"> <!-- Placeholder for now -->
 
-        <!-- Story 2 -->
-        <div class="col-md-6">
-            <div class="display-card h-100">
-                <div class="row g-0">
-                    <div class="col-6">
-                        <img src="https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=200&h=150&fit=crop"
-                            alt="Youth's photo" class="img-fluid h-100 object-fit-cover"
-                            style="border-radius: 20px 0 0 0;">
-                    </div>
-                    <div class="col-6">
-                        <img src="https://images.unsplash.com/photo-1445116572660-236099ec97a0?w=200&h=150&fit=crop"
-                            alt="Senior's photo" class="img-fluid h-100 object-fit-cover"
-                            style="border-radius: 0 20px 0 0;">
-                    </div>
+                    {% if display.is_private %}
+                    <span class="card-badge"><i class="bi bi-lock-fill"></i> Private</span>
+                    {% endif %}
                 </div>
-                <div class="stories">
-                    <p class="small text-muted mb-2"><i class="bi bi-chat-quote me-1"></i>"Your favourite morning
-                        ritual"</p>
-                    <div class="story-section youth-story">
-                        <div class="story-author">
-                            <img src="https://i.pravatar.cc/30?img=15" alt="Marcus">
-                            <span>Marcus (Youth)</span>
-                        </div>
-                        <p class="story-text">"My morning flat white at this café is sacred. I took this photo of my
-                            usual corner spot. It's where I mentally prepare for the day ahead..."</p>
-                    </div>
-                    <div class="story-section senior-story">
-                        <div class="story-author">
-                            <img src="https://i.pravatar.cc/30?img=25" alt="Grandma Rose">
-                            <span>Grandma Rose (Senior)</span>
-                        </div>
-                        <p class="story-text">"My kopitiam! Every morning for 40 years. The uncle still remembers my
-                            kopi-o kosong. This place has seen my whole life - first dates, grandchildren's
-                            birthdays..."</p>
-                    </div>
-                </div>
-                <div class="display-actions">
-                    <button class="like-btn">
-                        <i class="bi bi-heart"></i> 32 likes
-                    </button>
-                    <small class="text-muted">5 hours ago</small>
-                </div>
-            </div>
-        </div>
 
-        <!-- Story 3 -->
-        <div class="col-md-6">
-            <div class="display-card h-100">
-                <div class="row g-0">
-                    <div class="col-6">
-                        <img src="https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=200&h=150&fit=crop"
-                            alt="Youth's photo" class="img-fluid h-100 object-fit-cover"
-                            style="border-radius: 20px 0 0 0;">
-                    </div>
-                    <div class="col-6">
-                        <img src="https://images.unsplash.com/photo-1516733968668-dbdce39c4651?w=200&h=150&fit=crop"
-                            alt="Senior's photo" class="img-fluid h-100 object-fit-cover"
-                            style="border-radius: 0 20px 0 0;">
-                    </div>
-                </div>
-                <div class="stories">
-                    <p class="small text-muted mb-2"><i class="bi bi-chat-quote me-1"></i>"What does family mean to
-                        you?"</p>
-                    <div class="story-section youth-story">
-                        <div class="story-author">
-                            <img src="https://i.pravatar.cc/30?img=33" alt="Wei Ling">
-                            <span>Wei Ling (Youth)</span>
+                <div class="card-body-custom">
+                    <h5 class="card-title">Slice of Life #{{ display.display_id }}</h5>
+                    <div class="card-meta">
+                        <!-- Creator & Partner Avatars -->
+                        <div class="d-flex">
+                            <img src="https://i.pravatar.cc/100?img={{ (display.creator_id * 5) % 70 }}"
+                                class="user-avatar-small" style="z-index: 2;">
+                            <img src="https://i.pravatar.cc/100?img={{ (display.partner_id * 5) % 70 }}"
+                                class="user-avatar-small" style="margin-left: -10px; z-index: 1;">
                         </div>
-                        <p class="story-text">"This is from last CNY. Three generations at one table, fighting over the
-                            last piece of bak kwa. Nothing says family like this chaos..."</p>
+                        <small class="text-muted" style="font-weight: 500;">
+                            Shared {{ display.created_at[:10] }}
+                        </small>
                     </div>
-                    <div class="story-section senior-story">
-                        <div class="story-author">
-                            <img src="https://i.pravatar.cc/30?img=28" alt="Uncle David">
-                            <span>Uncle David (Senior)</span>
-                        </div>
-                        <p class="story-text">"This is my old family altar. Every Qing Ming, we gather here. Even my
-                            children overseas video call to pay respects. Technology brought us closer..."</p>
-                    </div>
+                    <p class="text-muted small mb-0 line-clamp-3">
+                        A beautiful conversation captured between two generations. Click to unfold their story.
+                    </p>
                 </div>
-                <div class="display-actions">
-                    <button class="like-btn liked">
-                        <i class="bi bi-heart-fill"></i> 89 likes
-                    </button>
-                    <small class="text-muted">Yesterday</small>
-                </div>
-            </div>
-        </div>
 
-        <!-- Story 4 -->
-        <div class="col-md-6">
-            <div class="display-card h-100">
-                <div class="row g-0">
-                    <div class="col-6">
-                        <img src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=200&h=150&fit=crop"
-                            alt="Youth's photo" class="img-fluid h-100 object-fit-cover"
-                            style="border-radius: 20px 0 0 0;">
+                <div class="card-footer-custom">
+                    <div class="d-flex gap-2">
+                        <button class="action-btn" title="Like">
+                            <i class="bi bi-heart"></i>
+                        </button>
+                        <span class="small text-muted align-self-center">{{ display.likes or 0 }}</span>
                     </div>
-                    <div class="col-6">
-                        <img src="https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=200&h=150&fit=crop"
-                            alt="Senior's photo" class="img-fluid h-100 object-fit-cover"
-                            style="border-radius: 0 20px 0 0;">
-                    </div>
-                </div>
-                <div class="stories">
-                    <p class="small text-muted mb-2"><i class="bi bi-chat-quote me-1"></i>"How has technology changed
-                        your life?"</p>
-                    <div class="story-section youth-story">
-                        <div class="story-author">
-                            <img src="https://i.pravatar.cc/30?img=41" alt="Jason">
-                            <span>Jason (Youth)</span>
-                        </div>
-                        <p class="story-text">"My whole life is in this phone. I took a photo of my screen time - 8
-                            hours yesterday! Sometimes I wonder what life was like before..."</p>
-                    </div>
-                    <div class="story-section senior-story">
-                        <div class="story-author">
-                            <img src="https://i.pravatar.cc/30?img=45" alt="Auntie Chen">
-                            <span>Auntie Chen (Senior)</span>
-                        </div>
-                        <p class="story-text">"This is my first handwritten letter to my mother in 1970. Now I WhatsApp
-                            my grandchildren daily. Both are blessings in different ways..."</p>
-                    </div>
-                </div>
-                <div class="display-actions">
-                    <button class="like-btn">
-                        <i class="bi bi-heart"></i> 124 likes
-                    </button>
-                    <small class="text-muted">2 days ago</small>
+                    <a href="{{ url_for('slice_of_life.review', display_id=display.display_id) }}" class="view-link">
+                        Read Story <i class="bi bi-arrow-right"></i>
+                    </a>
                 </div>
             </div>
         </div>
+        {% endfor %}
+        {% else %}
+        <div class="col-12 py-5 text-center">
+            <div class="bg-light rounded-circle d-inline-flex p-5 mb-4 text-muted" style="background: #f1f5f9;">
+                <i class="bi bi-journal-bookmark fs-1" style="color: #cbd5e1;"></i>
+            </div>
+            <h3 class="fw-bold text-dark mb-2">It's quiet here...</h3>
+            <p class="text-muted mb-4 lead">Be the first to share a memory in this collection.</p>
+            <a href="{{ url_for('slice_of_life.prompt') }}" class="btn-create-slice">
+                Start a Conversation
+            </a>
+        </div>
+        {% endif %}
     </div>
 
-    <!-- Load More -->
-    <div class="text-center mt-4">
-        <button class="btn btn-outline-primary btn-lg">
-            <i class="bi bi-arrow-down-circle me-2"></i>Load More Stories
-        </button>
-    </div>
 </div>
 {% endblock %}

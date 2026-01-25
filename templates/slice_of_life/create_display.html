@@ -1,152 +1,130 @@
 {% extends "base.html" %}
 
-{% block title %}Upload Your Story - Slice of Life{% endblock %}
+{% block title %}Create Your Story - Slice of Life{% endblock %}
 
 {% block content %}
-<!-- Loading Overlay - Shows after submit, reveals button after 5 seconds -->
-<div id="loadingOverlay" class="sol-loading-overlay" style="display: none;">
-    <div id="loadingSpinner">
-        <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status"></div>
-        <p class="sol-loading-text">Submitting your response...</p>
-        <p class="sol-loading-subtext" id="loadingStatus">Waiting for your partner to respond</p>
-        <div class="mt-4">
-            <div class="progress" style="width: 200px; height: 8px;">
-                <div id="progressBar" class="progress-bar" role="progressbar" style="width: 0%"></div>
-            </div>
-            <small class="text-muted mt-2 d-block" id="countdown">Partner responding in 5s...</small>
-        </div>
-    </div>
+<div style="background: linear-gradient(180deg, #e8f4fc 0%, #f5f7fa 100%); min-height: calc(100vh - 70px);">
+    <div class="container py-4">
 
-    <!-- Success State - Shows after 5 seconds -->
-    <div id="successState" style="display: none;">
-        <div class="text-center">
-            <div class="bg-success bg-opacity-10 rounded-circle p-4 d-inline-block mb-4">
-                <i class="bi bi-check-circle-fill text-success" style="font-size: 3rem;"></i>
-            </div>
-            <h4 class="fw-bold mb-2">Both Responses Received!</h4>
-            <p class="text-muted mb-4">You and Grandma Rose have both submitted. Ready to review!</p>
-            <a href="{{ url_for('slice_of_life.review', display_id=1) }}" class="btn btn-success btn-lg"
-                style="border-radius: 12px;">
-                <i class="bi bi-eye me-2"></i>Enter Review Mode
+        <!-- Header -->
+        <div class="mb-4">
+            <a href="{{ url_for('slice_of_life.prompt') }}"
+                style="color: #1e3a5f; text-decoration: none; font-size: 1rem;">
+                <i class="bi bi-arrow-left me-2"></i>Back to Prompt
             </a>
         </div>
-    </div>
-</div>
 
-<div class="container py-4">
-    <!-- Header -->
-    <div class="mb-4">
-        <a href="{{ url_for('slice_of_life.prompt') }}" class="text-decoration-none text-muted">
-            <i class="bi bi-arrow-left me-1"></i>Back to Prompt
-        </a>
-    </div>
-
-    <!-- Prompt Card - Full Width on Top -->
-    <div class="card border-0 shadow-sm mb-4"
-        style="background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%); border-radius: 16px;">
-        <div class="card-body p-4 text-white">
-            <div class="d-flex align-items-center justify-content-between">
-                <div>
-                    <p class="text-uppercase small opacity-75 mb-2">
-                        <i class="bi bi-calendar-event me-1"></i>Today's Prompt
-                    </p>
-                    <h3 class="mb-0" style="line-height: 1.4;">
-                        "What is your favourite thing to do after school/work?"
-                    </h3>
-                </div>
-                <div class="d-flex align-items-center gap-2">
-                    <img src="https://i.pravatar.cc/40?img=12" class="rounded-circle" alt="You">
-                    <i class="bi bi-arrow-left-right text-white-50"></i>
-                    <img src="https://i.pravatar.cc/40?img=25" class="rounded-circle" alt="Partner">
-                </div>
+        <!-- Progress Steps -->
+        <div class="d-flex justify-content-center mb-4">
+            <div class="d-flex align-items-center">
+                <div
+                    style="width: 40px; height: 40px; border-radius: 50%; background: #1e3a5f; color: white; display: flex; align-items: center; justify-content: center; font-weight: 600;">
+                    1</div>
+                <span style="margin-left: 0.5rem; font-weight: 600; color: #1e3a5f;">Create</span>
+                <div style="width: 60px; height: 3px; background: #cbd5e1; margin: 0 1rem;"></div>
+                <div
+                    style="width: 40px; height: 40px; border-radius: 50%; background: #e2e8f0; color: #94a3b8; display: flex; align-items: center; justify-content: center; font-weight: 600;">
+                    2</div>
+                <span style="margin-left: 0.5rem; color: #94a3b8;">Choose</span>
+                <div style="width: 60px; height: 3px; background: #cbd5e1; margin: 0 1rem;"></div>
+                <div
+                    style="width: 40px; height: 40px; border-radius: 50%; background: #e2e8f0; color: #94a3b8; display: flex; align-items: center; justify-content: center; font-weight: 600;">
+                    3</div>
+                <span style="margin-left: 0.5rem; color: #94a3b8;">Send</span>
             </div>
         </div>
-    </div>
 
-    <!-- Upload Photo & Share Thoughts - Side by Side Equal Proportion -->
-    <form id="storyForm" onsubmit="submitStory(event)">
-        <div class="row g-4">
-            <!-- Left: Upload Your Photo (50%) -->
-            <div class="col-md-6">
-                <div class="card border-0 shadow-sm h-100" style="border-radius: 16px;">
-                    <div class="card-body p-4">
-                        <h5 class="fw-bold mb-3">
-                            <i class="bi bi-image text-primary me-2"></i>Upload Your Photo
-                        </h5>
-                        <p class="text-muted mb-4">
+        <!-- Prompt Card -->
+        <div
+            style="background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%); border-radius: 20px; padding: 1.5rem 2rem; color: white; margin-bottom: 2rem; box-shadow: 0 8px 30px rgba(30, 58, 95, 0.25);">
+            <p
+                style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; opacity: 0.8; margin-bottom: 0.5rem;">
+                <i class="bi bi-calendar-event me-2"></i>Today's Prompt
+            </p>
+            <h2 style="font-size: 1.5rem; font-weight: 500; margin: 0;">
+                "{{ prompt.prompt_text }}"
+            </h2>
+        </div>
+
+        <!-- Upload Form -->
+        <form id="storyForm" action="{{ url_for('slice_of_life.create_display') }}" method="POST"
+            enctype="multipart/form-data">
+            <div class="row g-4">
+                <!-- Upload Photo -->
+                <div class="col-md-6">
+                    <div
+                        style="background: white; border-radius: 20px; padding: 2rem; height: 100%; box-shadow: 0 4px 20px rgba(0,0,0,0.05);">
+                        <h4 style="font-size: 1.25rem; font-weight: 600; color: #1e3a5f; margin-bottom: 0.5rem;">
+                            <i class="bi bi-image me-2" style="color: #3b82f6;"></i>Upload Your Photo
+                        </h4>
+                        <p style="font-size: 1rem; color: #6b7280; margin-bottom: 1.5rem;">
                             Share a photo that represents your answer to the prompt.
                         </p>
 
-                        <!-- Upload Zone -->
-                        <div class="upload-zone text-center p-4"
-                            style="border: 2px dashed #dee2e6; border-radius: 16px; background: #f8f9fa; cursor: pointer; min-height: 250px; display: flex; flex-direction: column; align-items: center; justify-content: center;"
-                            onclick="document.getElementById('imageUpload').click()">
-                            <div id="uploadPreview" style="display: none;">
-                                <img id="previewImage" src="" alt="Preview" class="img-fluid rounded mb-3"
-                                    style="max-height: 200px;">
-                                <p class="text-success mb-0"><i class="bi bi-check-circle me-1"></i>Image selected</p>
-                            </div>
+                        <div id="uploadZone" onclick="document.getElementById('imageUpload').click()"
+                            style="border: 3px dashed #cbd5e1; border-radius: 16px; padding: 3rem 2rem; text-align: center; cursor: pointer; background: #f8fafc; transition: all 0.2s;">
                             <div id="uploadPlaceholder">
-                                <i class="bi bi-cloud-arrow-up text-muted" style="font-size: 3rem;"></i>
-                                <p class="text-muted mt-3 mb-1">Click to upload or drag and drop</p>
-                                <small class="text-muted">PNG, JPG up to 10MB</small>
+                                <i class="bi bi-cloud-arrow-up" style="font-size: 3.5rem; color: #1e3a5f;"></i>
+                                <p style="font-size: 1.1rem; color: #1e3a5f; margin: 1rem 0 0.5rem; font-weight: 500;">
+                                    Click to upload or drag and drop</p>
+                                <p style="font-size: 0.9rem; color: #94a3b8; margin: 0;">PNG, JPG up to 10MB</p>
                             </div>
-                            <input type="file" id="imageUpload" name="image" accept="image/*" class="d-none"
+                            <div id="uploadPreview" style="display: none;">
+                                <img id="previewImage" src="" alt="Preview"
+                                    style="max-height: 200px; border-radius: 12px; margin-bottom: 1rem;">
+                                <p style="color: #22c55e; font-size: 1rem; margin: 0;"><i
+                                        class="bi bi-check-circle me-2"></i>Image selected!</p>
+                            </div>
+                            <input type="file" id="imageUpload" name="image" accept="image/*" style="display: none;"
                                 onchange="previewUpload(this)">
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Right: Share Your Thoughts (50%) -->
-            <div class="col-md-6">
-                <div class="card border-0 shadow-sm h-100" style="border-radius: 16px;">
-                    <div class="card-body p-4 d-flex flex-column">
-                        <h5 class="fw-bold mb-3">
-                            <i class="bi bi-pen text-primary me-2"></i>Share Your Thoughts
-                        </h5>
-                        <p class="text-muted mb-3">
+                <!-- Share Thoughts -->
+                <div class="col-md-6">
+                    <div
+                        style="background: white; border-radius: 20px; padding: 2rem; height: 100%; box-shadow: 0 4px 20px rgba(0,0,0,0.05); display: flex; flex-direction: column;">
+                        <h4 style="font-size: 1.25rem; font-weight: 600; color: #1e3a5f; margin-bottom: 0.5rem;">
+                            <i class="bi bi-pen me-2" style="color: #22c55e;"></i>Share Your Thoughts
+                        </h4>
+                        <p style="font-size: 1rem; color: #6b7280; margin-bottom: 1rem;">
                             What does your photo mean to you? Share the story behind it.
                         </p>
 
-                        <!-- Story Input -->
-                        <div class="flex-grow-1 d-flex flex-column">
-                            <textarea class="form-control flex-grow-1" id="story" name="story"
-                                style="border-radius: 12px; border-color: #e0e0e0; resize: none; min-height: 180px;"
-                                placeholder="Tell the story behind your photo...
+                        <textarea id="story" name="story" placeholder="Tell the story behind your photo...
 
 What made you choose this image?
-What memory or feeling does it capture?" required maxlength="2000"></textarea>
-                            <div class="d-flex justify-content-between mt-2">
-                                <small class="text-muted">Write from the heart!</small>
-                                <small class="text-muted"><span id="charCount">0</span>/2000</small>
-                            </div>
+What memory or feeling does it capture?"
+                            style="flex: 1; border: 2px solid #e2e8f0; border-radius: 16px; padding: 1.25rem; font-size: 1rem; resize: none; min-height: 200px; transition: border-color 0.2s;"
+                            onfocus="this.style.borderColor='#1e3a5f'" onblur="this.style.borderColor='#e2e8f0'"
+                            required maxlength="2000"></textarea>
+
+                        <div class="d-flex justify-content-between mt-2">
+                            <span style="font-size: 0.9rem; color: #94a3b8;">Write from the heart!</span>
+                            <span style="font-size: 0.9rem; color: #94a3b8;"><span id="charCount">0</span>/2000</span>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Submit Button - Full Width Below -->
-        <div class="mt-4">
-            <button type="submit" class="btn btn-primary btn-lg w-100" id="submitBtn" disabled
-                style="border-radius: 12px;">
-                <i class="bi bi-send me-2"></i>Submit My Response
-            </button>
-            <p class="text-center text-muted small mt-2 mb-0">
-                <i class="bi bi-person-hearts me-1"></i>Paired with <strong>Grandma Rose</strong>
-            </p>
-        </div>
-    </form>
+            <!-- Next Button -->
+            <div class="mt-4">
+                <button type="submit" id="nextBtn" disabled
+                    style="width: 100%; background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%); color: white; border: none; border-radius: 16px; padding: 1.25rem; font-size: 1.25rem; font-weight: 600; cursor: pointer; opacity: 0.5; transition: all 0.2s; box-shadow: 0 4px 15px rgba(30, 58, 95, 0.3);">
+                    <i class="bi bi-arrow-right-circle me-2"></i>Next - Choose Who to Share With
+                </button>
+            </div>
+        </form>
+    </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-    // Character counter
     const storyTextarea = document.getElementById('story');
     const charCount = document.getElementById('charCount');
-    const submitBtn = document.getElementById('submitBtn');
+    const nextBtn = document.getElementById('nextBtn');
     let imageSelected = false;
 
     storyTextarea.addEventListener('input', function () {
@@ -158,6 +136,7 @@ What memory or feeling does it capture?" required maxlength="2000"></textarea>
         const preview = document.getElementById('uploadPreview');
         const placeholder = document.getElementById('uploadPlaceholder');
         const previewImage = document.getElementById('previewImage');
+        const uploadZone = document.getElementById('uploadZone');
 
         if (input.files && input.files[0]) {
             const reader = new FileReader();
@@ -165,6 +144,8 @@ What memory or feeling does it capture?" required maxlength="2000"></textarea>
                 previewImage.src = e.target.result;
                 preview.style.display = 'block';
                 placeholder.style.display = 'none';
+                uploadZone.style.borderColor = '#22c55e';
+                uploadZone.style.background = '#f0fdf4';
                 imageSelected = true;
                 checkFormValidity();
             };
@@ -174,46 +155,8 @@ What memory or feeling does it capture?" required maxlength="2000"></textarea>
 
     function checkFormValidity() {
         const hasStory = storyTextarea.value.trim().length > 10;
-        submitBtn.disabled = !(imageSelected && hasStory);
-    }
-
-    // Submit and show loading, then reveal button after 5 seconds
-    function submitStory(e) {
-        e.preventDefault();
-
-        const overlay = document.getElementById('loadingOverlay');
-        const loadingSpinner = document.getElementById('loadingSpinner');
-        const successState = document.getElementById('successState');
-        const progressBar = document.getElementById('progressBar');
-        const countdown = document.getElementById('countdown');
-        const loadingStatus = document.getElementById('loadingStatus');
-
-        overlay.style.display = 'flex';
-
-        let seconds = 5;
-        let progress = 0;
-
-        const interval = setInterval(() => {
-            seconds--;
-            progress += 20;
-            progressBar.style.width = progress + '%';
-
-            if (seconds <= 3) {
-                loadingStatus.textContent = 'Grandma Rose is responding...';
-            }
-            if (seconds <= 1) {
-                loadingStatus.textContent = 'Response received!';
-            }
-
-            countdown.textContent = seconds > 0 ? `Partner responding in ${seconds}s...` : 'Done!';
-
-            if (seconds <= 0) {
-                clearInterval(interval);
-                // Show success state with button (NOT auto-redirect)
-                loadingSpinner.style.display = 'none';
-                successState.style.display = 'block';
-            }
-        }, 1000);
+        nextBtn.disabled = !(imageSelected && hasStory);
+        nextBtn.style.opacity = (imageSelected && hasStory) ? '1' : '0.5';
     }
 </script>
 {% endblock %}

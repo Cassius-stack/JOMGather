@@ -3,16 +3,17 @@ Social routes - Social features, Chat, AskAGrandfriend
 Now using Supabase for database
 """
 
-from flask import Blueprint, render_template, request, redirect, url_for, jsonify
+from flask import Blueprint, render_template, request, redirect, url_for, jsonify, session
 from utils.supabase_db import get_supabase, fetch_all, fetch_one, insert
+from utils.auth_middleware import login_required
 import traceback
 
 social_bp = Blueprint('social', __name__)
 
 
 def get_current_user_id():
-    """Get current user ID from query parameter (for testing) or session."""
-    return int(request.args.get('user', 1))
+    """Get current user ID from session."""
+    return session.get('user_id')
 
 
 @social_bp.route('/')
@@ -35,47 +36,250 @@ def test_supabase():
 
 # === CHAT API ENDPOINTS ===
 
+@social_bp.route('/search-results')
+def search_results_page():
+    """Full search results page."""
+    query = request.args.get('q', '').strip()
+    if not query:
+        return redirect(url_for('index'))
+        
+    currentUser = get_current_user_id()
+    
+    # 1. Search Users
+    users = []
+    try:
+        supabase = get_supabase()
+        response = supabase.table('users').select('user_id, username, user_type').ilike('username', f'%{query}%').neq('user_id', currentUser).execute()
+        
+        # Check friendship status for each
+        for user in response.data:
+            status = 'none'
+            # Check sent
+            sent = supabase.table('friendships').select('status').eq('user_id_1', currentUser).eq('user_id_2', user['user_id']).execute()
+            if sent.data:
+                status = sent.data[0]['status']
+            else:
+                # Check received
+                rec = supabase.table('friendships').select('status').eq('user_id_1', user['user_id']).eq('user_id_2', currentUser).execute()
+                if rec.data:
+                    status = 'received' if rec.data[0]['status'] == 'pending' else 'accepted'
+            
+            users.append({
+                'username': user['username'],
+                'user_type': user['user_type'],
+                'friendship_status': status
+            })
+    except Exception as e:
+        print(f"Search users error: {e}")
+
+    # 2. Search Activities
+    from routes.activities import search_activities_logic
+    activities = search_activities_logic(query)
+    
+    return render_template('social/search_results.html', query=query, users=users, activities=activities)
+
+# === FRIEND REQUEST ENDPOINTS ===
+
+@social_bp.route('/api/search')
+@login_required
+def search_users():
+    """Search for users by username."""
+    try:
+        query = request.args.get('q', '').strip()
+        current_user_id = get_current_user_id()
+        
+        if not query or len(query) < 2:
+            return jsonify([])
+        
+        supabase = get_supabase()
+        # Search users logic
+        # Note: 'ilike' might not be supported in all client versions or table settings. 
+        # Checking robust implementation.
+        
+        # 1. Fetch potential matches
+        response = supabase.table('users').select('user_id, username, user_type').ilike('username', f'%{query}%').neq('user_id', current_user_id).limit(10).execute()
+        
+        results = []
+        if response.data:
+            searched_users = response.data
+            
+            # Optimization: Fetch all relevant friendships in one go if possible, but loop is safer for prototype
+            for user in searched_users:
+                # Check friendship status
+                status = 'none'
+                
+                # Check sent
+                sent = supabase.table('friendships').select('status').eq('user_id_1', current_user_id).eq('user_id_2', user['user_id']).execute()
+                if sent.data:
+                    status = sent.data[0]['status'] 
+                else:
+                    # Check received
+                    received = supabase.table('friendships').select('status').eq('user_id_1', user['user_id']).eq('user_id_2', current_user_id).execute()
+                    if received.data:
+                        status = 'received' if received.data[0]['status'] == 'pending' else 'accepted'
+                
+                results.append({
+                    'id': user['user_id'],
+                    'username': user['username'],
+                    'type': user['user_type'],
+                    'friendship_status': status
+                })
+            
+        return jsonify(results)
+    except Exception as e:
+        print(f"Search API Error: {e}")
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+@social_bp.route('/api/friend-request', methods=['POST'])
+def send_friend_request():
+    """Send a friend request."""
+    try:
+        current_user_id = get_current_user_id()
+        target_id = request.json.get('target_id')
+        
+        if not target_id:
+            return jsonify({'error': 'Missing target_id'}), 400
+            
+        supabase = get_supabase()
+        # Check existing
+        existing = supabase.table('friendships').select('*').or_(
+            f"and(user_id_1.eq.{current_user_id},user_id_2.eq.{target_id}),and(user_id_1.eq.{target_id},user_id_2.eq.{current_user_id})"
+        ).execute()
+        
+        if existing.data:
+            return jsonify({'error': 'Request already exists or matched'}), 400
+            
+        # Insert
+        insert('friendships', {
+            'user_id_1': current_user_id,
+            'user_id_2': target_id,
+            'status': 'pending'
+        })
+        
+        return jsonify({'success': True})
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+@social_bp.route('/api/friend-accept', methods=['POST'])
+def accept_friend_request():
+    """Accept a friend request."""
+    try:
+        current_user_id = get_current_user_id()
+        requester_id = request.json.get('requester_id')
+        
+        supabase = get_supabase()
+        # Update status to accepted
+        # user_id_1 is requester, user_id_2 is current_user
+        supabase.table('friendships').update({'status': 'accepted'}).eq('user_id_1', requester_id).eq('user_id_2', current_user_id).execute()
+        
+        return jsonify({'success': True})
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
 @social_bp.route('/api/contacts')
 def get_contacts():
-    """Get list of all contacts for the current user."""
+    """Get accepted friends, sorted by most recent message."""
     try:
         current_user_id = get_current_user_id()
         supabase = get_supabase()
         
-        # Get all users except current user
-        response = supabase.table('users').select('user_id, username').neq('user_id', current_user_id).execute()
-        users = response.data
+        # Get friendships where status is accepted and involves current user
+        friends = []
         
-        result = []
-        for user in users:
-            # Get last message with this user
+        # 1. Where I am user_1 (I requested, they accepted)
+        sent_accepted = supabase.table('friendships').select('user_id_2').eq('user_id_1', current_user_id).eq('status', 'accepted').execute()
+        for item in sent_accepted.data:
+            friends.append(item['user_id_2'])
+            
+        # 2. Where I am user_2 (They requested, I accepted)
+        received_accepted = supabase.table('friendships').select('user_id_1').eq('user_id_2', current_user_id).eq('status', 'accepted').execute()
+        for item in received_accepted.data:
+            friends.append(item['user_id_1'])
+            
+        if not friends:
+            return jsonify([])
+        
+        # Helper: Check if user is online (active in last 5 mins)
+        import datetime
+        def is_online(user_data):
+            last_seen = user_data.get('last_seen')
+            if not last_seen:
+                return False
             try:
-                msg_response = supabase.table('messages').select('*').or_(
-                    f"and(sender_id.eq.{current_user_id},receiver_id.eq.{user['user_id']}),and(sender_id.eq.{user['user_id']},receiver_id.eq.{current_user_id})"
-                ).order('sent_at', desc=True).limit(1).execute()
+                five_mins_ago = (datetime.datetime.now() - datetime.timedelta(minutes=5)).isoformat()
+                return last_seen > five_mins_ago
+            except:
+                return False
+            
+        # Fetch user details for these IDs
+        result = []
+        for friend_id in friends:
+            user_data = fetch_one('users', user_id=friend_id)
+            if user_data:
+                # Get last message
+                last_msg = None
+                last_msg_time = None
+                try:
+                    msg_res = supabase.table('messages').select('*').or_(
+                        f"and(sender_id.eq.{current_user_id},receiver_id.eq.{friend_id}),and(sender_id.eq.{friend_id},receiver_id.eq.{current_user_id})"
+                    ).order('sent_at', desc=True).limit(1).execute()
+                    if msg_res.data:
+                        last_msg = msg_res.data[0]
+                        last_msg_time = last_msg.get('sent_at')
+                except:
+                    pass
                 
-                last_message = msg_response.data[0] if msg_response.data else None
-            except Exception as e:
-                print(f"Error getting messages for user {user['user_id']}: {e}")
-                last_message = None
-            
-            preview = ''
-            if last_message:
-                prefix = 'You: ' if last_message['sender_id'] == current_user_id else ''
-                content = last_message.get('content', '')
-                preview = f"{prefix}{content[:30]}" if content else ''
-            
-            result.append({
-                'id': user['user_id'],
-                'name': user['username'],
-                'lastMessage': preview,
-                'status': 'Active now'
-            })
+                preview = ''
+                if last_msg:
+                    prefix = 'You: ' if last_msg['sender_id'] == current_user_id else ''
+                    preview = f"{prefix}{last_msg['content'][:30]}"
+                
+                # Determine online status from last_seen
+                status = 'Active now' if is_online(user_data) else 'Offline'
+                
+                # Count unread messages from this friend
+                unread_count = 0
+                try:
+                    unread_res = supabase.table('messages').select('message_id', count='exact').eq('sender_id', friend_id).eq('receiver_id', current_user_id).eq('read', False).execute()
+                    unread_count = unread_res.count or 0
+                except:
+                    pass
+                
+                result.append({
+                    'id': friend_id,
+                    'name': user_data['username'],
+                    'lastMessage': preview,
+                    'status': status,
+                    'lastMessageTime': last_msg_time,
+                    'unreadCount': unread_count
+                })
         
+        # Sort by last message time (most recent first), new friends (no messages) at top
+        result.sort(key=lambda x: x.get('lastMessageTime') or '9999-99-99', reverse=True)
+                
         return jsonify(result)
     except Exception as e:
         print(f"Error in get_contacts: {e}")
         traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+
+@social_bp.route('/api/messages/<int:contact_id>/read', methods=['POST'])
+def mark_messages_read(contact_id):
+    """Mark all messages from a contact as read."""
+    try:
+        current_user_id = get_current_user_id()
+        supabase = get_supabase()
+        
+        # Mark all unread messages from this contact as read
+        supabase.table('messages').update({'read': True}).eq('sender_id', contact_id).eq('receiver_id', current_user_id).eq('read', False).execute()
+        
+        return jsonify({'success': True})
+    except Exception as e:
+        print(f"Error marking messages as read: {e}")
         return jsonify({'error': str(e)}), 500
 
 
@@ -208,3 +412,54 @@ def delete_question_route(question_id):
     except Exception as e:
         print(f"Error deleting question: {e}")
     return redirect(url_for('social.ask_grandfriend'))
+
+
+@social_bp.route('/api/cyber-challenge/<challenge_id>')
+def get_cyber_challenge_status(challenge_id):
+    """Get the status of a cyber challenge (who has answered, etc.)."""
+    try:
+        user_id = request.args.get('user', type=int)
+        if not user_id:
+            return jsonify({'error': 'User ID required'}), 400
+        
+        supabase = get_supabase()
+        
+        # Handle both numeric and string challenge IDs
+        if str(challenge_id).startswith('msg_'):
+            # This is a fallback ID using message_id
+            message_id = int(challenge_id.replace('msg_', ''))
+            result = supabase.table('cyber_challenges').select('*').eq('message_id', message_id).execute()
+        else:
+            # Direct challenge_id lookup
+            result = supabase.table('cyber_challenges').select('*').eq('challenge_id', int(challenge_id)).execute()
+        
+        if not result.data:
+            return jsonify({'found': False, 'status': 'not_found'})
+        
+        challenge = result.data[0]
+        
+        # Determine if current user has answered
+        if user_id == challenge['user1_id']:
+            my_answer = challenge.get('user1_answer')
+            partner_answer = challenge.get('user2_answer')
+        elif user_id == challenge['user2_id']:
+            my_answer = challenge.get('user2_answer')
+            partner_answer = challenge.get('user1_answer')
+        else:
+            return jsonify({'found': False, 'error': 'User not part of this challenge'})
+        
+        return jsonify({
+            'found': True,
+            'challenge_id': challenge['challenge_id'],
+            'scenario_id': challenge['scenario_id'],
+            'status': challenge['status'],
+            'my_answer': my_answer,
+            'partner_answered': partner_answer is not None,
+            'user1_id': challenge['user1_id'],
+            'user2_id': challenge['user2_id'],
+            'user1_answer': challenge.get('user1_answer'),
+            'user2_answer': challenge.get('user2_answer')
+        })
+    except Exception as e:
+        print(f"Error getting cyber challenge status: {e}")
+        return jsonify({'found': False, 'error': str(e)}), 500

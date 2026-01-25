@@ -75,17 +75,58 @@ CREATE TABLE IF NOT EXISTS messages (
     FOREIGN KEY (receiver_id) REFERENCES users(user_id)
 );
 
--- Slice of Life displays
-CREATE TABLE IF NOT EXISTS slice_of_life (
+-- Slice of Life prompts (daily questions)
+CREATE TABLE IF NOT EXISTS sol_prompts (
+    prompt_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    prompt_text TEXT NOT NULL,
+    active_date DATE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Slice of Life displays (the combined result)
+CREATE TABLE IF NOT EXISTS sol_displays (
     display_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    pair_id INTEGER NOT NULL,
-    prompt_image VARCHAR(255),
-    youth_story TEXT,
-    senior_story TEXT,
-    is_public BOOLEAN DEFAULT TRUE,
+    prompt_id INTEGER NOT NULL,
+    creator_id INTEGER NOT NULL,
+    partner_id INTEGER NOT NULL,
+    status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'completed')),
+    is_public BOOLEAN DEFAULT FALSE,
+    is_private BOOLEAN DEFAULT TRUE,
     likes INTEGER DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (pair_id) REFERENCES pairs(pair_id)
+    completed_at TIMESTAMP,
+    FOREIGN KEY (prompt_id) REFERENCES sol_prompts(prompt_id),
+    FOREIGN KEY (creator_id) REFERENCES users(user_id),
+    FOREIGN KEY (partner_id) REFERENCES users(user_id)
+);
+
+-- Slice of Life submissions (each user's contribution)
+CREATE TABLE IF NOT EXISTS sol_submissions (
+    submission_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    display_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL,
+    image_url VARCHAR(255),
+    thought TEXT,
+    comment TEXT,
+    submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (display_id) REFERENCES sol_displays(display_id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(user_id)
+);
+
+-- Slice of Life invites (pending invite requests)
+CREATE TABLE IF NOT EXISTS sol_invites (
+    invite_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    sender_id INTEGER NOT NULL,
+    recipient_id INTEGER NOT NULL,
+    prompt_id INTEGER NOT NULL,
+    display_id INTEGER,
+    status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'declined')),
+    sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    responded_at TIMESTAMP,
+    FOREIGN KEY (sender_id) REFERENCES users(user_id),
+    FOREIGN KEY (recipient_id) REFERENCES users(user_id),
+    FOREIGN KEY (prompt_id) REFERENCES sol_prompts(prompt_id),
+    FOREIGN KEY (display_id) REFERENCES sol_displays(display_id)
 );
 
 -- Communities table

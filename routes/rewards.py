@@ -2,7 +2,7 @@
 Rewards routes - Redeem, Coins
 """
 
-from flask import Blueprint, render_template
+from flask import Blueprint, render_template, session
 from models.reward import get_user_coins
 
 rewards_bp = Blueprint('rewards', __name__)
@@ -10,8 +10,12 @@ rewards_bp = Blueprint('rewards', __name__)
 @rewards_bp.route('/')
 def redeem():
     """View redeem page."""
-    user_id = 1  # TODO: Get from session after login
+    user_id = session.get('user_id')
     user_coins = get_user_coins(user_id)
+    
+    # DEBUG: Print to terminal to see what's happening
+    print(f"DEBUG: user_id from session = {user_id}")
+    print(f"DEBUG: coins retrieved = {user_coins}")
     
     # List of rewards (can be moved to database later)
     rewards = [

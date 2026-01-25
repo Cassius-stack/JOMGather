@@ -34,57 +34,96 @@
 <main>
     <div class="container px-3">
         <h1>History & Matches</h1>
-        <p>Matched:</p>
+
+        <!-- Active Matches -->
+        <p class="mt-4"><strong>Active Matches:</strong></p>
+        {% if active_matches %}
+        {% for match in active_matches %}
         <div class="card shadow-sm mb-3 border-start border-5 border-success">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-start mb-2">
-                    <h5 class="card-title text-primary mb-0">Match: Speaking Cantonese</h5>
-                    <span class="badge bg-success">ACTIVE MATCH</span>
+                    <h5 class="card-title text-primary mb-0">
+                        {{ match.help_requests.title if match.help_requests else 'Help Request' }}
+                    </h5>
+                    <span class="badge bg-{{ 'warning' if match.status == 'pending' else 'success' }}">
+                        {{ match.status.upper() }}
+                    </span>
                 </div>
 
                 <div class="text-muted small mb-3">
-                    <i class="bi bi-person-circle me-1"></i> Partner: <strong>Uncle Chan (Elderly)</strong> &bull;
-                    <i class="bi bi-geo-alt-fill me-1"></i> Location: <strong>Yishun CC, Room 3</strong>
+                    <i class="bi bi-person-circle me-1"></i>
+                    Partner: <strong>{{ match.help_requests.users.username if match.help_requests and
+                        match.help_requests.users else 'Unknown' }}</strong> &bull;
+                    <i class="bi bi-geo-alt-fill me-1"></i>
+                    Location: <strong>{{ match.help_requests.location if match.help_requests else 'TBD' }}</strong>
                 </div>
 
-                <!-- Feedback Loop -->
-                <div class="bg-light p-3 rounded border">
-                    <label class="form-label fw-bold small text-secondary">Slice of Life (Feedback):</label>
-                    <div class="input-group input-group-sm">
-                        <input type="text" class="form-control" placeholder="What did you learn today?">
-                        <button class="btn btn-success"
-                            onclick="alert('Points Awarded! Thank you for your feedback.')">Submit</button>
-                    </div>
-                </div>
+                <p class="text-muted small">{{ match.help_requests.description if match.help_requests else '' }}</p>
 
-                <div class="text-end mt-3">
-                    <button class="btn btn-outline-danger btn-sm" onclick="this.closest('.card').remove()">Cancel
-                        Match</button>
+                <div class="text-end mt-3 d-flex gap-2 justify-content-end">
+                    {% if match.status == 'accepted' %}
+                    <form action="{{ url_for('support_swap.complete_support_session', match_id=match.id) }}"
+                        method="POST">
+                        <button type="submit" class="btn btn-success btn-sm">Mark Complete</button>
+                    </form>
+                    {% endif %}
+                    <form action="{{ url_for('support_swap.cancel_match', match_id=match.id) }}" method="POST">
+                        <button type="submit" class="btn btn-outline-danger btn-sm">Cancel Match</button>
+                    </form>
                 </div>
             </div>
         </div>
-        <p>Done/Cancelled:</p>
-        <div class="card shadow-sm mb-3 border-start border-5 border-secondary px-3">
+        {% endfor %}
+        {% else %}
+        <div class="card shadow-sm mb-3">
+            <div class="card-body text-center py-4">
+                <i class="bi bi-inbox display-4 text-muted"></i>
+                <p class="text-muted mt-2">No active matches. Browse the <a
+                        href="{{ url_for('support_swap.ss_market') }}">Skills Market</a> to find help requests!</p>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Done/Cancelled Matches -->
+        <p class="mt-4"><strong>Done/Cancelled:</strong></p>
+        {% if completed_matches %}
+        {% for match in completed_matches %}
+        <div class="card shadow-sm mb-3 border-start border-5 border-secondary">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-start mb-2">
-                    <h5 class="card-title text-primary mb-0">Match: Speaking Cantonese</h5>
-                    <span class="badge bg-secondary">COMPLETED MATCH</span>
+                    <h5 class="card-title text-primary mb-0">
+                        {{ match.help_requests.title if match.help_requests else 'Help Request' }}
+                    </h5>
+                    <span class="badge bg-{{ 'secondary' if match.status == 'completed' else 'danger' }}">
+                        {{ match.status.upper() }}
+                    </span>
                 </div>
 
                 <div class="text-muted small mb-3">
-                    <i class="bi bi-person-circle me-1"></i> Partner: <strong>Uncle Tan (Elderly)</strong> &bull;
-                    <i class="bi bi-geo-alt-fill me-1"></i> Location: <strong>Yishun CC, Room 3</strong>
+                    <i class="bi bi-person-circle me-1"></i>
+                    Partner: <strong>{{ match.help_requests.users.username if match.help_requests and
+                        match.help_requests.users else 'Unknown' }}</strong> &bull;
+                    <i class="bi bi-geo-alt-fill me-1"></i>
+                    Location: <strong>{{ match.help_requests.location if match.help_requests else 'TBD' }}</strong>
                 </div>
 
-                <!-- Feedback Loop -->
+                {% if match.feedback %}
                 <div class="bg-light p-3 rounded border">
-                    <label class="form-label fw-bold small text-secondary">Slice of Life (Feedback):</label>
-                    <div class="input-group input-group-sm">
-                        <p>I have learnt how to make the wheels on my bike run smootly after applying rubricants</p>
-                    </div>
+                    <label class="form-label fw-bold small text-secondary">Feedback:</label>
+                    <p class="mb-0">{{ match.feedback }}</p>
                 </div>
+                {% endif %}
             </div>
         </div>
+        {% endfor %}
+        {% else %}
+        <div class="card shadow-sm mb-3">
+            <div class="card-body text-center py-4">
+                <p class="text-muted mb-0">No completed or cancelled matches yet.</p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
 </main>
 <footer></footer>
 {% endblock %}
