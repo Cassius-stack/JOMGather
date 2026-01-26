@@ -214,6 +214,105 @@ def delete_community(community_id):
 
 
 # ============================================
+# LEAVE/JOIN COMMUNITY ENDPOINTS
+# ============================================
+
+@community_bp.route('/api/communities/<int:community_id>/leave', methods=['POST'])
+@login_required
+def leave_community(community_id):
+    """Leave a community."""
+    try:
+        user_id = get_current_user_id()
+        supabase = get_supabase()
+        
+        # Check if user is the only admin
+        role = fetch_one('community_roles', community_id=community_id, user_id=user_id, role='admin')
+        if role:
+            # Count other admins
+            other_admins = supabase.table('community_roles').select('user_id', count='exact').eq('community_id', community_id).eq('role', 'admin').neq('user_id', user_id).execute()
+            if other_admins.count == 0:
+                return jsonify({'error': 'You are the only admin. Transfer admin rights or delete the community.'}), 400
+        
+        # Remove from community_members
+        supabase.table('community_members').delete().eq('community_id', community_id).eq('user_id', user_id).execute()
+        
+        # Remove any roles
+        supabase.table('community_roles').delete().eq('community_id', community_id).eq('user_id', user_id).execute()
+        
+        return jsonify({'success': True})
+    except Exception as e:
+        print(f"Error leaving community: {e}")
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+
+@community_bp.route('/api/communities/<int:community_id>/join', methods=['POST'])
+@login_required
+def join_community(community_id):
+    """Join a community."""
+    try:
+        user_id = get_current_user_id()
+        supabase = get_supabase()
+        
+        # Check if already a member
+        existing = fetch_one('community_members', community_id=community_id, user_id=user_id)
+        if existing:
+            return jsonify({'error': 'Already a member of this community'}), 400
+        
+        # Check if community exists
+        community = fetch_one('communities', community_id=community_id)
+        if not community:
+            return jsonify({'error': 'Community not found'}), 404
+        
+        # Add as member
+        insert('community_members', {
+            'community_id': community_id,
+            'user_id': user_id
+        })
+        
+        return jsonify({'success': True, 'message': f'Joined {community["name"]}'})
+    except Exception as e:
+        print(f"Error joining community: {e}")
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+
+@community_bp.route('/api/communities/available', methods=['GET'])
+@login_required
+def get_available_communities():
+    """Get all communities available to join (that user is not already a member of)."""
+    try:
+        user_id = get_current_user_id()
+        supabase = get_supabase()
+        
+        # Get communities user is already a member of
+        memberships = supabase.table('community_members').select('community_id').eq('user_id', user_id).execute()
+        member_ids = [m['community_id'] for m in memberships.data]
+        
+        # Get all communities
+        all_communities = supabase.table('communities').select('*').execute()
+        
+        # Filter out communities user is already a member of
+        available = []
+        for comm in all_communities.data:
+            if comm['community_id'] not in member_ids:
+                # Get member count
+                member_count = supabase.table('community_members').select('user_id', count='exact').eq('community_id', comm['community_id']).execute()
+                available.append({
+                    'id': comm['community_id'],
+                    'name': comm['name'],
+                    'description': comm.get('description', ''),
+                    'members': member_count.count or 0
+                })
+        
+        return jsonify(available)
+    except Exception as e:
+        print(f"Error fetching available communities: {e}")
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+
+# ============================================
 # CHANNEL API ENDPOINTS
 # ============================================
 

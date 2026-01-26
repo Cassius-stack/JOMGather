@@ -735,6 +735,7 @@
     // Application state
     let state = {
         communities: [],
+        availableCommunities: [],
         currentUser: { id: CURRENT_USER_ID, name: CURRENT_USERNAME },
         activeCommunityId: null,
         activeChannelId: null,
@@ -742,6 +743,7 @@
         messageText: '',
         showAddChannel: false,
         showAddCommunity: false,
+        showBrowseCommunities: false,
         showCommunitySettings: false,
         showChannelSettings: false,
         newChannelName: '',
@@ -807,7 +809,11 @@
     async function deleteCommunity() {
         if (!confirm('Delete this community? This cannot be undone.')) return;
         try {
-            await fetch(`${API_BASE}/communities/${state.activeCommunityId}`, { method: 'DELETE' });
+            const res = await fetch(`${API_BASE}/communities/${state.activeCommunityId}`, { method: 'DELETE' });
+            if (!res.ok) {
+                const data = await res.json();
+                throw new Error(data.error || 'Failed to delete community');
+            }
             state.communities = state.communities.filter(c => c.id !== state.activeCommunityId);
             state.activeCommunityId = state.communities[0]?.id || null;
             state.activeChannelId = null;
@@ -815,6 +821,59 @@
             render();
         } catch (error) {
             console.error('Error deleting community:', error);
+            alert('Failed to delete community: ' + error.message);
+        }
+    }
+
+    async function leaveCommunity() {
+        if (!confirm('Leave this community? You can rejoin later.')) return;
+        try {
+            const res = await fetch(`${API_BASE}/communities/${state.activeCommunityId}/leave`, { method: 'POST' });
+            const data = await res.json();
+            if (!res.ok) {
+                throw new Error(data.error || 'Failed to leave community');
+            }
+            state.communities = state.communities.filter(c => c.id !== state.activeCommunityId);
+            state.activeCommunityId = state.communities[0]?.id || null;
+            state.activeChannelId = null;
+            state.showCommunitySettings = false;
+            render();
+        } catch (error) {
+            console.error('Error leaving community:', error);
+            alert('Failed to leave community: ' + error.message);
+        }
+    }
+
+    async function fetchAvailableCommunities() {
+        try {
+            const res = await fetch(`${API_BASE}/communities/available`);
+            if (!res.ok) throw new Error('Failed to fetch');
+            state.availableCommunities = await res.json();
+            render();
+        } catch (error) {
+            console.error('Error fetching available communities:', error);
+            state.availableCommunities = [];
+            render();
+        }
+    }
+
+    async function joinCommunity(communityId) {
+        try {
+            const res = await fetch(`${API_BASE}/communities/${communityId}/join`, { method: 'POST' });
+            const data = await res.json();
+            if (!res.ok) {
+                throw new Error(data.error || 'Failed to join community');
+            }
+            // Refresh communities list
+            await fetchCommunities();
+            state.showBrowseCommunities = false;
+            // Select the joined community
+            state.activeCommunityId = communityId;
+            render();
+            alert(data.message || 'Successfully joined the community!');
+        } catch (error) {
+            console.error('Error joining community:', error);
+            alert('Failed to join community: ' + error.message);
         }
     }
 
@@ -1001,6 +1060,10 @@
                     <div class="add-icon"><i class="bi bi-plus-lg"></i></div>
                     <span>Create Community</span>
                 </div>
+                <div class="add-item-btn" onclick="fetchAvailableCommunities(); state.showBrowseCommunities = true; render();">
+                    <div class="add-icon" style="background-color: #e0f2fe;"><i class="bi bi-search"></i></div>
+                    <span>Browse Communities</span>
+                </div>
             </div>
 
             <!-- Channel List Pane -->
@@ -1030,6 +1093,7 @@
             <!-- Modals -->
             ${state.showAddCommunity ? renderAddCommunityModal() : ''}
             ${state.showAddChannel ? renderAddChannelModal() : ''}
+            ${state.showBrowseCommunities ? renderBrowseCommunitiesModal() : ''}
             ${state.showCommunitySettings && community ? renderCommunitySettingsModal(community) : ''}
             ${state.showChannelSettings && channel ? renderChannelSettingsModal(channel) : ''}
         `;
@@ -1042,12 +1106,18 @@
                     <i class="bi bi-people-fill"></i>
                 </div>
                 <h3>Welcome to Communities!</h3>
-                <p>You haven't joined any communities yet.<br>Create one to get started!</p>
-                <button class="btn-create" onclick="state.showAddCommunity = true; render();">
-                    <i class="bi bi-plus-lg"></i> Create Your First Community
-                </button>
+                <p>You haven't joined any communities yet.<br>Create one or browse existing communities!</p>
+                <div style="display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;">
+                    <button class="btn-create" onclick="state.showAddCommunity = true; render();">
+                        <i class="bi bi-plus-lg"></i> Create Community
+                    </button>
+                    <button class="btn-secondary" onclick="fetchAvailableCommunities(); state.showBrowseCommunities = true; render();">
+                        <i class="bi bi-search"></i> Browse Communities
+                    </button>
+                </div>
             </div>
             ${state.showAddCommunity ? renderAddCommunityModal() : ''}
+            ${state.showBrowseCommunities ? renderBrowseCommunitiesModal() : ''}
         `;
     }
 
@@ -1273,11 +1343,17 @@
                 <div class="community-modal" onclick="event.stopPropagation();">
                     <h3>Community Settings</h3>
                     <p style="color: #666; margin-bottom: 20px;">Managing: <strong>${community.name}</strong></p>
+                    
+                    <button class="btn-secondary" style="width: 100%; margin-bottom: 12px; background: #fef3c7; border-color: #f59e0b; color: #92400e;" onclick="leaveCommunity();">
+                        <i class="bi bi-box-arrow-left"></i> Leave Community
+                    </button>
+                    
                     ${isUserAdmin() ? `
                         <button class="btn-danger" style="width: 100%; margin-bottom: 12px;" onclick="deleteCommunity();">
                             <i class="bi bi-trash"></i> Delete Community
                         </button>
                     ` : ''}
+                    
                     <button class="btn-secondary" style="width: 100%;" onclick="state.showCommunitySettings = false; render();">Close</button>
                 </div>
             </div>
@@ -1294,6 +1370,43 @@
                         <i class="bi bi-trash"></i> Delete Channel
                     </button>
                     <button class="btn-secondary" style="width: 100%;" onclick="state.showChannelSettings = false; render();">Close</button>
+                </div>
+            </div>
+        `;
+    }
+
+    function renderBrowseCommunitiesModal() {
+        return `
+            <div class="community-modal-overlay" onclick="state.showBrowseCommunities = false; render();">
+                <div class="community-modal" style="width: 500px;" onclick="event.stopPropagation();">
+                    <h3>Browse Communities</h3>
+                    <p style="color: #666; margin-bottom: 20px;">Find and join existing communities</p>
+                    
+                    <div style="max-height: 300px; overflow-y: auto;">
+                        ${state.availableCommunities.length === 0 ? `
+                            <div style="text-align: center; color: #888; padding: 20px;">
+                                <i class="bi bi-emoji-frown" style="font-size: 32px;"></i>
+                                <p style="margin-top: 10px;">No communities available to join.</p>
+                            </div>
+                        ` : state.availableCommunities.map(c => `
+                            <div style="display: flex; align-items: center; padding: 12px; border: 1px solid #eee; border-radius: 10px; margin-bottom: 10px;">
+                                <div style="width: 45px; height: 45px; background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 18px; margin-right: 15px;">
+                                    <i class="bi bi-people-fill"></i>
+                                </div>
+                                <div style="flex-grow: 1;">
+                                    <h4 style="font-size: 15px; color: #1e3a5f; margin: 0;">${c.name}</h4>
+                                    <p style="font-size: 12px; color: #888; margin: 2px 0 0 0;">${c.members} members${c.description ? ' · ' + c.description.substring(0, 50) + (c.description.length > 50 ? '...' : '') : ''}</p>
+                                </div>
+                                <button class="btn-create" style="padding: 8px 16px; font-size: 13px;" onclick="joinCommunity(${c.id});">
+                                    Join
+                                </button>
+                            </div>
+                        `).join('')}
+                    </div>
+                    
+                    <div class="modal-actions" style="margin-top: 20px;">
+                        <button class="btn-secondary" style="width: 100%;" onclick="state.showBrowseCommunities = false; render();">Close</button>
+                    </div>
                 </div>
             </div>
         `;
