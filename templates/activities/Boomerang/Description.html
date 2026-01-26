@@ -651,38 +651,36 @@
                             <i class="bi bi-clock-history"></i> Recent Chats
                         </div>
 
-                        <!-- Today Section -->
+                        <!-- Dynamic Recent Chats -->
+                        {% if recent_chats %}
                         <div class="history-section">
-                            <div class="history-date">📅 Today</div>
+                            <div class="history-date">📅 Recent</div>
+                            {% for chat in recent_chats %}
                             <div class="history-item">
                                 <div class="history-info">
-                                    <span class="history-name">Marcus Lim</span>
-                                    <span class="history-time">10 min chat</span>
+                                    <span class="history-name">{{ chat.partner_name }}</span>
+                                    <span class="history-time">{{ chat.duration }}</span>
                                 </div>
-                                <button class="btn-add"><i class="bi bi-person-plus"></i> Add</button>
+                                {% if chat.is_friend %}
+                                <a href="{{ url_for('social.social_hub', chat_user=chat.partner_id) }}" class="btn-add"
+                                    style="background: #e6fcf5; color: #0ca678;">
+                                    <i class="bi bi-chat-dots-fill"></i> Chat
+                                </a>
+                                {% else %}
+                                <button class="btn-add" onclick="sendFriendRequest('{{ chat.partner_id }}', this)">
+                                    <i class="bi bi-person-plus"></i> Add
+                                </button>
+                                {% endif %}
                             </div>
+                            {% endfor %}
                         </div>
-
-                        <!-- Yesterday Section -->
-                        <div class="history-section">
-                            <div class="history-date">📅 Yesterday</div>
-                            <div class="history-item">
-                                <div class="history-info">
-                                    <span class="history-name">Sarah Wong</span>
-                                    <span class="history-time">5 min chat</span>
-                                </div>
-                                <button class="btn-add"><i class="bi bi-person-plus"></i> Add</button>
-                            </div>
-                            <div class="history-item">
-                                <div class="history-info">
-                                    <span class="history-name">James Chia</span>
-                                    <span class="history-time">8 min chat</span>
-                                </div>
-                                <button class="btn-add"><i class="bi bi-person-plus"></i> Add</button>
-                            </div>
+                        <div class="text-center mt-3">
+                            <a href="{{ url_for('activities.boomerang_history') }}"
+                                style="color: #3B5BDB; text-decoration: none; font-weight: 600;">View All History</a>
                         </div>
-
-                        <div class="no-history">That's all your recent chats! 🌸</div>
+                        {% else %}
+                        <div class="no-history">No recent chats. Start one now! 🌸</div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -690,41 +688,36 @@
 
         <!-- Friends Tab -->
         <div id="friends" class="tab-content">
-            <h2><i class="bi bi-heart-fill" style="color: #e74c3c;"></i> Your Chat Friends</h2>
-            <p class="subtitle">These are the wonderful people you've connected with.
-                Call them anytime for a friendly chat! 💬</p>
+            <h2><i class="bi bi-heart-fill" style="color: #e74c3c;"></i> Boomerang Friends</h2>
+            <p class="subtitle">These are the wonderful people you've met on Boomerang.
+                Call them anytime! 💬</p>
 
             <div class="friends-list">
+                {% if friends %}
+                {% for friend in friends %}
                 <div class="friend-card">
                     <div class="friend-info">
-                        <div class="friend-avatar">ML</div>
+                        <div class="friend-avatar">{{ friend.wb_avatar }}</div>
                         <div class="friend-details">
-                            <h4>Mdm. Lim Siew Eng</h4>
-                            <span><span class="status-dot"></span> Online now</span>
+                            <h4>{{ friend.username }}</h4>
+                            <span>
+                                <span class="status-dot {{ 'online' if friend.is_online else 'offline' }}"></span>
+                                {{ 'Online now' if friend.is_online else 'Offline' }}
+                            </span>
                         </div>
                     </div>
-                    <button class="btn-call"><i class="bi bi-telephone-fill"></i> Call Now</button>
+                    <a href="{{ url_for('social.social_hub', chat_user=friend.user_id) }}" class="btn-call">
+                        <i class="bi bi-chat-dots-fill"></i> Chat
+                    </a>
                 </div>
-                <div class="friend-card">
-                    <div class="friend-info">
-                        <div class="friend-avatar">MT</div>
-                        <div class="friend-details">
-                            <h4>Mr. Tan Ah Kow</h4>
-                            <span><span class="status-dot offline"></span> Last seen 2 hours ago</span>
-                        </div>
-                    </div>
-                    <button class="btn-call"><i class="bi bi-telephone-fill"></i> Call Now</button>
+                {% endfor %}
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-emoji-frown" style="font-size: 3rem; color: #ccc;"></i>
+                    <p class="text-muted mt-3">You don't have any friends yet.</p>
+                    <p class="text-muted">Meet people in Boomerang to add them!</p>
                 </div>
-                <div class="friend-card">
-                    <div class="friend-info">
-                        <div class="friend-avatar">SW</div>
-                        <div class="friend-details">
-                            <h4>Sarah Wong (Student)</h4>
-                            <span><span class="status-dot"></span> Online now</span>
-                        </div>
-                    </div>
-                    <button class="btn-call"><i class="bi bi-telephone-fill"></i> Call Now</button>
-                </div>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -743,5 +736,30 @@
             document.getElementById(btn.dataset.tab).classList.add('active');
         });
     });
+
+    async function sendFriendRequest(userId, btn) {
+        try {
+            const response = await fetch('/social/api/friend-request', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ target_id: userId })
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                btn.innerHTML = '<i class="bi bi-check-lg"></i> Sent';
+                btn.disabled = true;
+                btn.style.background = '#d3f9d8';
+                btn.style.color = '#2b8a3e';
+            } else {
+                alert(data.error || 'Failed to send request');
+            }
+        } catch (e) {
+            console.error(e);
+            alert('Error sending request');
+        }
+    }
 </script>
 {% endblock %}
