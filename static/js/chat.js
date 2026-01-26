@@ -157,7 +157,8 @@ socket.on('new_message', (data) => {
             appendMessage({
                 id: data.id,
                 type: messageType,
-                text: data.text
+                text: data.text,
+                image_url: data.image_url
             });
         }
     } else if (messageType === 'received') {
@@ -167,7 +168,13 @@ socket.on('new_message', (data) => {
     }
 
     // Always update the contact preview
-    const previewText = data.is_cyber_challenge ? '🎮 Cyber Challenge!' : data.text;
+    let previewText = data.text;
+    if (data.is_cyber_challenge) {
+        previewText = '🎮 Cyber Challenge!';
+    } else if (!data.text && data.image_url) {
+        previewText = '📷 Photo';
+    }
+
     updateContactPreview(otherUserId, previewText, messageType);
 
     // Move this contact to top of the list
@@ -406,11 +413,14 @@ function appendMessage(msg) {
     if (msg.id) messageDiv.dataset.messageId = msg.id;
 
     // Add action buttons for sent messages
+    const showEdit = !msg.image_url;
     const actionsHtml = msg.type === 'sent' ? `
         <div class="message-actions">
+            ${showEdit ? `
             <button class="message-action-btn edit" title="Edit message" onclick="startEditMessage(this)">
                 <i class="bi bi-pencil"></i>
             </button>
+            ` : ''}
             <button class="message-action-btn delete" title="Delete message" onclick="showDeleteModal(this)">
                 <i class="bi bi-trash"></i>
             </button>
@@ -419,12 +429,23 @@ function appendMessage(msg) {
 
     const editedIndicator = msg.edited ? '<span class="edited-indicator">(edited)</span>' : '';
 
+    // Image HTML
+    const imageHtml = msg.image_url ? `
+        <div class="message-image" style="margin-bottom: 5px;">
+            <img src="${msg.image_url}" alt="Attachment" style="max-width: 200px; border-radius: 8px; cursor: pointer;" onclick="window.open(this.src, '_blank')">
+        </div>
+    ` : '';
+
     messageDiv.innerHTML = `
         ${actionsHtml}
         <div class="bubble">
-            <p>${msg.text}</p>
+            ${imageHtml}
+            ${msg.text ? `<p style="margin: 0;">${msg.text}</p>` : ''}
             ${editedIndicator}
             ${msg.type === 'sent' ? `<span class="message-tick ${msg.read ? 'read' : ''}"><i class="bi bi-check${msg.read ? '-all' : ''}"></i></span>` : ''}
+        </div>
+        <div class="msg-actions-chat">
+            <button class="react-btn" onclick="toggleReactionPicker(this)" title="Add reaction">😊</button>
         </div>
     `;
 
@@ -556,11 +577,14 @@ function renderMessages(messages) {
             checkAndUpdateChallengeCard(effectiveChallengeId, effectiveScenarioId);
         } else {
             // Add action buttons for sent messages
+            const showEdit = !msg.image_url;
             const actionsHtml = msg.type === 'sent' ? `
                 <div class="message-actions">
+                    ${showEdit ? `
                     <button class="message-action-btn edit" title="Edit message" onclick="startEditMessage(this)">
                         <i class="bi bi-pencil"></i>
                     </button>
+                    ` : ''}
                     <button class="message-action-btn delete" title="Delete message" onclick="showDeleteModal(this)">
                         <i class="bi bi-trash"></i>
                     </button>
@@ -569,13 +593,24 @@ function renderMessages(messages) {
 
             const editedIndicator = msg.edited ? '<span class="edited-indicator">(edited)</span>' : '';
 
+            // Image HTML
+            const imageHtml = msg.image_url ? `
+                <div class="message-image" style="margin-bottom: 5px;">
+                    <img src="${msg.image_url}" alt="Attachment" style="max-width: 200px; border-radius: 8px; cursor: pointer;" onclick="window.open(this.src, '_blank')">
+                </div>
+            ` : '';
+
             chatMessages.innerHTML += `
                 <div class="message ${msg.type}" data-message-id="${msg.id || ''}">
                     ${actionsHtml}
                     <div class="bubble">
-                        <p>${msg.text}</p>
+                        ${imageHtml}
+                        ${msg.text ? `<p style="margin: 0;">${msg.text}</p>` : ''}
                         ${editedIndicator}
                         ${msg.type === 'sent' ? `<span class="message-tick ${msg.read ? 'read' : ''}"><i class="bi bi-check${msg.read ? '-all' : ''}"></i></span>` : ''}
+                    </div>
+                    <div class="msg-actions-chat">
+                        <button class="react-btn" onclick="toggleReactionPicker(this)" title="Add reaction">😊</button>
                     </div>
                 </div>
             `;
@@ -638,7 +673,8 @@ async function checkAndUpdateChallengeCard(challengeId, scenarioId) {
 function startEditMessage(button) {
     const messageDiv = button.closest('.message');
     const bubble = messageDiv.querySelector('.bubble');
-    const currentText = bubble.querySelector('p').textContent;
+    const pElement = bubble.querySelector('p');
+    const currentText = pElement ? pElement.textContent : '';
     const messageId = messageDiv.dataset.messageId;
 
     // Hide the bubble and show edit input
@@ -726,14 +762,15 @@ function cancelEditMessage(button) {
 function showDeleteModal(button) {
     const messageDiv = button.closest('.message');
     const messageId = messageDiv.dataset.messageId;
-    const messageText = messageDiv.querySelector('.bubble p').textContent;
+    const pElement = messageDiv.querySelector('.bubble p');
+    const messageText = pElement ? pElement.textContent : 'Photo attachment';
 
     // Create modal overlay
     const overlay = document.createElement('div');
     overlay.className = 'delete-modal-overlay';
     overlay.innerHTML = `
         <div class="delete-modal">
-            <h4>Delete Message?</h4>
+            <h4><i class="bi bi-exclamation-triangle"></i> Delete Message?</h4>
             <p>"${messageText.substring(0, 50)}${messageText.length > 50 ? '...' : ''}"</p>
             <div class="delete-modal-actions">
                 <button class="confirm-delete">Delete</button>
@@ -795,6 +832,83 @@ function deleteMessage(messageId, messageDiv) {
     setTimeout(() => {
         messageDiv.remove();
     }, 300);
+}
+
+// ============================================
+// REACTION FUNCTIONS
+// ============================================
+
+const chatEmojis = ['👍', '❤️', '🎉'];
+
+/**
+ * Toggle reaction emoji picker for a message
+ */
+function toggleReactionPicker(button) {
+    // Close any existing emoji picker
+    const existingPicker = document.querySelector('.emoji-picker-chat');
+    if (existingPicker) {
+        existingPicker.remove();
+    }
+
+    const messageDiv = button.closest('.message');
+    const messageId = messageDiv.dataset.messageId;
+
+    // Create emoji picker
+    const picker = document.createElement('div');
+    picker.className = 'emoji-picker-chat';
+    picker.innerHTML = chatEmojis.map(e =>
+        `<button onclick="addReactionToMessage('${messageId}', '${e}', this)">${e}</button>`
+    ).join('');
+
+    // Position it near the button
+    button.parentElement.appendChild(picker);
+
+    // Close picker when clicking outside
+    document.addEventListener('click', function closePicker(e) {
+        if (!picker.contains(e.target) && e.target !== button) {
+            picker.remove();
+            document.removeEventListener('click', closePicker);
+        }
+    });
+}
+
+/**
+ * Add a reaction emoji to a message (visual only for now)
+ */
+function addReactionToMessage(messageId, emoji, button) {
+    const picker = button.closest('.emoji-picker-chat');
+    const messageDiv = document.querySelector(`[data-message-id="${messageId}"]`);
+
+    if (messageDiv) {
+        // Check if reactions container exists
+        let reactionsDiv = messageDiv.querySelector('.msg-reactions-chat');
+        if (!reactionsDiv) {
+            reactionsDiv = document.createElement('div');
+            reactionsDiv.className = 'msg-reactions-chat';
+            messageDiv.querySelector('.bubble').after(reactionsDiv);
+        }
+
+        // Check if this emoji already exists
+        let badge = reactionsDiv.querySelector(`[data-emoji="${emoji}"]`);
+        if (badge) {
+            // Increment count
+            const count = parseInt(badge.dataset.count || 1) + 1;
+            badge.dataset.count = count;
+            badge.textContent = `${emoji} ${count}`;
+        } else {
+            // Add new reaction badge
+            badge = document.createElement('span');
+            badge.className = 'reaction-badge-chat';
+            badge.dataset.emoji = emoji;
+            badge.dataset.count = 1;
+            badge.textContent = `${emoji} 1`;
+            badge.onclick = () => addReactionToMessage(messageId, emoji, badge);
+            reactionsDiv.appendChild(badge);
+        }
+    }
+
+    // Remove picker
+    if (picker) picker.remove();
 }
 
 // ============================================
@@ -1390,16 +1504,22 @@ function switchContact(contactId, contactName, contactStatus) {
 /**
  * Send a new message using Socket.IO
  */
-function sendMessage() {
+// Store the selected file
+let selectedImageFile = null;
+
+/**
+ * Send a new message using Socket.IO
+ */
+async function sendMessage() {
     const text = messageInput.value.trim();
-    if (!text) return;
 
-    // Check for !cyber command
+    // Check for !cyber command (Dev tool for testing scenarios)
     if (text.toLowerCase() === '!cyber') {
-        // Pick a random scenario and send it with the challenge
-        const randomScenario = cyberScenarios[Math.floor(Math.random() * cyberScenarios.length)];
+        // Determine a valid random scenario
+        const randomScenario = typeof cyberScenarios !== 'undefined' && cyberScenarios.length > 0
+            ? cyberScenarios[Math.floor(Math.random() * cyberScenarios.length)]
+            : { id: 1 }; // Fallback
 
-        // Send cyber challenge as a special message type
         socket.emit('send_message', {
             sender_id: CURRENT_USER_ID,
             receiver_id: currentContactId,
@@ -1411,16 +1531,98 @@ function sendMessage() {
         return;
     }
 
-    // Send via Socket.IO (real-time!)
-    socket.emit('send_message', {
+    if (!text && !selectedImageFile) return;
+    if (!currentContactId) return;
+
+    let imageUrl = null;
+
+    // Upload image if selected
+    if (selectedImageFile) {
+        // Show uploading state
+        const sendBtn = document.getElementById('send-btn');
+        const originalIcon = sendBtn.innerHTML;
+        sendBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+        sendBtn.disabled = true;
+
+        try {
+            const formData = new FormData();
+            formData.append('file', selectedImageFile);
+
+            const response = await fetch('/social/api/upload_image', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) throw new Error('Upload failed');
+
+            const data = await response.json();
+            imageUrl = data.url;
+
+        } catch (error) {
+            console.error('Error uploading image:', error);
+            alert('Failed to upload image. Please try again.');
+            sendBtn.innerHTML = originalIcon;
+            sendBtn.disabled = false;
+            return;
+        } finally {
+            sendBtn.innerHTML = originalIcon;
+            sendBtn.disabled = false;
+        }
+    }
+
+    const payload = {
         sender_id: CURRENT_USER_ID,
         receiver_id: currentContactId,
-        content: text
-    });
+        content: text,
+        image_url: imageUrl
+    };
 
-    // Clear input
+    socket.emit('send_message', payload);
+
     messageInput.value = '';
+
+    // Clear image selection
+    selectedImageFile = null;
+    document.getElementById('image-preview-container').style.display = 'none';
+    document.getElementById('image-preview').src = '';
+    document.getElementById('image-input').value = ''; // Reset file input
 }
+
+// --- Image Upload Event Listeners ---
+document.addEventListener('DOMContentLoaded', () => {
+    const clipBtn = document.getElementById('clip-btn');
+    const imageInput = document.getElementById('image-input');
+    const imagePreviewContainer = document.getElementById('image-preview-container');
+    const imagePreview = document.getElementById('image-preview');
+    const removeImageBtn = document.getElementById('remove-image-btn');
+
+    if (clipBtn && imageInput) {
+        clipBtn.addEventListener('click', () => {
+            imageInput.click();
+        });
+
+        imageInput.addEventListener('change', (e) => {
+            if (e.target.files && e.target.files[0]) {
+                selectedImageFile = e.target.files[0];
+
+                // Show preview
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    imagePreview.src = e.target.result;
+                    imagePreviewContainer.style.display = 'flex';
+                };
+                reader.readAsDataURL(selectedImageFile);
+            }
+        });
+
+        removeImageBtn.addEventListener('click', () => {
+            selectedImageFile = null;
+            imageInput.value = '';
+            imagePreviewContainer.style.display = 'none';
+            imagePreview.src = '';
+        });
+    }
+});
 
 // ============================================
 // TYPING INDICATOR

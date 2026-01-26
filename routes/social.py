@@ -226,11 +226,47 @@ def accept_friend_request():
         current_user_id = get_current_user_id()
         requester_id = request.json.get('requester_id')
         
+        if not requester_id:
+            return jsonify({'error': 'Missing requester_id'}), 400
+            
         supabase = get_supabase()
         # Update status to accepted
         # user_id_1 is requester, user_id_2 is current_user
         supabase.table('friendships').update({'status': 'accepted'}).eq('user_id_1', requester_id).eq('user_id_2', current_user_id).execute()
         
+        # Clear the specific notification for this friend request
+        try:
+            msg_frag = f"sent you a friend request!"
+            supabase.table('notifications').delete().eq('user_id', current_user_id).ilike('message', f'%{msg_frag}%').execute()
+        except:
+            pass
+            
+        return jsonify({'success': True})
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+@social_bp.route('/api/friend-reject', methods=['POST'])
+def reject_friend_request():
+    """Reject a friend request."""
+    try:
+        current_user_id = get_current_user_id()
+        requester_id = request.json.get('requester_id')
+        
+        if not requester_id:
+            return jsonify({'error': 'Missing requester_id'}), 400
+            
+        supabase = get_supabase()
+        # Delete the pending friendship record
+        supabase.table('friendships').delete().eq('user_id_1', requester_id).eq('user_id_2', current_user_id).eq('status', 'pending').execute()
+        
+        # Clear notification
+        try:
+            msg_frag = f"sent you a friend request!"
+            supabase.table('notifications').delete().eq('user_id', current_user_id).ilike('message', f'%{msg_frag}%').execute()
+        except:
+            pass
+            
         return jsonify({'success': True})
     except Exception as e:
         traceback.print_exc()
@@ -340,6 +376,43 @@ def mark_messages_read(contact_id):
         return jsonify({'error': str(e)}), 500
 
 
+@social_bp.route('/api/upload_image', methods=['POST'])
+def upload_chat_image():
+    """Upload an image for chat."""
+    try:
+        if 'file' not in request.files:
+            return jsonify({'error': 'No file part'}), 400
+        
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({'error': 'No selected file'}), 400
+            
+        if file:
+            import os
+            from werkzeug.utils import secure_filename
+            
+            # Ensure upload directory exists
+            upload_folder = os.path.join('static', 'uploads', 'chat')
+            os.makedirs(upload_folder, exist_ok=True)
+            
+            filename = secure_filename(file.filename)
+            # Add timestamp to prevent duplicates
+            import time
+            timestamp = int(time.time())
+            filename = f"{timestamp}_{filename}"
+            
+            file_path = os.path.join(upload_folder, filename)
+            file.save(file_path)
+            
+            # Return web-accessible URL
+            url = f"/static/uploads/chat/{filename}"
+            return jsonify({'url': url})
+            
+    except Exception as e:
+        print(f"Error uploading image: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
 @social_bp.route('/api/messages/<int:contact_id>')
 def get_messages(contact_id):
     """Get messages between current user and a contact."""
@@ -359,7 +432,8 @@ def get_messages(contact_id):
             'type': 'sent' if m['sender_id'] == current_user_id else 'received',
             'text': m['content'],
             'time': m['sent_at'],
-            'read': m.get('read', False)
+            'read': m.get('read', False),
+            'image_url': m.get('image_url')
         } for m in messages])
     except Exception as e:
         print(f"Error in get_messages: {e}")

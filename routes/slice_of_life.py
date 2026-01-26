@@ -376,6 +376,9 @@ def review(display_id):
                 # Refresh submissions
                 submissions = fetch_all('sol_submissions', display_id=display_id)
     
+    # Sort submissions: Current user ALWAYS first (on the left)
+    submissions.sort(key=lambda x: x['user_id'] != get_current_user_id())
+    
     return render_template('slice_of_life/review.html', 
                          display=display, 
                          prompt=prompt, 
@@ -385,6 +388,23 @@ def review(display_id):
                          comments=comments,
                          like_count=like_count,
                          has_liked=has_liked)
+
+
+@slice_of_life_bp.route('/edit-story/<int:submission_id>', methods=['POST'])
+@login_required
+def edit_my_story(submission_id):
+    """Allow user to edit their own thought/story before publishing."""
+    submission = fetch_one('sol_submissions', submission_id=submission_id)
+    if not submission or submission['user_id'] != get_current_user_id():
+        flash('Unauthorized or submission not found', 'danger')
+        return redirect(url_for('slice_of_life.index'))
+    
+    new_story = request.form.get('story')
+    if new_story:
+        update('sol_submissions', {'thought': new_story}, submission_id=submission_id)
+        flash('Story updated!', 'success')
+    
+    return redirect(url_for('slice_of_life.review', display_id=submission['display_id']))
 
 
 @slice_of_life_bp.route('/publish/<int:display_id>', methods=['POST'])
@@ -450,14 +470,10 @@ def publish(display_id):
         else:
             last_date = datetime.fromisoformat(last_date_str).date()
             if last_date == today_date:
-                # Already done today, keep streak but maybe don't award coins again?
-                # User said: "Just as long as they do it once per day. multiple times a day does not increase it at all."
-                # Coins were already awarded above. I'll stick to 10 per publish for now as incentive unless specified otherwise.
                 should_update_date = False
             elif last_date == yesterday_date:
                 new_streak += 1
             else:
-                # Streak broken
                 new_streak = 1
                 
         if should_update_date:
@@ -634,9 +650,10 @@ def catalog():
         subs = fetch_all('sol_submissions', display_id=d['display_id'])
         d['submissions'] = subs
         
-        # Like count
-        l_count = len(fetch_all('sol_likes', display_id=d['display_id']))
-        d['likes'] = l_count
+        # Like count and has_liked
+        l_res = fetch_all('sol_likes', display_id=d['display_id'])
+        d['likes'] = len(l_res)
+        d['has_liked'] = any(l['user_id'] == current_uid for l in l_res)
         
         # Top 3 Comments
         all_comments = fetch_all('sol_comments', display_id=d['display_id'])
