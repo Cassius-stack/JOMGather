@@ -1,0 +1,331 @@
+{% extends "base.html" %}
+
+{% block title %}Generational Jukebox - JOMGather{% endblock %}
+
+{% block head %}
+<style>
+    :root {
+        --neon-blue: #00f3ff;
+        --neon-pink: #bc13fe;
+        --deep-bg: #1a1a2e;
+        --card-bg: #16213e;
+    }
+
+    body {
+        background-color: var(--deep-bg);
+        color: white;
+    }
+
+    .jukebox-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        min-height: 80vh;
+        padding: 2rem;
+    }
+
+    /* Wheel Styles */
+    .wheel-container {
+        position: relative;
+        width: 350px;
+        height: 350px;
+        margin: 2rem 0;
+    }
+
+    .wheel {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        border: 10px solid #fff;
+        position: relative;
+        transition: transform 4s cubic-bezier(0.17, 0.67, 0.12, 0.99);
+        background: conic-gradient(#ff6b6b 0 60deg,
+                #feca57 60deg 120deg,
+                #48dbfb 120deg 180deg,
+                #ff9ff3 180deg 240deg,
+                #54a0ff 240deg 300deg,
+                #1dd1a1 300deg 360deg);
+        box-shadow: 0 0 20px rgba(0, 243, 255, 0.5);
+    }
+
+    .wheel-arrow {
+        position: absolute;
+        top: -20px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 0;
+        height: 0;
+        border-left: 20px solid transparent;
+        border-right: 20px solid transparent;
+        border-top: 40px solid white;
+        z-index: 10;
+        filter: drop-shadow(0 4px 4px rgba(0, 0, 0, 0.5));
+    }
+
+    .spin-btn {
+        margin-top: 2rem;
+        padding: 1rem 3rem;
+        font-size: 1.5rem;
+        font-weight: bold;
+        background: linear-gradient(45deg, var(--neon-pink), var(--neon-blue));
+        border: none;
+        border-radius: 50px;
+        color: white;
+        cursor: pointer;
+        transition: transform 0.2s, box-shadow 0.2s;
+        box-shadow: 0 0 15px rgba(188, 19, 254, 0.5);
+    }
+
+    .spin-btn:hover {
+        transform: scale(1.05);
+        box-shadow: 0 0 25px rgba(188, 19, 254, 0.8);
+    }
+
+    .spin-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    /* Song Card Result */
+    .song-result {
+        margin-top: 2rem;
+        background: var(--card-bg);
+        border-radius: 15px;
+        padding: 2rem;
+        width: 100%;
+        max-width: 500px;
+        text-align: center;
+        opacity: 0;
+        transform: translateY(20px);
+        transition: all 0.5s ease;
+        display: none;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .song-result.show {
+        opacity: 1;
+        transform: translateY(0);
+        display: block;
+    }
+
+    .song-source-icon {
+        font-size: 2rem;
+        margin-bottom: 1rem;
+    }
+
+    .song-title {
+        font-size: 1.5rem;
+        margin-bottom: 0.5rem;
+        color: var(--neon-blue);
+    }
+
+    .song-recommender {
+        color: #aaa;
+        font-style: italic;
+        margin-bottom: 1.5rem;
+    }
+
+    /* Rating Stars */
+    .rating-container {
+        display: flex;
+        justify-content: center;
+        gap: 0.5rem;
+        margin: 1.5rem 0;
+    }
+
+    .star-btn {
+        background: none;
+        border: none;
+        font-size: 2rem;
+        color: #444;
+        cursor: pointer;
+        transition: color 0.2s;
+    }
+
+    .star-btn.active,
+    .star-btn:hover {
+        color: #ffd700;
+    }
+
+    .loading-text {
+        color: #aaa;
+        margin-top: 1rem;
+        font-style: italic;
+        display: none;
+    }
+
+    .history-section {
+        margin-top: 4rem;
+        width: 100%;
+        max-width: 800px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="jukebox-container">
+    <div class="text-center mb-4">
+        <h1 class="display-4 fw-bold">Generational Jukebox</h1>
+        <p class="lead text-light">Spin the wheel to discover songs shared by your community!</p>
+    </div>
+
+    <div class="wheel-container">
+        <div class="wheel-arrow"></div>
+        <div class="wheel" id="wheel"></div>
+    </div>
+
+    <button id="spinBtn" class="spin-btn">SPIN THE WHEEL!</button>
+    <div id="loadingText" class="loading-text">Selecting a song from the archives...</div>
+
+    <!-- Result Card -->
+    <div id="resultCard" class="song-result">
+        <div id="sourceIcon" class="song-source-icon">🎵</div>
+        <h2 id="songTitle" class="song-title">Song Title</h2>
+        <p class="song-recommender">Recommended by <span id="recommenderName">User</span></p>
+
+        <div class="mb-4">
+            <a id="songLink" href="#" target="_blank" class="btn btn-outline-light rounded-pill px-4">
+                <i class="bi bi-play-fill"></i> Listen Now
+            </a>
+        </div>
+
+        <div class="rating-section" id="ratingSection">
+            <p>Rate this song:</p>
+            <div class="rating-container">
+                <button class="star-btn" data-rating="1">★</button>
+                <button class="star-btn" data-rating="2">★</button>
+                <button class="star-btn" data-rating="3">★</button>
+                <button class="star-btn" data-rating="4">★</button>
+                <button class="star-btn" data-rating="5">★</button>
+            </div>
+            <button id="submitRating" class="btn btn-sm btn-primary mt-2" disabled>Submit Rating</button>
+        </div>
+        <div id="ratingSuccess" class="text-success mt-2" style="display: none;">
+            <i class="bi bi-check-circle"></i> Rating submitted!
+        </div>
+    </div>
+</div>
+
+<script>
+    const communityId = {{ community_id | default (1) }};
+    const spinBtn = document.getElementById('spinBtn');
+    const wheel = document.getElementById('wheel');
+    const resultCard = document.getElementById('resultCard');
+    const loadingText = document.getElementById('loadingText');
+
+    let currentRotation = 0;
+    let currentSongId = null;
+
+    spinBtn.addEventListener('click', async () => {
+        // Reset UI
+        resultCard.classList.remove('show');
+        spinBtn.disabled = true;
+        loadingText.style.display = 'block';
+        document.getElementById('ratingSection').style.display = 'block';
+        document.getElementById('ratingSuccess').style.display = 'none';
+
+        try {
+            // 1. Get a random song from API
+            const response = await fetch('/jukebox/api/spin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ community_id: communityId })
+            });
+
+            const data = await response.json();
+
+            if (!data.success) {
+                alert(data.error || 'Failed to spin wheel');
+                spinBtn.disabled = false;
+                loadingText.style.display = 'none';
+                return;
+            }
+
+            // 2. Animate Wheel
+            const spins = 5; // Minimum full rotations
+            const degrees = spins * 360 + Math.floor(Math.random() * 360);
+            currentRotation += degrees;
+            wheel.style.transform = `rotate(${currentRotation}deg)`;
+
+            // 3. Wait for animation
+            setTimeout(() => {
+                showResult(data.song);
+                spinBtn.disabled = false;
+                loadingText.style.display = 'none';
+            }, 4000);
+
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Something went wrong. Please try again.');
+            spinBtn.disabled = false;
+            loadingText.style.display = 'none';
+        }
+    });
+
+    function showResult(song) {
+        currentSongId = song.id;
+
+        // Update Content
+        document.getElementById('songTitle').textContent = song.title;
+        document.getElementById('recommenderName').textContent = song.userName;
+        document.getElementById('songLink').href = song.url;
+
+        // Set Icon
+        const iconDiv = document.getElementById('sourceIcon');
+        if (song.source === 'youtube') iconDiv.innerHTML = '<i class="bi bi-youtube text-danger"></i>';
+        else if (song.source === 'spotify') iconDiv.innerHTML = '<i class="bi bi-spotify text-success"></i>';
+        else iconDiv.innerHTML = '🎵';
+
+        // Show Card
+        resultCard.classList.add('show');
+    }
+
+    // Rating Logic
+    let currentRating = 0;
+    const stars = document.querySelectorAll('.star-btn');
+    const submitRatingBtn = document.getElementById('submitRating');
+
+    stars.forEach(star => {
+        star.addEventListener('click', () => {
+            currentRating = parseInt(star.dataset.rating);
+            updateStars(currentRating);
+            submitRatingBtn.disabled = false;
+        });
+    });
+
+    function updateStars(rating) {
+        stars.forEach(s => {
+            if (parseInt(s.dataset.rating) <= rating) s.classList.add('active');
+            else s.classList.remove('active');
+        });
+    }
+
+    submitRatingBtn.addEventListener('click', async () => {
+        if (!currentSongId || !currentRating) return;
+
+        try {
+            const response = await fetch('/jukebox/api/rate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    community_id: communityId,
+                    song_id: currentSongId,
+                    song_title: document.getElementById('songTitle').textContent,
+                    rating: currentRating
+                })
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                document.getElementById('ratingSection').style.display = 'none';
+                document.getElementById('ratingSuccess').style.display = 'block';
+            } else {
+                alert(data.error);
+            }
+        } catch (error) {
+            console.error(error);
+            alert('Failed to submit rating');
+        }
+    });
+</script>
+{% endblock %}
