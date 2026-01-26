@@ -199,11 +199,10 @@
                                 </li>
                             </ul>
                         </div>
-                    </div> <!-- End Right Side -->
-                </div> <!-- End d-flex w-100 -->
-                {% endif %}
-            </div> <!-- End navbar-collapse -->
-        </div> <!-- End container -->
+                    </div>
+                    {% endif %}
+                </div> <!-- End navbar-collapse -->
+            </div> <!-- End container -->
     </nav>
 
     <!-- Flash Messages -->
@@ -241,6 +240,34 @@
 
     <!-- Social Modals -->
     {% include "social/modals.html" %}
+
+    <!-- Logout Confirmation Script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var logoutBtn = document.getElementById('logoutBtn');
+            var logoutPopup = document.getElementById('logoutConfirmPopup');
+
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    logoutPopup.style.display = 'flex';
+                });
+            }
+        });
+
+        function hideLogoutConfirm() {
+            document.getElementById('logoutConfirmPopup').style.display = 'none';
+        }
+
+        // Also close popup when clicking outside
+        document.addEventListener('click', function (e) {
+            var popup = document.getElementById('logoutConfirmPopup');
+            if (popup && e.target === popup) {
+                popup.style.display = 'none';
+            }
+        });
+    </script>
 
     {% block scripts %}{% endblock %}
 </body>

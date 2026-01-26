@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Profile - JOMGather{% endblock %}
+
+{% block content %}
+<main>
+    <div class="container py-5">
+
+        <form method="POST" action="{{ url_for('profile.edit_personal') }}" enctype="multipart/form-data">
+            <div class="row justify-content-center mb-5">
+                <div class="col-md-8 text-center">
+
+                    <div class="position-relative d-inline-block mb-4">
+                        <label for="avatarUpload" class="cursor-pointer" style="cursor: pointer;"
+                            title="Change Profile Picture">
+                            <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto bg-primary-subtle border border-3 border-light shadow-sm"
+                                style="width: 180px; height: 180px; overflow: hidden;">
+                                <i class="bi bi-person-circle text-primary" style="font-size: 6rem;"></i>
+                            </div>
+
+                            <div
+                                class="position-absolute bottom-0 end-0 bg-white rounded-circle p-2 shadow-sm border border-2 border-light">
+                                <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center"
+                                    style="width: 32px; height: 32px;">
+                                    <i class="bi bi-camera-fill text-white small"></i>
+                                </div>
+                            </div>
+                        </label>
+                        <input type="file" class="d-none" id="avatarUpload" name="avatar" accept="image/*">
+                    </div>
+
+                    <h2 class="fw-bold text-dark">Edit Profile</h2>
+                    <p class="text-secondary">Update your personal details and preferences</p>
+                </div>
+            </div>
+
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+
+                    <div class="card border-0 shadow-sm mb-4">
+                        <div class="card-header bg-transparent border-0 pt-4 px-4">
+                            <h5 class="mb-0 fw-bold text-primary"><i class="bi bi-person-vcard me-2"></i>Personal Info
+                            </h5>
+                        </div>
+                        <div class="card-body p-4">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label for="username"
+                                        class="form-label small text-uppercase fw-bold text-muted">Username</label>
+                                    <input type="text" class="form-control" id="username" name="username"
+                                        value="{{ user.username if user else '' }}" required>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label for="email"
+                                        class="form-label small text-uppercase fw-bold text-muted">Email</label>
+                                    <input type="email" class="form-control" id="email" name="email"
+                                        value="{{ user.email if user else '' }}" required>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label for="age"
+                                        class="form-label small text-uppercase fw-bold text-muted">Age</label>
+                                    <input type="number" class="form-control" id="age" name="age"
+                                        value="{{ user.age if user else '' }}">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-3 justify-content-center pb-5">
+                        <a href="{{ url_for('profile.view_profile') }}" class="btn btn-outline-secondary px-4">
+                            Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary px-5">
+                            Save Changes
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+        </form>
+    </div>
+</main>
+{% endblock %}
