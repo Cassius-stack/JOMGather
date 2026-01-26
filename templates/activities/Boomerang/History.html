@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+
+{% block title %}My Meetup History - Boomerang{% endblock %}
+
+{% block head %}
+<style>
+    body {
+        background-color: #E8F4FC;
+    }
+
+    .main-card {
+        background: white;
+        border-radius: 25px;
+        padding: 35px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        border: 3px solid #E8F4FC;
+    }
+
+    .page-title {
+        color: #3B5BDB;
+        font-weight: 800;
+        margin-bottom: 25px;
+    }
+
+    .history-list {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .history-card {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 20px;
+        background: white;
+        border-radius: 15px;
+        border: 2px solid #edeff5;
+        transition: all 0.2s;
+    }
+
+    .history-card:hover {
+        border-color: #3B5BDB;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(59, 91, 219, 0.1);
+    }
+
+    .user-info {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .avatar {
+        width: 50px;
+        height: 50px;
+        background: linear-gradient(135deg, #4263EB 0%, #3B5BDB 100%);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 1.2rem;
+    }
+
+    .details h5 {
+        margin: 0;
+        color: #2c3e50;
+        font-weight: 700;
+    }
+
+    .meta {
+        color: #888;
+        font-size: 0.9rem;
+        margin-top: 3px;
+    }
+
+    .btn-add {
+        background: #e7f5ff;
+        color: #3B5BDB;
+        border: none;
+        padding: 8px 20px;
+        border-radius: 20px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-add:hover {
+        background: #3B5BDB;
+        color: white;
+    }
+
+    .btn-chat {
+        background: #e6fcf5;
+        color: #0ca678;
+        border: none;
+        padding: 8px 20px;
+        border-radius: 20px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-chat:hover {
+        background: #0ca678;
+        color: white;
+    }
+
+    .back-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 20px;
+        background: white;
+        color: #3B5BDB;
+        border-radius: 25px;
+        text-decoration: none;
+        margin-bottom: 25px;
+        font-weight: 600;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <a href="{{ url_for('activities.boomerang') }}" class="back-btn">
+        <i class="bi bi-arrow-left"></i> Back to Boomerang
+    </a>
+
+    <div class="main-card">
+        <h2 class="page-title"><i class="bi bi-clock-history"></i> Meetup History</h2>
+
+        {% if history %}
+        <div class="history-list">
+            {% for item in history %}
+            <div class="history-card">
+                <div class="user-info">
+                    <div class="avatar">{{ item.partner_name[0]|upper }}</div>
+                    <div class="details">
+                        <h5>{{ item.partner_name }}</h5>
+                        <div class="meta">
+                            <i class="bi bi-calendar3"></i> {{ item.date }} &bull;
+                            <i class="bi bi-stopwatch"></i> {{ item.duration }}
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    {% if item.is_friend %}
+                    <a href="{{ url_for('social.social_hub', chat_user=item.partner_id) }}" class="btn-chat">
+                        <i class="bi bi-chat-dots-fill"></i> Chat
+                    </a>
+                    {% else %}
+                    <button class="btn-add" onclick="sendFriendRequest('{{ item.partner_id }}', this)">
+                        <i class="bi bi-person-plus-fill"></i> Add Friend
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="bi bi-journal-x" style="font-size: 3rem; color: #ccc;"></i>
+            <p class="text-muted mt-3">No history yet. Start a Boomerang chat to meet new people!</p>
+            <a href="{{ url_for('activities.boomerang') }}" class="btn btn-primary rounded-pill mt-2">Start Chatting</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    async function sendFriendRequest(userId, btn) {
+        try {
+            const response = await fetch('/social/api/friend-request', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ target_id: userId })
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                btn.innerHTML = '<i class="bi bi-check-lg"></i> Sent';
+                btn.disabled = true;
+                btn.style.background = '#d3f9d8';
+                btn.style.color = '#2b8a3e';
+            } else {
+                alert(data.error || 'Failed to send request');
+            }
+        } catch (e) {
+            console.error(e);
+            alert('Error sending request');
+        }
+    }
+</script>
+{% endblock %}

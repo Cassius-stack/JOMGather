@@ -75,20 +75,6 @@
     box-shadow: 0 15px 40px rgba(255, 255, 255, 0.7);
 }
 
-/* Message Ticks for Read Receipts */
-.message-tick {
-    display: inline-block;
-    margin-left: 5px;
-    font-size: 0.8em;
-    color: rgba(255, 255, 255, 0.7);
-    vertical-align: bottom;
-}
-
-.message-tick.read {
-    color: #4fc3f7;
-    /* Light Blue for read receipt */
-}
-
 /* Activity Card Refinements for "Morphy" feel */
 .activity-card {
     transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1) !important;

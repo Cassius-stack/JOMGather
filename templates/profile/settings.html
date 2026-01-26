@@ -19,21 +19,20 @@
 
                     <!-- 2. Edit Button with 'position: absolute' -->
                     <!-- Adjusted to match the blue style in your image -->
-                    <a href="{{ url_for('profile.edit_profile') }}"
+                    <a href="{{ url_for('profile.edit_personal') }}"
                         style="position: absolute; bottom: 0; right: 0; text-decoration: underline; background-color: #1d4ed8; color: white; padding: 4px 16px; border-radius: 8px; font-weight: 600; font-size: 1.1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                         Edit
                     </a>
 
                 </div>
             </div>
-            <div class="card-header row">
+            <!-- Tab Buttons -->
+            <div class="card-header row mt-3">
                 <div class="col-md-6">
-                    <button class="btn btn-outline-primary btn-lg" style="width: 100%;">
-                        <a href="{{ url_for('profile.view_profile', user_id=session.get('user_id')) }}"
-                            style="width: 100%; display: block; text-align: center; text-decoration: none;">
-                            My Profile
-                        </a>
-                    </button>
+                    <a href="{{ url_for('profile.view_profile', user_id=session.get('user_id')) }}"
+                        class="btn btn-outline-primary btn-lg" style="width: 100%;">
+                        My Profile
+                    </a>
                 </div>
                 <div class="col-md-6">
                     <button class="btn btn-primary btn-lg" style="width: 100%;">
@@ -106,11 +105,82 @@
                 <h2 class="mb-0 h5"><i class="bi bi-person-gear me-2"></i>Account</h2>
             </div>
             <div class="card-body">
-                <a href="{{ url_for('auth.logout') }}" class="btn btn-danger w-100">
+                <button type="button" class="btn btn-danger w-100" onclick="showLogoutConfirm()">
                     <i class="bi bi-box-arrow-right me-2"></i>Logout
-                </a>
+                </button>
+            </div>
+            <div class="card-body">
+                <button type="button" class="btn btn-danger w-100" onclick="showDeleteConfirm()">
+                    <i class="bi bi-box-arrow-right me-2"></i>Delete Account
+                </button>
+            </div>
+        </div>
+
+        <!-- Logout Confirmation Popup (Hidden by default) -->
+        <div id="logoutConfirmPopup"
+            style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center;">
+            <div
+                style="background: white; border-radius: 16px; padding: 2rem; max-width: 400px; width: 90%; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.2);">
+                <i class="bi bi-question-circle text-warning" style="font-size: 3rem;"></i>
+                <h4 class="mt-3 mb-2">Are you sure you want to logout?</h4>
+                <p class="text-muted mb-4">You will be logged out of your account.</p>
+                <div class="d-flex gap-3 justify-content-center">
+                    <button type="button" class="btn btn-outline-secondary px-4"
+                        onclick="hideLogoutConfirm()">Cancel</button>
+                    <a href="{{ url_for('auth.logout') }}" class="btn btn-danger px-4">Yes, Logout</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Delete Account Confirmation Popup (Hidden by default) -->
+        <div id="deleteConfirmPopup"
+            style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center;">
+            <div
+                style="background: white; border-radius: 16px; padding: 2rem; max-width: 400px; width: 90%; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.2);">
+                <i class="bi bi-exclamation-triangle text-danger" style="font-size: 3rem;"></i>
+                <h4 class="mt-3 mb-2">Delete Account?</h4>
+                <p class="text-muted mb-4">This action is permanent. All your data will be deleted and cannot be
+                    recovered.</p>
+                <div class="d-flex gap-3 justify-content-center">
+                    <button type="button" class="btn btn-outline-secondary px-4"
+                        onclick="hideDeleteConfirm()">Cancel</button>
+                    <form action="{{ url_for('profile.delete_account') }}" method="POST" style="display: inline;">
+                        <button type="submit" class="btn btn-danger px-4">Yes, Delete My Account</button>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
 </main>
+
+<script>
+    function showLogoutConfirm() {
+        document.getElementById('logoutConfirmPopup').style.display = 'flex';
+    }
+
+    function hideLogoutConfirm() {
+        document.getElementById('logoutConfirmPopup').style.display = 'none';
+    }
+
+    function showDeleteConfirm() {
+        document.getElementById('deleteConfirmPopup').style.display = 'flex';
+    }
+
+    function hideDeleteConfirm() {
+        document.getElementById('deleteConfirmPopup').style.display = 'none';
+    }
+
+    // Close popups when clicking outside
+    document.getElementById('logoutConfirmPopup').addEventListener('click', function (e) {
+        if (e.target === this) {
+            hideLogoutConfirm();
+        }
+    });
+
+    document.getElementById('deleteConfirmPopup').addEventListener('click', function (e) {
+        if (e.target === this) {
+            hideDeleteConfirm();
+        }
+    });
+</script>
 {% endblock %}

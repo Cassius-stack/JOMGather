@@ -535,6 +535,7 @@
 <script>
     const roomId = sessionStorage.getItem('boomerang_room');
     const partnerName = sessionStorage.getItem('boomerang_partner');
+    const partnerId = sessionStorage.getItem('boomerang_partner_id');
     const isInitiator = sessionStorage.getItem('boomerang_initiator') === 'true';
     const userName = sessionStorage.getItem('boomerang_user') || 'You';
 
@@ -746,9 +747,33 @@
         }
     });
 
-    document.getElementById('addFriendBtn').addEventListener('click', function () {
-        this.classList.add('active');
-        this.innerHTML = '<i class="bi bi-check-lg"></i>';
+    document.getElementById('addFriendBtn').addEventListener('click', async function () {
+        if (!partnerId) {
+            alert("No partner info available to add friend.");
+            return;
+        }
+
+        try {
+            const response = await fetch('/social/api/friend-request', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ target_id: partnerId })
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                this.classList.add('active');
+                this.innerHTML = '<i class="bi bi-check-lg"></i>';
+                this.disabled = true;
+            } else {
+                alert(data.error || 'Failed to send friend request');
+            }
+        } catch (e) {
+            console.error(e);
+            alert('Error sending friend request');
+        }
     });
 
     function sendMessage() {
@@ -795,6 +820,7 @@
         cleanup();
         sessionStorage.removeItem('boomerang_room');
         sessionStorage.removeItem('boomerang_partner');
+        sessionStorage.removeItem('boomerang_partner_id');
         sessionStorage.removeItem('boomerang_initiator');
         window.location.href = "{{ url_for('activities.boomerang_loading') }}?name=" + encodeURIComponent(userName);
     });

@@ -6,12 +6,17 @@ Real-time video chat matching and signaling
 from flask_socketio import emit, join_room, leave_room
 from flask import request
 import uuid
+import datetime
+from utils.supabase_db import insert
 
 # Queue of users waiting to be matched: {socket_id: user_info}
 boomerang_queue = {}
 
 # Active rooms: {room_id: {user1_sid, user2_sid}}
 active_rooms = {}
+
+# Metadata for rooms: {room_id: {'start_time': datetime, 'users': {sid: user_id}}}
+room_metadata = {}
 
 # Map socket_id to room_id
 user_room_map = {}
@@ -25,6 +30,8 @@ def register_boomerang_events(socketio):
         """User joins the matching queue."""
         sid = request.sid
         user_name = data.get('name', 'Anonymous')
+        user_id = data.get('user_id')
+
         
         print(f"[BOOMERang] {user_name} ({sid}) joining queue")
         
@@ -39,6 +46,13 @@ def register_boomerang_events(socketio):
             
             # Track the room
             active_rooms[room_id] = {sid, partner_sid}
+            room_metadata[room_id] = {
+                'start_time': datetime.datetime.now(),
+                'users': {
+                    sid: user_id,
+                    partner_sid: partner_info.get('user_id')
+                }
+            }
             user_room_map[sid] = room_id
             user_room_map[partner_sid] = room_id
             
@@ -53,6 +67,7 @@ def register_boomerang_events(socketio):
             emit('boomerang_matched', {
                 'room_id': room_id,
                 'partner_name': user_name,
+                'partner_id': user_id,
                 'is_initiator': True
             }, room=partner_sid)
             
@@ -60,12 +75,14 @@ def register_boomerang_events(socketio):
             emit('boomerang_matched', {
                 'room_id': room_id,
                 'partner_name': partner_info['name'],
+                'partner_id': partner_info.get('user_id'),
                 'is_initiator': False
             }, room=sid)
         else:
             # Add to queue
             boomerang_queue[sid] = {
                 'name': user_name,
+                'user_id': user_id,
                 'sid': sid
             }
             print(f"[BOOMERang] {user_name} added to queue. Queue size: {len(boomerang_queue)}")
@@ -179,6 +196,26 @@ def register_boomerang_events(socketio):
             
             # If room is now empty or has one user, clean it up
             if room_id in active_rooms:
+                # Save history if this is the first person leaving (meaning call ended)
+                if room_id in room_metadata:
+                    meta = room_metadata[room_id]
+                    # Check if we have two valid user IDs to save history
+                    uids = list(meta['users'].values())
+                    if len(uids) == 2 and all(uids):
+                        try:
+                            duration = (datetime.datetime.now() - meta['start_time']).total_seconds()
+                            insert('meetup_history', {
+                                'user1_id': uids[0],
+                                'user2_id': uids[1],
+                                'duration_seconds': int(duration)
+                            })
+                            print(f"[BOOMERang] Saved history for room {room_id}, duration {int(duration)}s")
+                        except Exception as e:
+                            print(f"[BOOMERang] Failed to save history: {e}")
+                    
+                    # Clean up metadata
+                    del room_metadata[room_id]
+
                 active_rooms[room_id].discard(sid)
                 if len(active_rooms[room_id]) == 0:
                     del active_rooms[room_id]

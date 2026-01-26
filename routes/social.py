@@ -496,6 +496,12 @@ def join_group(group_id):
 
 @social_bp.route('/ask-grandfriend')
 def ask_grandfriend():
+    """AskAGrandfriend - Entry Transition."""
+    return render_template('social/ask_grandfriend_transition.html')
+
+
+@social_bp.route('/ask-grandfriend/home')
+def ask_grandfriend_home():
     """AskAGrandfriend forum."""
     questions = []
     try:
@@ -619,7 +625,7 @@ def post_question():
                 from flask import flash
                 flash("Question posted successfully!", "success")
         
-        return redirect(url_for('social.ask_grandfriend'))
+        return redirect(url_for('social.ask_grandfriend_home'))
     
     return render_template('social/ask_grandfriend.html')
 
@@ -638,7 +644,7 @@ def react_to_reply_route(reply_id, reaction_type):
     }
     
     if reaction_type not in allowed_reactions:
-        return redirect(url_for('social.ask_grandfriend'))
+        return redirect(url_for('social.ask_grandfriend_home'))
 
     try:
         supabase = get_supabase()
@@ -659,7 +665,7 @@ def react_to_reply_route(reply_id, reaction_type):
         if str(question.get('user_id')) != str(user_id):
             from flask import flash
             flash("Only the question author can react.", "error")
-            return redirect(url_for('social.ask_grandfriend'))
+            return redirect(url_for('social.ask_grandfriend_home'))
 
         # 2. Calculate Coin Diff
         old_coins = reply.get('coins_awarded', 0)
@@ -716,7 +722,7 @@ def post_reply(question_id):
     parent_reply_id = request.form.get('parent_reply_id')
     
     if not content:
-        return redirect(url_for('social.ask_grandfriend'))
+        return redirect(url_for('social.ask_grandfriend_home'))
 
     # Determine Author
     try:
