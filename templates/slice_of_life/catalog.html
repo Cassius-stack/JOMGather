@@ -2,6 +2,10 @@
 
 {% block title %}Memory Library - Slice of Life{% endblock %}
 
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/hero_vibrant.css') }}">
+{% endblock %}
+
 {% block content %}
 <style>
     /* Design Tokens borrowed from Landing Page */
@@ -26,31 +30,6 @@
     h4,
     .brand-font {
         font-family: 'Outfit', sans-serif;
-    }
-
-    /* Hero Section */
-    .library-hero {
-        background: linear-gradient(135deg, #1e3a5f 0%, #0f172a 100%);
-        padding: 4rem 2rem 6rem;
-        color: white;
-        text-align: center;
-        border-bottom-left-radius: 50px;
-        border-bottom-right-radius: 50px;
-        margin-bottom: 3rem;
-        position: relative;
-        overflow: hidden;
-    }
-
-    .library-hero::before {
-        content: '';
-        position: absolute;
-        top: -50%;
-        left: -10%;
-        width: 600px;
-        height: 600px;
-        background: radial-gradient(circle, rgba(219, 234, 254, 0.1) 0%, transparent 70%);
-        border-radius: 50%;
-        filter: blur(60px);
     }
 
     .btn-create-slice {
@@ -174,46 +153,12 @@
         color: var(--text-dark);
     }
 
-    .card-meta {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        margin-bottom: 1rem;
-    }
-
-    .user-avatar-small {
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-        object-fit: cover;
-        border: 2px solid white;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    }
-
     .card-footer-custom {
         padding: 1rem 1.5rem;
         border-top: 1px solid #f1f5f9;
         display: flex;
         justify-content: space-between;
         align-items: center;
-    }
-
-    .action-btn {
-        background: #f1f5f9;
-        color: var(--text-muted);
-        border: none;
-        width: 36px;
-        height: 36px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.2s;
-    }
-
-    .action-btn:hover {
-        background: #e0f2fe;
-        color: #3b82f6;
     }
 
     .view-link {
@@ -231,15 +176,22 @@
     }
 </style>
 
-<!-- Hero -->
-<div class="library-hero">
-    <div class="container" style="max-width: 800px;">
-        <h1 style="font-size: 3.5rem; margin-bottom: 1rem;">Memory Library</h1>
+<!-- Hero Section - Unified with Dashboard -->
+<div class="hero-vibrant-bg"
+    style="border-radius: 0 0 50px 50px; padding: 6rem 2rem 5.5rem; color: white; text-align: center;">
+    <div class="mesh-blob blob-1"></div>
+    <div class="mesh-blob blob-2"></div>
+    <div class="mesh-blob blob-3"></div>
+    <div class="container position-relative" style="z-index: 2; max-width: 800px;">
+        <h1
+            style="font-size: 4rem; font-weight: 900; margin-bottom: 0.5rem; letter-spacing: -2px; text-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+            Memory Library
+        </h1>
         <p
-            style="font-size: 1.25rem; opacity: 0.8; margin-bottom: 2.5rem; max-width: 600px; margin-left: auto; margin-right: auto;">
-            A curated collection of shared moments, wisdom, and laughter. Explore stories that bridge generations.
+            style="font-size: 1.4rem; opacity: 0.9; margin-bottom: 3rem; font-weight: 500; letter-spacing: -0.5px; max-width: 650px; margin-left: auto; margin-right: auto;">
+            A shared vault of moments, wisdom, and laughter that bridge generations together.
         </p>
-        <a href="{{ url_for('slice_of_life.prompt') }}" class="btn-create-slice">
+        <a href="{{ url_for('slice_of_life.prompt') }}" class="btn-create-slice shadow-lg">
             <i class="bi bi-plus-circle-fill"></i> New Slice of Life
         </a>
     </div>
@@ -326,8 +278,9 @@
                         <form action="{{ url_for('slice_of_life.like_display', display_id=display.display_id) }}"
                             method="POST">
                             <button type="submit" class="border-0 bg-transparent p-0 d-flex align-items-center gap-1"
-                                title="Like">
-                                <i class="bi bi-heart-fill text-danger"></i>
+                                title="{{ 'Unlike' if display.has_liked else 'Like' }}">
+                                <i
+                                    class="bi {{ 'bi-heart-fill text-danger' if display.has_liked else 'bi-heart text-secondary' }}"></i>
                                 <span class="small fw-bold text-muted">{{ display.likes or 0 }}</span>
                             </button>
                         </form>

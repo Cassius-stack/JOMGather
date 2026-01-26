@@ -58,20 +58,20 @@
 <!-- LOGGED IN DASHBOARD -->
 <!-- ============================================ -->
 
-<!-- Hero Section - Vibrant Mesh -->
-<div class="hero-vibrant-bg" style="border-radius: 0 0 50px 50px; padding: 5.5rem 2rem 5rem; color: white;">
+<!-- Hero Section - Sophisticated Dark Theme -->
+<div class="hero-vibrant-bg" style="border-radius: 0 0 50px 50px; padding: 6rem 2rem 5.5rem; color: white;">
     <div class="mesh-blob blob-1"></div>
     <div class="mesh-blob blob-2"></div>
     <div class="mesh-blob blob-3"></div>
     <div class="container position-relative" style="z-index: 2;">
         <h1
-            style="font-size: 3.8rem; font-weight: 900; margin-bottom: 0.75rem; letter-spacing: -1.5px; text-shadow: 0 4px 15px rgba(0,0,0,0.15);">
-            Hello, {{ session.get('username') }}!</h1>
-        <p
-            style="font-size: 1.5rem; opacity: 1; margin-bottom: 2.5rem; font-weight: 600; text-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-            What wonderful things shall we do together today?
+            style="font-size: 4rem; font-weight: 900; margin-bottom: 0.5rem; letter-spacing: -2px; text-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+            Welcome back, {{ session.get('username') }}!</h1>
+        <p style="font-size: 1.6rem; opacity: 0.9; margin-bottom: 3rem; font-weight: 500; letter-spacing: -0.5px;">
+            Ready for your daily moments of joy?
         </p>
-        <a href="{{ url_for('activities.activity_list') }}" class="vibrant-btn text-decoration-none shadow-lg">
+        <a href="{{ url_for('activities.activity_list') }}" class="vibrant-btn text-decoration-none shadow-lg"
+            style="background: #ffffff; color: #1e3a5f; border: none; padding: 1.2rem 3rem; font-size: 1.2rem; border-radius: 50px; font-weight: 700; box-shadow: 0 15px 35px rgba(0,0,0,0.2) !important;">
             Explore Activities
         </a>
     </div>
@@ -125,15 +125,18 @@
 
             <!-- Online Friends Loop -->
             {% for friend in online_friends %}
-            <div class="text-center position-relative" style="flex-shrink: 0;">
-                <div
-                    style="width: 65px; height: 65px; background: #e0f2fe; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #1e3a5f; font-weight: 600; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-                    {{ friend.username[0] | upper }}
+            <a href="{{ url_for('profile.view_profile', user_id=friend['user_id']) }}" class="text-decoration-none"
+                title="Online">
+                <div class="text-center position-relative" style="flex-shrink: 0;">
+                    <div
+                        style="width: 65px; height: 65px; background: #e0f2fe; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #1e3a5f; font-weight: 600; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                        {{ friend.username[0] | upper }}
+                    </div>
+                    <span
+                        style="position: absolute; bottom: 22px; right: 0; width: 14px; height: 14px; background: #22c55e; border-radius: 50%; border: 2px solid white;"></span>
+                    <p style="font-size: 0.9rem; color: #6b7280; margin-top: 0.5rem;">{{ friend.username }}</p>
                 </div>
-                <span
-                    style="position: absolute; bottom: 22px; right: 0; width: 14px; height: 14px; background: #22c55e; border-radius: 50%; border: 2px solid white;"></span>
-                <p style="font-size: 0.9rem; color: #6b7280; margin-top: 0.5rem;">{{ friend.username }}</p>
-            </div>
+            </a>
             {% endfor %}
 
             <!-- Offline Friends Loop (always show, after online) -->

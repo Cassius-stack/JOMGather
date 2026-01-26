@@ -226,11 +226,47 @@ def accept_friend_request():
         current_user_id = get_current_user_id()
         requester_id = request.json.get('requester_id')
         
+        if not requester_id:
+            return jsonify({'error': 'Missing requester_id'}), 400
+            
         supabase = get_supabase()
         # Update status to accepted
         # user_id_1 is requester, user_id_2 is current_user
         supabase.table('friendships').update({'status': 'accepted'}).eq('user_id_1', requester_id).eq('user_id_2', current_user_id).execute()
         
+        # Clear the specific notification for this friend request
+        try:
+            msg_frag = f"sent you a friend request!"
+            supabase.table('notifications').delete().eq('user_id', current_user_id).ilike('message', f'%{msg_frag}%').execute()
+        except:
+            pass
+            
+        return jsonify({'success': True})
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+@social_bp.route('/api/friend-reject', methods=['POST'])
+def reject_friend_request():
+    """Reject a friend request."""
+    try:
+        current_user_id = get_current_user_id()
+        requester_id = request.json.get('requester_id')
+        
+        if not requester_id:
+            return jsonify({'error': 'Missing requester_id'}), 400
+            
+        supabase = get_supabase()
+        # Delete the pending friendship record
+        supabase.table('friendships').delete().eq('user_id_1', requester_id).eq('user_id_2', current_user_id).eq('status', 'pending').execute()
+        
+        # Clear notification
+        try:
+            msg_frag = f"sent you a friend request!"
+            supabase.table('notifications').delete().eq('user_id', current_user_id).ilike('message', f'%{msg_frag}%').execute()
+        except:
+            pass
+            
         return jsonify({'success': True})
     except Exception as e:
         traceback.print_exc()

@@ -41,6 +41,18 @@
     </style>
 
     {% block head %}{% endblock %}
+
+    <!-- Aggressive Prerendering (Speculation Rules API) -->
+    <script type="speculationrules">
+        {
+          "prerender": [
+            {
+              "source": "list",
+              "urls": ["{{ url_for('index') }}", "{{ url_for('social.social_hub') }}", "{{ url_for('activities.activity_list') }}", "{{ url_for('rewards.redeem') }}"]
+            }
+          ]
+        }
+    </script>
 </head>
 
 <body>
@@ -57,117 +69,140 @@
 
             <div class="collapse navbar-collapse" id="navbarNav">
                 {% if session.get('user_id') %}
-                <ul class="navbar-nav nav-pills-custom mx-auto mb-2 mb-lg-0">
-                    <li class="nav-item">
-                        <a class="nav-link {{ 'active' if request.endpoint == 'index' else '' }}"
-                            href="{{ url_for('index') }}">Home</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {{ 'active' if 'activities' in request.endpoint or 'slice_of_life' in request.endpoint else '' }}"
-                            href="{{ url_for('activities.activity_list') }}">Activity</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {{ 'active' if 'social' in request.endpoint or 'messaging' in request.endpoint else '' }}"
-                            href="{{ url_for('social.social_hub') }}">Social</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {{ 'active' if 'rewards' in request.endpoint else '' }}"
-                            href="{{ url_for('rewards.redeem') }}">Rewards</a>
-                    </li>
-                </ul>
+                <!-- Three-column layout for perfect centering -->
+                <div class="d-flex w-100 align-items-center justify-content-between">
+                    <!-- Left Spacer (Same width as right side if possible, or just flex-1) -->
+                    <div style="flex: 1;" class="d-none d-lg-block"></div>
 
-                <div class="d-flex align-items-center">
+                    <!-- Centered Nav Pills -->
+                    <ul class="navbar-nav nav-pills-custom mb-2 mb-lg-0">
+                        <li class="nav-item">
+                            <a class="nav-link {{ 'active' if request.endpoint == 'index' else '' }}"
+                                href="{{ url_for('index') }}">Home</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {{ 'active' if 'activities' in request.endpoint or 'slice_of_life' in request.endpoint else '' }}"
+                                href="{{ url_for('activities.activity_list') }}">Activity</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {{ 'active' if 'social' in request.endpoint or 'messaging' in request.endpoint else '' }}"
+                                href="{{ url_for('social.social_hub') }}">Social</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {{ 'active' if 'rewards' in request.endpoint else '' }}"
+                                href="{{ url_for('rewards.redeem') }}">Rewards</a>
+                        </li>
+                    </ul>
 
-                    <!-- Notification Bell -->
-                    {% if session.get('user_id') %}
-                    <div class="dropdown me-3">
-                        <a href="#" class="text-decoration-none position-relative" data-bs-toggle="dropdown"
-                            aria-expanded="false">
-                            <i class="bi bi-bell-fill" style="font-size: 1.5rem; color: #1e3a5f;"></i>
-                            {% if unread_notifications_count > 0 %}
-                            <span
-                                class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
-                                style="font-size: 0.6rem;">
-                                {{ unread_notifications_count }}
-                                <span class="visually-hidden">unread messages</span>
-                            </span>
-                            {% endif %}
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end dropdown-menu-premium border-0 rounded-4 mt-3"
-                            style="width: 320px; max-height: 450px; overflow-y: auto;">
-                            <li>
-                                <h6 class="dropdown-header">Notifications</h6>
-                            </li>
-                            {% if notifications %}
-                            {% for notif in notifications %}
-                            <li>
-                                <a class="dropdown-item py-2 px-3 text-wrap" href="{{ notif.link or '#' }}">
-                                    <div class="d-flex align-items-start">
-                                        <i class="bi bi-info-circle me-2 mt-1 text-primary"></i>
-                                        <div>
-                                            <small>{{ notif.message }}</small><br>
-                                            <small class="text-muted" style="font-size: 0.7rem;">{{ notif.created_at
-                                                }}</small>
+                    <!-- Right Side (Coins, Bell, Profile) -->
+                    <div class="d-flex align-items-center justify-content-end" style="flex: 1;">
+
+                        <div class="me-3 d-none d-lg-flex align-items-center bg-light rounded-pill px-3 py-1"
+                            style="border: 1px solid #e2e8f0;">
+                            <span class="text-warning me-1">🪙</span>
+                            <span style="font-weight: 700; color: #1e3a5f;">{{ total_coins }}</span>
+                        </div>
+
+                        <!-- Notification Bell -->
+                        {% if session.get('user_id') %}
+                        <div class="dropdown me-3">
+                            <a href="#" class="text-decoration-none position-relative" data-bs-toggle="dropdown"
+                                aria-expanded="false">
+                                <i class="bi bi-bell-fill" style="font-size: 1.5rem; color: #1e3a5f;"></i>
+                                {% if unread_notifications_count > 0 %}
+                                <span
+                                    class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                                    style="font-size: 0.6rem;">
+                                    {{ unread_notifications_count }}
+                                    <span class="visually-hidden">unread messages</span>
+                                </span>
+                                {% endif %}
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end dropdown-menu-premium border-0 rounded-4 mt-3"
+                                style="width: 320px; max-height: 450px; overflow-y: auto;">
+                                <li>
+                                    <h6 class="dropdown-header">Notifications</h6>
+                                </li>
+                                {% if notifications %}
+                                {% for notif in notifications %}
+                                <li class="notification-item-container" data-notif-id="{{ notif.notification_id }}">
+                                    <a class="dropdown-item py-2 px-3 text-wrap"
+                                        href="{{ '#' if 'friend request' in notif.message.lower() else (notif.link or '#') }}">
+                                        <div class="d-flex align-items-start">
+                                            <i class="bi bi-info-circle me-2 mt-1 text-primary"></i>
+                                            <div class="flex-grow-1">
+                                                <small>{{ notif.message }}</small><br>
+                                                <small class="text-muted" style="font-size: 0.7rem;">{{ notif.created_at
+                                                    }}</small>
+
+                                                {% if 'friend request' in notif.message.lower() %}
+                                                <div class="mt-2 d-flex gap-2">
+                                                    <button class="btn btn-sm btn-primary px-3 rounded-pill"
+                                                        style="font-size: 0.75rem;"
+                                                        onclick="handleFriendRequest(event, 'accept', '{{ notif.message }}', this)">
+                                                        Accept
+                                                    </button>
+                                                    <button class="btn btn-sm btn-outline-danger px-3 rounded-pill"
+                                                        style="font-size: 0.75rem;"
+                                                        onclick="handleFriendRequest(event, 'reject', '{{ notif.message }}', this)">
+                                                        Reject
+                                                    </button>
+                                                </div>
+                                                {% endif %}
+                                            </div>
                                         </div>
-                                    </div>
-                                </a>
-                            </li>
-                            {% if not loop.last %}
-                            <li>
-                                <hr class="dropdown-divider my-1">
-                            </li>
-                            {% endif %}
-                            {% endfor %}
-                            {% else %}
-                            <li><span class="dropdown-item text-muted small">No new notifications</span></li>
-                            {% endif %}
-                        </ul>
+                                    </a>
+                                </li>
+                                {% if not loop.last %}
+                                <li>
+                                    <hr class="dropdown-divider my-1">
+                                </li>
+                                {% endif %}
+                                {% endfor %}
+                                {% else %}
+                                <li><span class="dropdown-item text-muted small">No new notifications</span></li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                        {% endif %}
+
+                        <span class="me-3 d-none d-md-inline" style="font-weight: 500; color: #1e3a5f;">{{
+                            session.get('username') }}</span>
+
+                        <!-- Profile Dropdown -->
+                        <div class="dropdown d-inline-block">
+                            <a href="#" class="text-decoration-none" data-bs-toggle="dropdown" aria-expanded="false">
+                                <div
+                                    style="width: 40px; height: 40px; background: #e0f2fe; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #1e3a5f; font-weight: 600;">
+                                    {{ session.get('username')[0] | upper }}
+                                </div>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end dropdown-menu-premium border-0 rounded-4 mt-3">
+                                <li>
+                                    <a class="dropdown-item py-2 px-3"
+                                        href="{{ url_for('profile.view_profile', user_id=session.get('user_id')) }}">
+                                        <i class="bi bi-person me-2 text-muted"></i> Profile
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item py-2 px-3" href="{{ url_for('profile.settings') }}">
+                                        <i class="bi bi-gear me-2 text-muted"></i> Settings
+                                    </a>
+                                </li>
+                                <li>
+                                    <hr class="dropdown-divider my-1">
+                                </li>
+                                <li>
+                                    <a class="dropdown-item py-2 px-3 text-danger" href="{{ url_for('auth.logout') }}">
+                                        <i class="bi bi-box-arrow-right me-2"></i> Log Out
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
                     </div>
                     {% endif %}
-
-                    <div class="me-3 d-none d-lg-flex align-items-center bg-light rounded-pill px-3 py-1"
-                        style="border: 1px solid #e2e8f0;">
-                        <span class="text-warning me-1">🪙</span>
-                        <span style="font-weight: 700; color: #1e3a5f;">{{ total_coins }}</span>
-                    </div>
-
-                    <span class="me-3 d-none d-md-inline" style="font-weight: 500; color: #1e3a5f;">{{
-                        session.get('username') }}</span>
-
-                    <!-- Profile Dropdown -->
-                    <div class="dropdown d-inline-block">
-                        <a href="#" class="text-decoration-none" data-bs-toggle="dropdown" aria-expanded="false">
-                            <div
-                                style="width: 40px; height: 40px; background: #e0f2fe; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #1e3a5f; font-weight: 600;">
-                                {{ session.get('username')[0] | upper }}
-                            </div>
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end dropdown-menu-premium border-0 rounded-4 mt-3">
-                            <li>
-                                <a class="dropdown-item py-2 px-3"
-                                    href="{{ url_for('profile.view_profile', user_id=session.get('user_id')) }}">
-                                    <i class="bi bi-person me-2 text-muted"></i> Profile
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item py-2 px-3" href="{{ url_for('profile.settings') }}">
-                                    <i class="bi bi-gear me-2 text-muted"></i> Settings
-                                </a>
-                            </li>
-                            <li>
-                                <hr class="dropdown-divider my-1">
-                            </li>
-                            <li>
-                                <a class="dropdown-item py-2 px-3 text-danger" href="{{ url_for('auth.logout') }}">
-                                    <i class="bi bi-box-arrow-right me-2"></i> Log Out
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
                 </div>
-                {% endif %}
             </div>
-        </div>
     </nav>
 
     <!-- Flash Messages -->
