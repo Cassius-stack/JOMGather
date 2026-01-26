@@ -32,6 +32,34 @@ def get_supabase() -> Client:
 # DATABASE QUERY HELPERS
 # ============================================
 
+import time
+from functools import wraps
+
+def retry_query(max_retries=3, delay=1):
+    """Decorator to retry Supabase queries on network errors."""
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            last_exception = None
+            for attempt in range(max_retries):
+                try:
+                    return func(*args, **kwargs)
+                except Exception as e:
+                    import traceback
+                    # Check for socket errors or timeout
+                    error_str = str(e).lower()
+                    if "10035" in error_str or "timeout" in error_str or "transport" in error_str:
+                        print(f"[Supabase] Retry {attempt+1}/{max_retries} due to error: {e}")
+                        last_exception = e
+                        time.sleep(delay)
+                    else:
+                        raise e
+            if last_exception:
+                raise last_exception
+        return wrapper
+    return decorator
+
+@retry_query()
 def fetch_all(table: str, columns: str = "*", **filters):
     """
     Fetch all rows from a table.
@@ -50,6 +78,7 @@ def fetch_all(table: str, columns: str = "*", **filters):
     return response.data
 
 
+@retry_query()
 def fetch_one(table: str, columns: str = "*", **filters):
     """
     Fetch a single row from a table.
@@ -67,6 +96,7 @@ def fetch_one(table: str, columns: str = "*", **filters):
     return response.data[0] if response.data else None
 
 
+@retry_query()
 def insert(table: str, data: dict):
     """
     Insert a new row into a table.
@@ -83,6 +113,7 @@ def insert(table: str, data: dict):
     return response.data[0] if response.data else None
 
 
+@retry_query()
 def update(table: str, data: dict, **filters):
     """
     Update rows in a table.
@@ -100,6 +131,7 @@ def update(table: str, data: dict, **filters):
     return response.data
 
 
+@retry_query()
 def delete(table: str, **filters):
     """
     Delete rows from a table.

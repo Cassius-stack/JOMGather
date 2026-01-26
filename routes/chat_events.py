@@ -431,6 +431,39 @@ def register_chat_events(socketio):
             print(f"[Socket.IO] User {user_id} answered challenge {challenge_id}, waiting for user {other_user_id}")
 
 
+    @socketio.on('mark_read')
+    def handle_mark_read(data):
+        """
+        Called when a user opens a chat or reads messages.
+        1. Update messages in Supabase to read=True
+        2. Emit 'messages_read' to the sender (so they see blue ticks)
+        """
+        user_id = data.get('user_id')          # The reader
+        sender_id = data.get('sender_id')      # The person who sent the messages
+        
+        if not user_id or not sender_id:
+            return
+
+        user_id = int(user_id)
+        sender_id = int(sender_id)
+
+        # Import here to avoid circular imports
+        from utils.supabase_db import get_supabase
+        supabase = get_supabase()
+
+        try:
+            # Update DB: Mark all messages from sender_id to user_id as read
+            supabase.table('messages').update({'read': True}).eq('sender_id', sender_id).eq('receiver_id', user_id).eq('read', False).execute()
+            
+            # Emit to the SENDER that their messages have been read
+            # Use the sender's personal room
+            print(f"[Socket.IO] User {user_id} read messages from {sender_id}")
+            emit('messages_read', {'reader_id': user_id, 'contact_id': sender_id}, room=f"user_{sender_id}")
+            
+        except Exception as e:
+            print(f"[Socket.IO] Error marking read: {e}")
+
+
 def get_room_name(user1_id, user2_id):
     """Create a consistent room name for two users."""
     ids = sorted([int(user1_id), int(user2_id)])

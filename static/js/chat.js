@@ -132,6 +132,11 @@ const processedMessageIds = new Set();
 socket.on('new_message', (data) => {
     console.log('[Socket.IO] New message received:', data);
 
+    // If I am the receiver and the chat is open, mark it as read immediately
+    if (data.receiver_id === CURRENT_USER_ID && data.sender_id === currentContactId) {
+        socket.emit('mark_read', { user_id: CURRENT_USER_ID, sender_id: currentContactId });
+    }
+
     // Prevent duplicate processing (message may arrive from both chat room and personal room)
     if (processedMessageIds.has(data.id)) {
         console.log('[Socket.IO] Skipping duplicate message:', data.id);
@@ -269,6 +274,23 @@ socket.on('message_deleted', (data) => {
 });
 
 /**
+ * When messages are read by the recipient
+ */
+socket.on('messages_read', (data) => {
+    console.log('[Socket.IO] Messages read:', data);
+
+    // If the person reading is the person I'm chatting with
+    if (data.reader_id === currentContactId) {
+        // Find all my sent messages and change ticks to read
+        const mySentMessages = document.querySelectorAll('.message.sent .message-tick i');
+        mySentMessages.forEach(tick => {
+            tick.className = 'bi bi-check-all'; // Double tick
+            tick.parentElement.classList.add('read');
+        });
+    }
+});
+
+/**
  * When a partner submits their cyber challenge answer (waiting state)
  */
 socket.on('cyber_answer_submitted', (data) => {
@@ -402,6 +424,7 @@ function appendMessage(msg) {
         <div class="bubble">
             <p>${msg.text}</p>
             ${editedIndicator}
+            ${msg.type === 'sent' ? `<span class="message-tick ${msg.read ? 'read' : ''}"><i class="bi bi-check${msg.read ? '-all' : ''}"></i></span>` : ''}
         </div>
     `;
 
@@ -552,6 +575,7 @@ function renderMessages(messages) {
                     <div class="bubble">
                         <p>${msg.text}</p>
                         ${editedIndicator}
+                        ${msg.type === 'sent' ? `<span class="message-tick ${msg.read ? 'read' : ''}"><i class="bi bi-check${msg.read ? '-all' : ''}"></i></span>` : ''}
                     </div>
                 </div>
             `;
@@ -1313,7 +1337,7 @@ async function loadContacts() {
             loadMessages(firstContact.id);
 
             // Mark messages as read and clear badge
-            fetch(`/social/api/messages/${firstContact.id}/read`, { method: 'POST' });
+            socket.emit('mark_read', { user_id: CURRENT_USER_ID, sender_id: firstContact.id });
             clearUnreadBadge(firstContact.id);
         }
 
@@ -1337,7 +1361,7 @@ function switchContact(contactId, contactName, contactStatus) {
 
     // Clear unread badge for this contact and mark messages as read
     clearUnreadBadge(contactId);
-    fetch(`/social/api/messages/${contactId}/read`, { method: 'POST' });
+    socket.emit('mark_read', { user_id: CURRENT_USER_ID, sender_id: contactId });
 
     // Update header
     chatContactName.textContent = contactName;

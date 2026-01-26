@@ -1292,8 +1292,13 @@ body {
     padding: 12px 18px;
     border-radius: 18px;
     font-size: 15px;
+    font-size: 15px;
     line-height: 1.4;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    position: relative;
+    /* For the tick */
+    padding-bottom: 20px;
+    /* Space for the tick */
 }
 
 .received .bubble {
@@ -1351,6 +1356,21 @@ body {
 
 .message-action-btn i {
     font-size: 14px;
+}
+
+/* Message Ticks for Read Receipts */
+/* Message Ticks for Read Receipts */
+.message-tick {
+    position: absolute;
+    bottom: 5px;
+    right: 10px;
+    font-size: 0.85em;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.message-tick.read {
+    color: #4fc3f7;
+    /* Light Blue for read receipt */
 }
 
 /* Edit mode input */
@@ -2558,6 +2578,7 @@ body {
         opacity: 0;
         transform: translateX(-50%) translateY(20px);
     }
+
     to {
         opacity: 1;
         transform: translateX(-50%) translateY(0);
@@ -2568,6 +2589,7 @@ body {
     from {
         opacity: 1;
     }
+
     to {
         opacity: 0;
     }

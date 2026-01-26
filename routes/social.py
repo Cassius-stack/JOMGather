@@ -358,7 +358,8 @@ def get_messages(contact_id):
             'id': m['message_id'],
             'type': 'sent' if m['sender_id'] == current_user_id else 'received',
             'text': m['content'],
-            'time': m['sent_at']
+            'time': m['sent_at'],
+            'read': m.get('read', False)
         } for m in messages])
     except Exception as e:
         print(f"Error in get_messages: {e}")
