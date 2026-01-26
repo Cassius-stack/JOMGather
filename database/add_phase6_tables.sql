@@ -27,6 +27,7 @@ CREATE TABLE IF NOT EXISTS sol_displays (
     status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'completed')),
     is_public BOOLEAN DEFAULT FALSE,
     is_private BOOLEAN DEFAULT TRUE,
+    title VARCHAR(255),
     likes INTEGER DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     completed_at TIMESTAMP,

@@ -4,8 +4,16 @@
 
 {% block content %}
 <!-- TODO: Cassius to implement BOOMERang quick call page -->
-<div class="container">
-    <h1>BOOMERang</h1>
-    <p class="text-muted">This page is awaiting implementation by Cassius.</p>
+<div class="container py-5 text-center">
+    <div class="card shadow-sm border-0 p-5" style="border-radius: 24px; background: #f8fafc;">
+        <div class="mb-4">
+            <i class="bi bi-camera-video" style="font-size: 4rem; color: #1e3a5f;"></i>
+        </div>
+        <h1 class="font-weight-bold">BOOMERang Video Chat</h1>
+        <p class="text-muted fs-5">Spontaneous intergenerational connections are on their way!</p>
+        <div class="mt-4">
+            <a href="{{ url_for('index') }}" class="btn btn-primary rounded-pill px-4">Back to Dashboard</a>
+        </div>
+    </div>
 </div>
 {% endblock %}

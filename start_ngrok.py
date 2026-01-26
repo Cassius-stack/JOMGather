@@ -1,40 +1,43 @@
-"""
-Start ngrok tunnel for BOOMERang video chat
-Run this AFTER starting Flask (py app.py)
-"""
-from pyngrok import ngrok
 import os
+import sys
+from pyngrok import ngrok, conf
+from dotenv import load_dotenv
 
-# Kill any existing ngrok processes first
-ngrok.kill()
+# Load environment variables from .env file
+load_dotenv()
 
-# Set auth token via environment variable (more reliable)
-os.environ["NGROK_AUTHTOKEN"] = "38hFt9ayV9zNDvjHU3xiMAnniT3_FHbfhyuU3r4WkKeebm63"
+# Define the port your Flask app is running on
+PORT = 5000
 
-# Start tunnel
-print("Starting ngrok tunnel...")
-try:
-    tunnel = ngrok.connect(5000)
-    
-    print("\n" + "="*60)
-    print("🎉 BOOMERang HTTPS URL Ready!")
-    print("="*60)
-    print(f"\n👉 Share this URL with your friend:\n")
-    print(f"   {tunnel.public_url}/activities/boomerang")
-    print(f"\n📹 Camera will work for both of you!")
-    print("="*60)
-    print("\nPress Ctrl+C to stop the tunnel")
-    
-    # Keep running
-    ngrok_process = ngrok.get_ngrok_process()
-    ngrok_process.proc.wait()
-except KeyboardInterrupt:
-    print("\nShutting down...")
-    ngrok.kill()
-except Exception as e:
-    print(f"Error: {e}")
-    print("\nTroubleshooting:")
-    print("1. Make sure Flask is running (py app.py)")
-    print("2. Make sure Malwarebytes allows ngrok")
-    print("3. Try again")
-    ngrok.kill()
+def start_ngrok():
+    # Check for auth token in environment
+    auth_token = os.environ.get("NGROK_AUTHTOKEN")
+    if auth_token:
+        print(f"Setting ngrok auth token from environment...")
+        ngrok.set_auth_token(auth_token)
+    else:
+        print("No NGROK_AUTHTOKEN env var found. Trying default ngrok config file...")
+
+    print(f"Starting ngrok tunnel on port {PORT}...")
+    try:
+        # Create a public URL for the local web server
+        public_url = ngrok.connect(PORT).public_url
+        print(f"\n * ngrok tunnel \"{public_url}\" -> \"http://127.0.0.1:{PORT}\"")
+        print(f" * Access your site at: {public_url}")
+        print("\nPress CTRL+C to stop the tunnel...")
+        
+        # Keep the script running
+        try:
+            while True:
+                pass
+        except KeyboardInterrupt:
+            print("\nShutting down ngrok...")
+            ngrok.kill()
+            sys.exit(0)
+
+    except Exception as e:
+        print(f"\nError starting ngrok: {e}")
+        sys.exit(1)
+
+if __name__ == "__main__":
+    start_ngrok()

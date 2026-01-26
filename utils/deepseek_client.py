@@ -50,6 +50,40 @@ def generate_daily_question(previous_questions=[]):
         print(f"Error generating question from DeepSeek: {e}")
         return "What is a simple joy you experienced recently?"
 
+def generate_memory_title(thoughts_list):
+    """
+    Summarizes two user thoughts into a poetic, short title for a shared memory.
+    """
+    if not DEEPSEEK_API_KEY:
+        return "A Shared Memory"
+
+    combined_text = " | ".join(thoughts_list)
+    prompt = f"Summarize these two perspectives into a short (3-6 words), poetic title for a shared memory. Perspectives: '{combined_text}'. Return ONLY the title."
+
+    headers = {
+        "Authorization": f"Bearer {DEEPSEEK_API_KEY}",
+        "Content-Type": "application/json"
+    }
+
+    data = {
+        "model": "deepseek-chat",
+        "messages": [
+            {"role": "system", "content": "You are a poetic storyteller for an intergenerational app."},
+            {"role": "user", "content": prompt}
+        ],
+        "temperature": 0.8
+    }
+
+    try:
+        response = requests.post(DEEPSEEK_API_URL, headers=headers, json=data, timeout=10)
+        response.raise_for_status()
+        result = response.json()
+        title = result['choices'][0]['message']['content'].strip().strip('"')
+        return title
+    except Exception as e:
+        print(f"Error generating title: {e}")
+        return "A Moment Shared"
+
 if __name__ == "__main__":
     # Test
     print(generate_daily_question())

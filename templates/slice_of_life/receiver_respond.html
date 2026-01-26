@@ -138,7 +138,7 @@
         </div>
         <h2 style="font-size: 1.75rem; font-weight: 600; color: #1e3a5f; margin-bottom: 0.5rem;">Response Sent!</h2>
         <p style="font-size: 1.1rem; color: #6b7280; margin-bottom: 2rem;">
-            Your response has been sent to Jeremy. You'll be notified when the display is published!
+            Your response has been sent to {{ sender.username }}. You'll be notified when the display is published!
         </p>
         <a href="{{ url_for('slice_of_life.receiver_waiting') }}"
             style="display: inline-block; background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%); color: white; border-radius: 16px; padding: 1rem 2rem; font-size: 1.1rem; font-weight: 600; text-decoration: none;">

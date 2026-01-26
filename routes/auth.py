@@ -48,7 +48,11 @@ def onboarding():
                     'email': email,
                     'user_type': user_type,
                     'auth_id': user_uuid,
-                    'password_hash': hashed_password
+                    'password_hash': hashed_password,
+                    'age': age,
+                    'region': region,
+                    'hobbies': hobbies,
+                    'skills': skills
                 })
                 
                 flash("Dev Account created! Logged in locally.", "success")
@@ -89,7 +93,11 @@ def onboarding():
                 'email': email,
                 'user_type': user_type,
                 'auth_id': user_uuid,
-                'password_hash': hashed_password
+                'password_hash': hashed_password,
+                'age': age,
+                'region': region,
+                'hobbies': hobbies,
+                'skills': skills
             })
 
             flash("Account created! Please log in.", "success")
