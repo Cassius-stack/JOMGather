@@ -414,18 +414,21 @@ function appendMessage(msg) {
 
     // Add action buttons for sent messages
     const showEdit = !msg.image_url;
-    const actionsHtml = msg.type === 'sent' ? `
+    const actionsHtml = `
         <div class="message-actions">
-            ${showEdit ? `
-            <button class="message-action-btn edit" title="Edit message" onclick="startEditMessage(this)">
-                <i class="bi bi-pencil"></i>
-            </button>
+            ${msg.type === 'sent' ? `
+                ${showEdit ? `
+                <button class="message-action-btn edit" title="Edit message" onclick="startEditMessage(this)">
+                    <i class="bi bi-pencil"></i>
+                </button>
+                ` : ''}
+                <button class="message-action-btn delete" title="Delete message" onclick="showDeleteModal(this)">
+                    <i class="bi bi-trash"></i>
+                </button>
             ` : ''}
-            <button class="message-action-btn delete" title="Delete message" onclick="showDeleteModal(this)">
-                <i class="bi bi-trash"></i>
-            </button>
+            <button class="react-btn" onclick="toggleReactionPicker(this)" title="Add reaction">😊</button>
         </div>
-    ` : '';
+    `;
 
     const editedIndicator = msg.edited ? '<span class="edited-indicator">(edited)</span>' : '';
 
@@ -438,14 +441,14 @@ function appendMessage(msg) {
 
     messageDiv.innerHTML = `
         ${actionsHtml}
-        <div class="bubble">
-            ${imageHtml}
-            ${msg.text ? `<p style="margin: 0;">${msg.text}</p>` : ''}
-            ${editedIndicator}
-            ${msg.type === 'sent' ? `<span class="message-tick ${msg.read ? 'read' : ''}"><i class="bi bi-check${msg.read ? '-all' : ''}"></i></span>` : ''}
-        </div>
-        <div class="msg-actions-chat">
-            <button class="react-btn" onclick="toggleReactionPicker(this)" title="Add reaction">😊</button>
+        <div class="message-content">
+            <div class="bubble">
+                ${imageHtml}
+                ${msg.text ? `<p style="margin: 0;">${msg.text}</p>` : ''}
+                ${editedIndicator}
+                ${msg.type === 'sent' ? `<span class="message-tick ${msg.read ? 'read' : ''}"><i class="bi bi-check${msg.read ? '-all' : ''}"></i></span>` : ''}
+            </div>
+            <div class="msg-reactions-chat"></div>
         </div>
     `;
 
@@ -576,20 +579,23 @@ function renderMessages(messages) {
             // Async check if this challenge is completed and update the card
             checkAndUpdateChallengeCard(effectiveChallengeId, effectiveScenarioId);
         } else {
-            // Add action buttons for sent messages
+            // Add action buttons for messages
             const showEdit = !msg.image_url;
-            const actionsHtml = msg.type === 'sent' ? `
+            const actionsHtml = `
                 <div class="message-actions">
-                    ${showEdit ? `
-                    <button class="message-action-btn edit" title="Edit message" onclick="startEditMessage(this)">
-                        <i class="bi bi-pencil"></i>
-                    </button>
+                    ${msg.type === 'sent' ? `
+                        ${showEdit ? `
+                        <button class="message-action-btn edit" title="Edit message" onclick="startEditMessage(this)">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        ` : ''}
+                        <button class="message-action-btn delete" title="Delete message" onclick="showDeleteModal(this)">
+                            <i class="bi bi-trash"></i>
+                        </button>
                     ` : ''}
-                    <button class="message-action-btn delete" title="Delete message" onclick="showDeleteModal(this)">
-                        <i class="bi bi-trash"></i>
-                    </button>
+                    <button class="react-btn" onclick="toggleReactionPicker(this)" title="Add reaction">😊</button>
                 </div>
-            ` : '';
+            `;
 
             const editedIndicator = msg.edited ? '<span class="edited-indicator">(edited)</span>' : '';
 
@@ -603,14 +609,14 @@ function renderMessages(messages) {
             chatMessages.innerHTML += `
                 <div class="message ${msg.type}" data-message-id="${msg.id || ''}">
                     ${actionsHtml}
-                    <div class="bubble">
-                        ${imageHtml}
-                        ${msg.text ? `<p style="margin: 0;">${msg.text}</p>` : ''}
-                        ${editedIndicator}
-                        ${msg.type === 'sent' ? `<span class="message-tick ${msg.read ? 'read' : ''}"><i class="bi bi-check${msg.read ? '-all' : ''}"></i></span>` : ''}
-                    </div>
-                    <div class="msg-actions-chat">
-                        <button class="react-btn" onclick="toggleReactionPicker(this)" title="Add reaction">😊</button>
+                    <div class="message-content">
+                        <div class="bubble">
+                            ${imageHtml}
+                            ${msg.text ? `<p style="margin: 0;">${msg.text}</p>` : ''}
+                            ${editedIndicator}
+                            ${msg.type === 'sent' ? `<span class="message-tick ${msg.read ? 'read' : ''}"><i class="bi bi-check${msg.read ? '-all' : ''}"></i></span>` : ''}
+                        </div>
+                        <div class="msg-reactions-chat"></div>
                     </div>
                 </div>
             `;

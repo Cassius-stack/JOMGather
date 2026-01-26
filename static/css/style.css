@@ -1275,17 +1275,36 @@ body {
 }
 
 .message {
-    max-width: 60%;
-    margin-bottom: 15px;
+    max-width: 80%;
+    margin-bottom: 20px;
     display: flex;
-}
-
-.message.received {
-    align-self: flex-start;
+    gap: 8px;
+    position: relative;
 }
 
 .message.sent {
     align-self: flex-end;
+    flex-direction: row;
+    align-items: flex-end;
+}
+
+.message.received {
+    align-self: flex-start;
+    flex-direction: row-reverse;
+    align-items: flex-end;
+}
+
+.message-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.message.sent .message-content {
+    align-items: flex-end;
+}
+
+.message.received .message-content {
+    align-items: flex-start;
 }
 
 .bubble {
@@ -1503,39 +1522,23 @@ body {
     background: #d1d5db;
 }
 
-/* Chat Reaction Styles */
-.message {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-}
-
-.message.received {
-    align-items: flex-start;
-}
-
-.msg-actions-chat {
-    display: flex;
-    gap: 8px;
-    margin-top: 4px;
-    opacity: 0;
-    transition: opacity 0.2s;
-    position: relative;
-}
-
-.message:hover .msg-actions-chat {
+.message:hover .message-actions {
     opacity: 1;
 }
 
 .react-btn {
-    background: none;
+    width: 32px;
+    height: 32px;
+    background: #e0e0e0;
     border: none;
-    font-size: 12px;
-    color: #888;
+    font-size: 14px;
+    color: #666;
     cursor: pointer;
-    padding: 4px 8px;
-    border-radius: 4px;
-    transition: background 0.2s;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
 }
 
 .react-btn:hover {
