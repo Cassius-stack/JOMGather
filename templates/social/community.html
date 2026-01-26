@@ -771,7 +771,10 @@
     }
 
     async function createCommunity() {
-        if (!state.newCommunityName.trim()) return;
+        if (!state.newCommunityName.trim()) {
+            alert('Please enter a community name.');
+            return;
+        }
         try {
             const res = await fetch(`${API_BASE}/communities`, {
                 method: 'POST',
@@ -781,17 +784,23 @@
                     description: state.newCommunityDesc
                 })
             });
-            if (!res.ok) throw new Error('Failed to create community');
-            const newCommunity = await res.json();
-            state.communities.push(newCommunity);
-            state.activeCommunityId = newCommunity.id;
+
+            const responseData = await res.json();
+
+            if (!res.ok) {
+                console.error('Server error:', responseData);
+                throw new Error(responseData.error || 'Failed to create community');
+            }
+
+            state.communities.push(responseData);
+            state.activeCommunityId = responseData.id;
             state.newCommunityName = '';
             state.newCommunityDesc = '';
             state.showAddCommunity = false;
             render();
         } catch (error) {
             console.error('Error creating community:', error);
-            alert('Failed to create community. Please try again.');
+            alert('Failed to create community: ' + error.message);
         }
     }
 
