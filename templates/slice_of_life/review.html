@@ -23,7 +23,8 @@
                 <form action="{{ url_for('slice_of_life.like_display', display_id=display.display_id) }}" method="POST"
                     class="d-inline">
                     <button type="submit"
-                        class="btn {{ 'btn-danger' if has_liked else 'btn-outline-danger' }} rounded-pill px-4">
+                        class="btn rounded-pill px-4 {{ 'btn-danger' if has_liked else 'btn-outline-secondary' }}"
+                        style="{{ 'border-color: #cbd5e1; color: #64748b;' if not has_liked else '' }}">
                         <i class="bi {{ 'bi-heart-fill' if has_liked else 'bi-heart' }} me-1"></i> {{ like_count }}
                     </button>
                 </form>
@@ -77,7 +78,41 @@
                             style="height: 250px;" alt="Memory">
                         {% endif %}
 
-                        <p class="lead" style="font-family: 'Georgia', serif;">{{ sub.thought }}</p>
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <p class="lead mb-0" style="font-family: 'Georgia', serif;">{{ sub.thought }}</p>
+                            {% if sub.user_id == current_user_id and display.status == 'pending' %}
+                            <button class="btn btn-sm btn-outline-primary rounded-pill px-3" data-bs-toggle="modal"
+                                data-bs-target="#editStoryModal">
+                                <i class="bi bi-pencil-square me-1"></i>Edit
+                            </button>
+                            {% endif %}
+                        </div>
+
+                        <!-- Edit Story Modal -->
+                        {% if sub.user_id == current_user_id and display.status == 'pending' %}
+                        <div class="modal fade" id="editStoryModal" tabindex="-1">
+                            <div class="modal-dialog">
+                                <div class="modal-content rounded-4 shadow border-0">
+                                    <div class="modal-header border-0">
+                                        <h5 class="modal-title fw-bold">Edit Your Story</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <form
+                                        action="{{ url_for('slice_of_life.edit_my_story', submission_id=sub.submission_id) }}"
+                                        method="POST">
+                                        <div class="modal-body">
+                                            <textarea name="story" class="form-control rounded-3" rows="5"
+                                                required>{{ sub.thought }}</textarea>
+                                        </div>
+                                        <div class="modal-footer border-0">
+                                            <button type="submit" class="btn btn-primary rounded-pill px-4">Save
+                                                Changes</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
 
                         <!-- Review Input -->
                         {% if sub.user_id != current_user_id and not sub.comment and display.status == 'pending' %}
@@ -169,10 +204,12 @@
                     <!-- Post Comment Form -->
                     <form action="{{ url_for('slice_of_life.post_comment', display_id=display.display_id) }}"
                         method="POST">
-                        <div class="input-group">
-                            <input type="text" name="content" class="form-control rounded-start-pill px-4"
-                                placeholder="Add a public comment..." required>
-                            <button class="btn btn-primary rounded-end-pill px-4" type="submit">Post</button>
+                        <div class="input-group shadow-sm rounded-pill overflow-hidden"
+                            style="border: 2px solid #e2e8f0;">
+                            <input type="text" name="content" class="form-control border-0 px-4"
+                                style="height: 50px; font-size: 1rem;" placeholder="Add a public comment..." required>
+                            <button class="btn btn-primary border-0 px-4" type="submit"
+                                style="font-weight: 600;">Post</button>
                         </div>
                     </form>
                 </div>
@@ -195,7 +232,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <p class="text-muted">Choose where to save your display. (+10 points)</p>
+                <p class="text-muted">Choose where to save your display. (+10 coins)</p>
                 <form method="POST" action="{{ url_for('slice_of_life.publish', display_id=display.display_id) }}">
                     <div class="form-check mb-3 p-3 bg-light rounded-3">
                         <input class="form-check-input ms-0 me-3" type="checkbox" name="publish_public"

@@ -226,11 +226,47 @@ def accept_friend_request():
         current_user_id = get_current_user_id()
         requester_id = request.json.get('requester_id')
         
+        if not requester_id:
+            return jsonify({'error': 'Missing requester_id'}), 400
+            
         supabase = get_supabase()
         # Update status to accepted
         # user_id_1 is requester, user_id_2 is current_user
         supabase.table('friendships').update({'status': 'accepted'}).eq('user_id_1', requester_id).eq('user_id_2', current_user_id).execute()
         
+        # Clear the specific notification for this friend request
+        try:
+            msg_frag = f"sent you a friend request!"
+            supabase.table('notifications').delete().eq('user_id', current_user_id).ilike('message', f'%{msg_frag}%').execute()
+        except:
+            pass
+            
+        return jsonify({'success': True})
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+@social_bp.route('/api/friend-reject', methods=['POST'])
+def reject_friend_request():
+    """Reject a friend request."""
+    try:
+        current_user_id = get_current_user_id()
+        requester_id = request.json.get('requester_id')
+        
+        if not requester_id:
+            return jsonify({'error': 'Missing requester_id'}), 400
+            
+        supabase = get_supabase()
+        # Delete the pending friendship record
+        supabase.table('friendships').delete().eq('user_id_1', requester_id).eq('user_id_2', current_user_id).eq('status', 'pending').execute()
+        
+        # Clear notification
+        try:
+            msg_frag = f"sent you a friend request!"
+            supabase.table('notifications').delete().eq('user_id', current_user_id).ilike('message', f'%{msg_frag}%').execute()
+        except:
+            pass
+            
         return jsonify({'success': True})
     except Exception as e:
         traceback.print_exc()
@@ -460,6 +496,12 @@ def join_group(group_id):
 
 @social_bp.route('/ask-grandfriend')
 def ask_grandfriend():
+    """AskAGrandfriend - Entry Transition."""
+    return render_template('social/ask_grandfriend_transition.html')
+
+
+@social_bp.route('/ask-grandfriend/home')
+def ask_grandfriend_home():
     """AskAGrandfriend forum."""
     questions = []
     try:
@@ -583,7 +625,7 @@ def post_question():
                 from flask import flash
                 flash("Question posted successfully!", "success")
         
-        return redirect(url_for('social.ask_grandfriend'))
+        return redirect(url_for('social.ask_grandfriend_home'))
     
     return render_template('social/ask_grandfriend.html')
 
@@ -602,7 +644,7 @@ def react_to_reply_route(reply_id, reaction_type):
     }
     
     if reaction_type not in allowed_reactions:
-        return redirect(url_for('social.ask_grandfriend'))
+        return redirect(url_for('social.ask_grandfriend_home'))
 
     try:
         supabase = get_supabase()
@@ -623,7 +665,7 @@ def react_to_reply_route(reply_id, reaction_type):
         if str(question.get('user_id')) != str(user_id):
             from flask import flash
             flash("Only the question author can react.", "error")
-            return redirect(url_for('social.ask_grandfriend'))
+            return redirect(url_for('social.ask_grandfriend_home'))
 
         # 2. Calculate Coin Diff
         old_coins = reply.get('coins_awarded', 0)
@@ -680,7 +722,7 @@ def post_reply(question_id):
     parent_reply_id = request.form.get('parent_reply_id')
     
     if not content:
-        return redirect(url_for('social.ask_grandfriend'))
+        return redirect(url_for('social.ask_grandfriend_home'))
 
     # Determine Author
     try:

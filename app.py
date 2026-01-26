@@ -143,33 +143,57 @@ def create_app(config_name='default'):
                 from utils.supabase_db import fetch_one, fetch_all
                 me = fetch_one('users', user_id=current_user_id)
                 if me:
+                    # Handle Hobbies (could be string from old data or list from Zongrong's system)
                     my_hobbies = me.get('hobbies') or []
-                    if isinstance(my_hobbies, str): my_hobbies = [h.strip() for h in my_hobbies.split(',')]
+                    if isinstance(my_hobbies, str):
+                        my_hobbies = [h.strip() for h in my_hobbies.split(',') if h.strip()]
+                    
+                    # Handle Skills (Zongrong's addition)
+                    my_skills = me.get('skills') or []
+                    if isinstance(my_skills, str):
+                        my_skills = [s.strip() for s in my_skills.split(',') if s.strip()]
+                        
                     my_region = me.get('region')
                     
-                    # IDs to exclude (me + friends + pending)
+                    # IDs to exclude (me + friends) - friendships check
                     excluded_ids = [current_user_id]
-                    all_f = supabase.table('friendships').select('*').or_(f"user_id_1.eq.{current_user_id},user_id_2.eq.{current_user_id}").execute().data
-                    for f in all_f:
-                        excluded_ids.append(f['user_id_1'] if f['user_id_1'] != current_user_id else f['user_id_2'])
+                    try:
+                        all_f = supabase.table('friendships').select('*').or_(f"user_id_1.eq.{current_user_id},user_id_2.eq.{current_user_id}").execute().data
+                        for f in all_f:
+                            excluded_ids.append(f['user_id_1'] if f['user_id_1'] != current_user_id else f['user_id_2'])
+                    except:
+                        pass
                     
+                    # Fetch other users and score them
                     other_users = fetch_all('users')
                     for u in other_users:
-                        if u['user_id'] in excluded_ids: continue
+                        if u['user_id'] in excluded_ids:
+                            continue
                         
                         score = 0
-                        if my_region and u.get('region') == my_region: score += 3
+                        # 1. Region Match (High Weight)
+                        if my_region and u.get('region') == my_region:
+                            score += 5
                         
+                        # 2. Hobbies Match
                         u_hobbies = u.get('hobbies') or []
-                        if isinstance(u_hobbies, str): u_hobbies = [h.strip() for h in u_hobbies.split(',')]
+                        if isinstance(u_hobbies, str):
+                            u_hobbies = [h.strip() for h in u_hobbies.split(',') if h.strip()]
+                        common_hobbies = set(h.lower() for h in my_hobbies) & set(h.lower() for h in u_hobbies)
+                        score += len(common_hobbies) * 2
                         
-                        common = set(my_hobbies) & set(u_hobbies)
-                        score += len(common) * 2
+                        # 3. Skills Match (Zongrong's System)
+                        u_skills = u.get('skills') or []
+                        if isinstance(u_skills, str):
+                            u_skills = [s.strip() for s in u_skills.split(',') if s.strip()]
+                        common_skills = set(s.lower() for s in my_skills) & set(s.lower() for s in u_skills)
+                        score += len(common_skills) * 3  # Higher weight for skills to encourage learning/teaching
                         
                         if score > 0:
                             u['score'] = score
                             suggested_friends.append(u)
                     
+                    # Sort and limit
                     suggested_friends.sort(key=lambda x: x['score'], reverse=True)
                     suggested_friends = suggested_friends[:4]
                 # -------------------------------

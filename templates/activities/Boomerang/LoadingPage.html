@@ -397,7 +397,8 @@
             document.getElementById('statusMessage').textContent = 'Searching for a partner...';
 
             // Join the matching queue
-            socket.emit('boomerang_join_queue', { name: userName });
+            const userId = "{{ session.get('user_id', '') }}";
+            socket.emit('boomerang_join_queue', { name: userName, user_id: userId });
         });
 
         socket.on('boomerang_queue_status', (data) => {
@@ -413,6 +414,7 @@
             // Store match data for Meetup page
             sessionStorage.setItem('boomerang_room', data.room_id);
             sessionStorage.setItem('boomerang_partner', data.partner_name);
+            sessionStorage.setItem('boomerang_partner_id', data.partner_id || '');
             sessionStorage.setItem('boomerang_initiator', data.is_initiator);
             sessionStorage.setItem('boomerang_user', userName);
 
