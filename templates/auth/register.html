@@ -44,10 +44,16 @@
                     placeholder="At least 6 characters">
             </div>
 
-            <button type="submit"
-                style="width: 100%; background: #1e3a5f; color: white; border: none; padding: 1rem; border-radius: 12px; font-size: 1.1rem; font-weight: 600; cursor: pointer; transition: background 0.2s; margin-bottom: 1.5rem;">
-                Create Account
-            </button>
+            <div style="display: flex; gap: 1rem;">
+                <a href="{{ url_for('auth.login') }}"
+                    style="flex: 1; text-align: center; padding: 1rem; border: 2px solid #e2e8f0; border-radius: 12px; color: #64748b; font-weight: 600; text-decoration: none;">
+                    &larr; Back
+                </a>
+                <button type="submit"
+                    style="flex: 2; background: #1e3a5f; color: white; border: none; padding: 1rem; border-radius: 12px; font-size: 1.1rem; font-weight: 600; cursor: pointer; transition: background 0.2s;">
+                    Next &rarr;
+                </button>
+            </div>
         </form>
 
         <!-- Login Link -->
