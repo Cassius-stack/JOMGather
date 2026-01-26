@@ -605,6 +605,44 @@ def post_comment(display_id):
     return redirect(url_for('slice_of_life.review', display_id=display_id))
 
 
+@slice_of_life_bp.route('/delete_display/<int:display_id>', methods=['POST'])
+@login_required
+def delete_display(display_id):
+    """Delete a display and its associated data (invites, submissions, etc)."""
+    current_uid = get_current_user_id()
+    
+    # 1. Fetch Display to check ownership
+    display = fetch_one('sol_displays', display_id=display_id)
+    if not display:
+        flash('Display not found.', 'danger')
+        return redirect(url_for('slice_of_life.catalog'))
+        
+    # 2. Check Permissions (Creator or Partner can delete)
+    if display['creator_id'] != current_uid and display['partner_id'] != current_uid:
+        flash('Unauthorized to delete this Slice of Life.', 'danger')
+        return redirect(url_for('slice_of_life.catalog'))
+        
+    try:
+        supabase = get_supabase()
+        
+        # 3. Manual Cleanup for tables WITHOUT Cascade (sol_invites)
+        # Based on schema, invites do NOT have ON DELETE CASCADE
+        supabase.table('sol_invites').delete().eq('display_id', display_id).execute()
+        
+        # 4. Delete Display (Cascade handles submissions, comments, likes)
+        supabase.table('sol_displays').delete().eq('display_id', display_id).execute()
+        
+        flash('Slice of Life deleted successfully.', 'success')
+        return redirect(url_for('slice_of_life.catalog'))
+        
+    except Exception as e:
+        print(f"Error deleting display: {e}")
+        import traceback
+        traceback.print_exc()
+        flash('An error occurred while deleting.', 'danger')
+        return redirect(url_for('slice_of_life.review', display_id=display_id))
+
+
 # ============================================
 
 @slice_of_life_bp.route('/catalog')

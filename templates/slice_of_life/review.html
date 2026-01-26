@@ -18,6 +18,18 @@
             </div>
 
             <div class="d-flex gap-2">
+                <!-- Delete Button (Owner Only) -->
+                {% if display.creator_id == current_user_id or display.partner_id == current_user_id %}
+                <form action="{{ url_for('slice_of_life.delete_display', display_id=display.display_id) }}"
+                    method="POST" onsubmit="return confirm('Are you sure you want to delete this memory permanently?');"
+                    class="d-inline">
+                    <button type="submit"
+                        class="btn btn-outline-danger rounded-circle d-flex align-items-center justify-content-center"
+                        style="width: 42px; height: 42px;" title="Delete Memory">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </form>
+                {% endif %}
                 {% if display.status != 'pending' %}
                 <!-- Like Button -->
                 <form action="{{ url_for('slice_of_life.like_display', display_id=display.display_id) }}" method="POST"
