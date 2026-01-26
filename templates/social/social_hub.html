@@ -51,9 +51,20 @@
                 </div>
             </div>
             <footer class="input-area">
+                <!-- Emoji Picker Container -->
+                <div class="emoji-picker" id="emoji-picker" style="display: none;">
+                    <div class="emoji-grid">
+                        <span>😄</span><span>😭</span><span>😂</span><span>🤣</span><span>😉</span>
+                        <span>👍</span><span>👎</span><span>👌</span><span>👋</span><span>🙏</span>
+                        <span>❤️</span><span>💔</span><span>⭐</span><span>🔥</span><span>✨</span>
+                        <span>💤</span><span>🎉</span><span>🍴</span><span>💩</span><span>💀</span>
+                        <span>😊</span><span>😋</span><span>😎</span><span>🤔</span><span>🤯</span>
+                    </div>
+                </div>
+
                 <input type="text" placeholder="Type your message..." id="message-input" required maxlength="500" minlength="1" autocomplete="off">
                 <div class="input-actions">
-                    <i class="bi bi-emoji-smile"></i>
+                    <i class="bi bi-emoji-smile" id="emoji-btn" style="cursor: pointer;"></i>
                     <i class="bi bi-paperclip"></i>
                 </div>
                 <button class="send-btn" id="send-btn">

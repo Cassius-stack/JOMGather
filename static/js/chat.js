@@ -1488,3 +1488,49 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     });
 });
+// --- Emoji Picker Logic ---
+document.addEventListener('DOMContentLoaded', () => {
+    const emojiBtn = document.getElementById('emoji-btn');
+    const emojiPicker = document.getElementById('emoji-picker');
+    const messageInput = document.getElementById('message-input');
+    const emojiGrid = document.querySelector('.emoji-grid');
+
+    if (emojiBtn && emojiPicker && messageInput && emojiGrid) {
+        // Toggle visibility on button click
+        emojiBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            emojiPicker.style.display = emojiPicker.style.display === 'block' ? 'none' : 'block';
+        });
+
+        // Hide when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!emojiPicker.contains(e.target) && e.target !== emojiBtn) {
+                emojiPicker.style.display = 'none';
+            }
+        });
+
+        // Use event delegation for emoji clicks
+        emojiGrid.addEventListener('click', (e) => {
+            if (e.target.tagName === 'SPAN') {
+                const emoji = e.target.textContent;
+
+                // Insert emoji at cursor position or end
+                const start = messageInput.selectionStart;
+                const end = messageInput.selectionEnd;
+                const text = messageInput.value;
+                const before = text.substring(0, start);
+                const after = text.substring(end, text.length);
+
+                messageInput.value = before + emoji + after;
+
+                // Move cursor to after emoji
+                const newPos = start + emoji.length;
+                messageInput.setSelectionRange(newPos, newPos);
+                messageInput.focus();
+
+                // Optional: Close picker after selection
+                // emojiPicker.style.display = 'none';
+            }
+        });
+    }
+});

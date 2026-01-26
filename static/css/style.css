@@ -1785,13 +1785,65 @@ body {
     font-size: 16px !important;
 }
 
+/* Emoji Picker Styles */
+.emoji-picker {
+    position: absolute;
+    bottom: 70px;
+    right: 120px;
+    width: 300px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    padding: 12px;
+    border: 1px solid #e0e0e0;
+    z-index: 100;
+}
+
+.emoji-picker::after {
+    content: '';
+    position: absolute;
+    bottom: -6px;
+    right: 20px;
+    width: 12px;
+    height: 12px;
+    background: white;
+    transform: rotate(45deg);
+    border-right: 1px solid #e0e0e0;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.emoji-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.emoji-grid span {
+    font-size: 24px;
+    cursor: pointer;
+    text-align: center;
+    padding: 4px;
+    border-radius: 6px;
+    transition: background-color 0.2s;
+    user-select: none;
+}
+
+.emoji-grid span:hover {
+    background-color: #f0f0f0;
+}
+
 /* Input Area */
 .input-area {
     padding: 15px 20px;
-    border-top: 1px solid #ddd;
     background-color: white;
+    border-top: 1px solid #e5e5e5;
     display: flex;
     align-items: center;
+    gap: 12px;
+    position: relative;
+    /* For absolute positioning context if needed */
 }
 
 .input-area input {
