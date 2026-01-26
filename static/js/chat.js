@@ -444,6 +444,9 @@ function appendMessage(msg) {
             ${editedIndicator}
             ${msg.type === 'sent' ? `<span class="message-tick ${msg.read ? 'read' : ''}"><i class="bi bi-check${msg.read ? '-all' : ''}"></i></span>` : ''}
         </div>
+        <div class="msg-actions-chat">
+            <button class="react-btn" onclick="toggleReactionPicker(this)" title="Add reaction">😊</button>
+        </div>
     `;
 
     chatMessages.appendChild(messageDiv);
@@ -606,6 +609,9 @@ function renderMessages(messages) {
                         ${editedIndicator}
                         ${msg.type === 'sent' ? `<span class="message-tick ${msg.read ? 'read' : ''}"><i class="bi bi-check${msg.read ? '-all' : ''}"></i></span>` : ''}
                     </div>
+                    <div class="msg-actions-chat">
+                        <button class="react-btn" onclick="toggleReactionPicker(this)" title="Add reaction">😊</button>
+                    </div>
                 </div>
             `;
         }
@@ -764,7 +770,7 @@ function showDeleteModal(button) {
     overlay.className = 'delete-modal-overlay';
     overlay.innerHTML = `
         <div class="delete-modal">
-            <h4>Delete Message?</h4>
+            <h4><i class="bi bi-exclamation-triangle"></i> Delete Message?</h4>
             <p>"${messageText.substring(0, 50)}${messageText.length > 50 ? '...' : ''}"</p>
             <div class="delete-modal-actions">
                 <button class="confirm-delete">Delete</button>
@@ -826,6 +832,83 @@ function deleteMessage(messageId, messageDiv) {
     setTimeout(() => {
         messageDiv.remove();
     }, 300);
+}
+
+// ============================================
+// REACTION FUNCTIONS
+// ============================================
+
+const chatEmojis = ['👍', '❤️', '🎉'];
+
+/**
+ * Toggle reaction emoji picker for a message
+ */
+function toggleReactionPicker(button) {
+    // Close any existing emoji picker
+    const existingPicker = document.querySelector('.emoji-picker-chat');
+    if (existingPicker) {
+        existingPicker.remove();
+    }
+
+    const messageDiv = button.closest('.message');
+    const messageId = messageDiv.dataset.messageId;
+
+    // Create emoji picker
+    const picker = document.createElement('div');
+    picker.className = 'emoji-picker-chat';
+    picker.innerHTML = chatEmojis.map(e =>
+        `<button onclick="addReactionToMessage('${messageId}', '${e}', this)">${e}</button>`
+    ).join('');
+
+    // Position it near the button
+    button.parentElement.appendChild(picker);
+
+    // Close picker when clicking outside
+    document.addEventListener('click', function closePicker(e) {
+        if (!picker.contains(e.target) && e.target !== button) {
+            picker.remove();
+            document.removeEventListener('click', closePicker);
+        }
+    });
+}
+
+/**
+ * Add a reaction emoji to a message (visual only for now)
+ */
+function addReactionToMessage(messageId, emoji, button) {
+    const picker = button.closest('.emoji-picker-chat');
+    const messageDiv = document.querySelector(`[data-message-id="${messageId}"]`);
+
+    if (messageDiv) {
+        // Check if reactions container exists
+        let reactionsDiv = messageDiv.querySelector('.msg-reactions-chat');
+        if (!reactionsDiv) {
+            reactionsDiv = document.createElement('div');
+            reactionsDiv.className = 'msg-reactions-chat';
+            messageDiv.querySelector('.bubble').after(reactionsDiv);
+        }
+
+        // Check if this emoji already exists
+        let badge = reactionsDiv.querySelector(`[data-emoji="${emoji}"]`);
+        if (badge) {
+            // Increment count
+            const count = parseInt(badge.dataset.count || 1) + 1;
+            badge.dataset.count = count;
+            badge.textContent = `${emoji} ${count}`;
+        } else {
+            // Add new reaction badge
+            badge = document.createElement('span');
+            badge.className = 'reaction-badge-chat';
+            badge.dataset.emoji = emoji;
+            badge.dataset.count = 1;
+            badge.textContent = `${emoji} 1`;
+            badge.onclick = () => addReactionToMessage(messageId, emoji, badge);
+            reactionsDiv.appendChild(badge);
+        }
+    }
+
+    // Remove picker
+    if (picker) picker.remove();
 }
 
 // ============================================
