@@ -699,6 +699,234 @@
             transform: rotate(360deg);
         }
     }
+
+    /* Message action buttons (edit/delete) - matching social_hub.html */
+    .message-actions {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        opacity: 0;
+        transition: opacity 0.2s;
+        flex-shrink: 0;
+    }
+
+    .community-message {
+        position: relative;
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .community-message.sent {
+        flex-direction: row;
+    }
+
+    .community-message.received {
+        flex-direction: row;
+    }
+
+    .community-message:hover .message-actions {
+        opacity: 1;
+    }
+
+    .message-action-btn {
+        width: 36px;
+        height: 36px;
+        border: none;
+        background: #f3f4f6;
+        border-radius: 10px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        color: #6b7280;
+        transition: all 0.2s;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    }
+
+    .message-action-btn:hover {
+        background: #e5e7eb;
+        transform: scale(1.05);
+    }
+
+    .message-action-btn.edit:hover {
+        color: #3b82f6;
+        background: #dbeafe;
+    }
+
+    .message-action-btn.delete:hover {
+        color: #ef4444;
+        background: #fee2e2;
+    }
+
+    /* Edit container */
+    .edit-container {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .edit-input {
+        width: 100%;
+        padding: 8px 12px;
+        border: 2px solid #3b82f6;
+        border-radius: 8px;
+        font-size: 14px;
+        outline: none;
+    }
+
+    .edit-input:focus {
+        border-color: #1e3a5f;
+    }
+
+    .edit-actions {
+        display: flex;
+        gap: 8px;
+    }
+
+    .edit-actions .save-btn {
+        padding: 6px 16px;
+        background: #1e3a5f;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 500;
+        transition: background 0.2s;
+    }
+
+    .edit-actions .save-btn:hover {
+        background: #2d5a87;
+    }
+
+    .edit-actions .cancel-btn {
+        padding: 6px 16px;
+        background: #e5e7eb;
+        color: #374151;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 13px;
+        transition: background 0.2s;
+    }
+
+    .edit-actions .cancel-btn:hover {
+        background: #d1d5db;
+    }
+
+    /* Edited indicator */
+    .edited-indicator {
+        font-size: 11px;
+        color: #888;
+        font-style: italic;
+        margin-left: 6px;
+    }
+
+    /* Delete modal overlay */
+    .delete-modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+        animation: fadeIn 0.2s;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+        }
+
+        to {
+            opacity: 1;
+        }
+    }
+
+    .delete-modal {
+        background: white;
+        border-radius: 16px;
+        padding: 24px;
+        width: 340px;
+        max-width: 90vw;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        animation: slideUp 0.2s;
+    }
+
+    @keyframes slideUp {
+        from {
+            transform: translateY(20px);
+            opacity: 0;
+        }
+
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+
+    .delete-modal h4 {
+        color: #ef4444;
+        margin: 0 0 12px 0;
+        font-size: 18px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .delete-modal p {
+        color: #666;
+        margin: 0 0 20px 0;
+        font-size: 14px;
+        background: #f8f8f8;
+        padding: 10px;
+        border-radius: 8px;
+        font-style: italic;
+    }
+
+    .delete-modal-actions {
+        display: flex;
+        gap: 12px;
+    }
+
+    .delete-modal-actions .confirm-delete {
+        flex: 1;
+        padding: 10px 16px;
+        background: #ef4444;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 500;
+        transition: background 0.2s;
+    }
+
+    .delete-modal-actions .confirm-delete:hover {
+        background: #dc2626;
+    }
+
+    .delete-modal-actions .cancel-delete {
+        flex: 1;
+        padding: 10px 16px;
+        background: #e5e7eb;
+        color: #374151;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: background 0.2s;
+    }
+
+    .delete-modal-actions .cancel-delete:hover {
+        background: #d1d5db;
+    }
 </style>
 {% endblock %}
 
@@ -753,7 +981,7 @@
         showReactionPicker: null
     };
 
-    const emojis = ['👍', '❤️', '😂', '😮', '😢', '🙏', '🎉', '🔥'];
+    const emojis = ['👍', '❤️', '🎉'];
 
     // API Functions
     async function fetchCommunities() {
@@ -943,20 +1171,190 @@
         }
     }
 
-    async function deleteMessage(messageId) {
+    // ============================================
+    // EDIT & DELETE FUNCTIONS (CRUD)
+    // ============================================
+
+    /**
+     * Start editing a message - shows inline input field
+     */
+    function startEditMessage(messageId) {
+        const messageDiv = document.querySelector(`[data-message-id="${messageId}"]`);
+        if (!messageDiv) return;
+
+        const bubble = messageDiv.querySelector('.msg-bubble');
+        const currentText = bubble.textContent;
+
+        // Store original text for cancel
+        bubble.dataset.originalText = currentText;
+
+        // Replace bubble with edit input
+        bubble.innerHTML = `
+            <div class="edit-container">
+                <input type="text" class="edit-input" value="${currentText.replace(/"/g, '&quot;')}" id="edit-input-${messageId}">
+                <div class="edit-actions">
+                    <button class="save-btn" onclick="saveEditMessage(${messageId})">Save</button>
+                    <button class="cancel-btn" onclick="cancelEditMessage(${messageId})">Cancel</button>
+                </div>
+            </div>
+        `;
+
+        // Focus and select the input
+        const input = document.getElementById(`edit-input-${messageId}`);
+        input.focus();
+        input.select();
+
+        // Handle keyboard shortcuts
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                saveEditMessage(messageId);
+            } else if (e.key === 'Escape') {
+                cancelEditMessage(messageId);
+            }
+        });
+    }
+
+    /**
+     * Save the edited message to the server
+     */
+    async function saveEditMessage(messageId) {
+        const input = document.getElementById(`edit-input-${messageId}`);
+        if (!input) return;
+
+        const newText = input.value.trim();
+        if (!newText) {
+            alert('Message cannot be empty');
+            return;
+        }
+
         try {
-            await fetch(
+            const res = await fetch(
+                `${API_BASE}/communities/${state.activeCommunityId}/channels/${state.activeChannelId}/messages/${messageId}`,
+                {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: newText })
+                }
+            );
+
+            if (!res.ok) {
+                const data = await res.json();
+                throw new Error(data.error || 'Failed to edit message');
+            }
+
+            // Update message in state
+            const community = state.communities.find(c => c.id === state.activeCommunityId);
+            const channel = community.channels.find(ch => ch.id === state.activeChannelId);
+            const message = channel.messages.find(m => m.id === messageId);
+            if (message) {
+                message.text = newText;
+                message.edited = true;
+            }
+
+            render();
+        } catch (error) {
+            console.error('Error editing message:', error);
+            alert('Failed to edit message: ' + error.message);
+        }
+    }
+
+    /**
+     * Cancel editing and restore original message
+     */
+    function cancelEditMessage(messageId) {
+        const messageDiv = document.querySelector(`[data-message-id="${messageId}"]`);
+        if (!messageDiv) return;
+
+        const bubble = messageDiv.querySelector('.msg-bubble');
+        const originalText = bubble.dataset.originalText || '';
+        bubble.textContent = originalText;
+        delete bubble.dataset.originalText;
+    }
+
+    /**
+     * Show delete confirmation modal
+     */
+    function showDeleteModal(messageId, messageText) {
+        // Create modal overlay
+        const overlay = document.createElement('div');
+        overlay.className = 'delete-modal-overlay';
+        overlay.id = 'delete-modal';
+        overlay.innerHTML = `
+            <div class="delete-modal">
+                <h4><i class="bi bi-exclamation-triangle"></i> Delete Message?</h4>
+                <p>"${messageText.substring(0, 50)}${messageText.length > 50 ? '...' : ''}"</p>
+                <div class="delete-modal-actions">
+                    <button class="confirm-delete" onclick="confirmDeleteMessage(${messageId})">Delete</button>
+                    <button class="cancel-delete" onclick="closeDeleteModal()">Cancel</button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(overlay);
+
+        // Close on overlay click
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) {
+                closeDeleteModal();
+            }
+        });
+    }
+
+    /**
+     * Close the delete confirmation modal
+     */
+    function closeDeleteModal() {
+        const overlay = document.getElementById('delete-modal');
+        if (overlay) {
+            overlay.remove();
+        }
+    }
+
+    /**
+     * Confirm and delete the message
+     */
+    async function confirmDeleteMessage(messageId) {
+        closeDeleteModal();
+
+        try {
+            const res = await fetch(
                 `${API_BASE}/communities/${state.activeCommunityId}/channels/${state.activeChannelId}/messages/${messageId}`,
                 { method: 'DELETE' }
             );
-            const community = state.communities.find(c => c.id === state.activeCommunityId);
-            const channel = community.channels.find(ch => ch.id === state.activeChannelId);
-            channel.messages = channel.messages.filter(m => m.id !== messageId);
-            render();
+
+            if (!res.ok) {
+                const data = await res.json();
+                throw new Error(data.error || 'Failed to delete message');
+            }
+
+            // Remove message from state with animation
+            const messageDiv = document.querySelector(`[data-message-id="${messageId}"]`);
+            if (messageDiv) {
+                messageDiv.style.transition = 'opacity 0.3s, transform 0.3s';
+                messageDiv.style.opacity = '0';
+                messageDiv.style.transform = 'translateX(20px)';
+
+                setTimeout(() => {
+                    const community = state.communities.find(c => c.id === state.activeCommunityId);
+                    const channel = community.channels.find(ch => ch.id === state.activeChannelId);
+                    channel.messages = channel.messages.filter(m => m.id !== messageId);
+                    render();
+                }, 300);
+            }
         } catch (error) {
             console.error('Error deleting message:', error);
+            alert('Failed to delete message: ' + error.message);
         }
     }
+
+    async function deleteMessage(messageId) {
+        // This function is now just a wrapper that shows the modal
+        const community = state.communities.find(c => c.id === state.activeCommunityId);
+        const channel = community?.channels?.find(ch => ch.id === state.activeChannelId);
+        const message = channel?.messages?.find(m => m.id === messageId);
+        showDeleteModal(messageId, message?.text || 'this message');
+    }
+
 
     async function addReaction(messageId, emoji) {
         try {
@@ -1069,15 +1467,20 @@
             <!-- Channel List Pane -->
             ${community ? `
             <div class="channel-list-pane">
-                <div class="channel-header">
-                    <h2>${community.name}</h2>
-                    <p>${community.members || 0} members</p>
+                <div class="channel-header" style="cursor: pointer;" onclick="state.showCommunitySettings = true; render();">
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <div>
+                            <h2 style="display: flex; align-items: center; gap: 8px;">${community.name} <i class="bi bi-chevron-down" style="font-size: 12px; color: #888;"></i></h2>
+                            <p>${community.members || 0} members</p>
+                        </div>
+                        <i class="bi bi-gear" style="font-size: 18px; color: #666;"></i>
+                    </div>
                 </div>
                 <div class="community-tabs">
                     <div class="community-tab ${state.activeTab === 'channels' ? 'active' : ''}"
-                         onclick="state.activeTab = 'channels'; render();">Channels</div>
+                         onclick="event.stopPropagation(); state.activeTab = 'channels'; render();">Channels</div>
                     <div class="community-tab ${state.activeTab === 'members' ? 'active' : ''}"
-                         onclick="state.activeTab = 'members'; render();">Members</div>
+                         onclick="event.stopPropagation(); state.activeTab = 'members'; render();">Members</div>
                 </div>
                 ${state.activeTab === 'channels' ? renderChannels(community) : renderMembers(community)}
                 <div class="community-about">
@@ -1248,17 +1651,37 @@
     function renderMessage(msg) {
         const isOwn = msg.userId === CURRENT_USER_ID;
         const canDelete = isOwn || hasModPermissions();
+        const canEdit = isOwn;
         const reactions = Object.entries(msg.reactions || {});
 
+        // Message action buttons (edit/delete) - positioned to the left of message
+        const actionsHtml = isOwn ? `
+            <div class="message-actions">
+                <button class="message-action-btn edit" title="Edit message" onclick="startEditMessage(${msg.id})">
+                    <i class="bi bi-pencil"></i>
+                </button>
+                <button class="message-action-btn delete" title="Delete message" onclick="showDeleteModal(${msg.id}, '${msg.text.replace(/'/g, "\\'")}')">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </div>
+        ` : (canDelete ? `
+            <div class="message-actions">
+                <button class="message-action-btn delete" title="Delete message" onclick="showDeleteModal(${msg.id}, '${msg.text.replace(/'/g, "\\'")}')">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </div>
+        ` : '');
+
         return `
-            <div class="community-message ${isOwn ? 'sent' : 'received'}">
+            <div class="community-message ${isOwn ? 'sent' : 'received'}" data-message-id="${msg.id}">
+                ${isOwn ? actionsHtml : ''}
                 <div class="msg-avatar">${(msg.userName || 'U')[0].toUpperCase()}</div>
                 <div class="msg-content">
                     <div class="msg-meta">
                         <strong>${msg.userName || 'Unknown'}</strong> · ${formatTime(msg.timestamp)}
-                        ${msg.edited ? '<span style="font-style: italic;">(edited)</span>' : ''}
+                        ${msg.edited ? '<span class="edited-indicator">(edited)</span>' : ''}
                     </div>
-                    <div class="msg-bubble">${msg.text}</div>
+                    <div class="msg-bubble" id="msg-bubble-${msg.id}">${msg.text}</div>
                     ${reactions.length > 0 ? `
                         <div class="msg-reactions">
                             ${reactions.map(([emoji, users]) => `
@@ -1270,10 +1693,9 @@
                         </div>
                     ` : ''}
                     <div class="msg-actions">
-                        <button onclick="state.showReactionPicker = state.showReactionPicker === ${msg.id} ? null : ${msg.id}; render();">
-                            😊 React
+                        <button onclick="state.showReactionPicker = state.showReactionPicker === ${msg.id} ? null : ${msg.id}; render();" title="Add reaction">
+                            😊
                         </button>
-                        ${canDelete ? `<button class="delete" onclick="deleteMessage(${msg.id});">Delete</button>` : ''}
                     </div>
                     ${state.showReactionPicker === msg.id ? `
                         <div class="emoji-picker">
@@ -1281,6 +1703,7 @@
                         </div>
                     ` : ''}
                 </div>
+                ${!isOwn && canDelete ? actionsHtml : ''}
             </div>
         `;
     }
@@ -1340,21 +1763,35 @@
     function renderCommunitySettingsModal(community) {
         return `
             <div class="community-modal-overlay" onclick="state.showCommunitySettings = false; render();">
-                <div class="community-modal" onclick="event.stopPropagation();">
-                    <h3>Community Settings</h3>
-                    <p style="color: #666; margin-bottom: 20px;">Managing: <strong>${community.name}</strong></p>
+                <div class="community-modal" style="width: 450px;" onclick="event.stopPropagation();">
+                    <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
+                        <div style="width: 60px; height: 60px; background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 24px;">
+                            <i class="bi bi-people-fill"></i>
+                        </div>
+                        <div>
+                            <h3 style="margin: 0; color: #1e3a5f;">${community.name}</h3>
+                            <p style="margin: 4px 0 0 0; color: #888; font-size: 13px;">${community.members || 0} members</p>
+                        </div>
+                    </div>
                     
-                    <button class="btn-secondary" style="width: 100%; margin-bottom: 12px; background: #fef3c7; border-color: #f59e0b; color: #92400e;" onclick="leaveCommunity();">
-                        <i class="bi bi-box-arrow-left"></i> Leave Community
-                    </button>
+                    <div style="background: #f8f9fa; border-radius: 10px; padding: 15px; margin-bottom: 20px;">
+                        <h4 style="font-size: 12px; text-transform: uppercase; color: #888; margin: 0 0 8px 0;">About this Community</h4>
+                        <p style="margin: 0; color: #333; font-size: 14px; line-height: 1.5;">${community.description || 'No description available.'}</p>
+                    </div>
                     
-                    ${isUserAdmin() ? `
-                        <button class="btn-danger" style="width: 100%; margin-bottom: 12px;" onclick="deleteCommunity();">
+                    <div style="border-top: 1px solid #eee; padding-top: 15px;">
+                        <p style="font-size: 12px; color: #888; margin-bottom: 12px;">Actions</p>
+                        
+                        <button class="btn-secondary" style="width: 100%; margin-bottom: 10px; background: #fef3c7; border-color: #f59e0b; color: #92400e;" onclick="leaveCommunity();">
+                            <i class="bi bi-box-arrow-left"></i> Leave Community
+                        </button>
+                        
+                        <button class="btn-danger" style="width: 100%; margin-bottom: 10px;" onclick="deleteCommunity();">
                             <i class="bi bi-trash"></i> Delete Community
                         </button>
-                    ` : ''}
-                    
-                    <button class="btn-secondary" style="width: 100%;" onclick="state.showCommunitySettings = false; render();">Close</button>
+                        
+                        <button class="btn-secondary" style="width: 100%;" onclick="state.showCommunitySettings = false; render();">Close</button>
+                    </div>
                 </div>
             </div>
         `;
