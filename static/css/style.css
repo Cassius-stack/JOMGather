@@ -1834,6 +1834,47 @@ body {
     background-color: #f0f0f0;
 }
 
+/* Image Preview Styles */
+.image-preview-container {
+    position: absolute;
+    bottom: 80px;
+    left: 20px;
+    background: white;
+    padding: 10px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border: 1px solid #e0e0e0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    z-index: 99;
+}
+
+.image-preview-container img {
+    height: 60px;
+    width: auto;
+    border-radius: 6px;
+    object-fit: cover;
+}
+
+.image-preview-container button {
+    background: #f0f0f0;
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #666;
+}
+
+.image-preview-container button:hover {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
 /* Input Area */
 .input-area {
     padding: 15px 20px;

@@ -100,6 +100,7 @@ def register_chat_events(socketio):
         sender_id = data.get('sender_id')
         receiver_id = data.get('receiver_id')
         content = data.get('content', '').strip()  # Trim whitespace
+        image_url = data.get('image_url')
         is_cyber_challenge = data.get('is_cyber_challenge', False)
         scenario_id = data.get('scenario_id', 1)  # Default to scenario 1
         
@@ -108,25 +109,26 @@ def register_chat_events(socketio):
             emit('validation_error', {'error': 'Invalid sender or receiver'})
             return
         
-        if not content:
+        # Allow empty content if there is an image
+        if not content and not image_url:
             emit('validation_error', {'error': 'Message cannot be empty'})
             return
         
-        if len(content) > 500:
+        if content and len(content) > 500:
             emit('validation_error', {'error': 'Message cannot exceed 500 characters'})
             return
         
-        if len(content) < 1:
-            emit('validation_error', {'error': 'Message is too short'})
-            return
-
-        
         # Save to Supabase
-        new_message = insert('messages', {
+        message_data = {
             'sender_id': sender_id,
             'receiver_id': receiver_id,
             'content': content
-        })
+        }
+        
+        if image_url:
+            message_data['image_url'] = image_url
+            
+        new_message = insert('messages', message_data)
         
         if not new_message:
             print(f"[Socket.IO] Failed to save message to database")
@@ -147,11 +149,12 @@ def register_chat_events(socketio):
                 challenge_id = challenge['challenge_id']
                 print(f"[Socket.IO] Created cyber challenge {challenge_id} for message {new_message['message_id']}")
         
-        message_data = {
+        response_data = {
             'id': new_message['message_id'],
             'sender_id': sender_id,
             'receiver_id': receiver_id,
             'text': content,
+            'image_url': image_url,
             'is_cyber_challenge': is_cyber_challenge,
             'challenge_id': challenge_id,
             'scenario_id': scenario_id
@@ -159,13 +162,13 @@ def register_chat_events(socketio):
         
         # Emit to the chat room (both users in the conversation)
         room = get_room_name(sender_id, receiver_id)
-        emit('new_message', message_data, room=room)
+        emit('new_message', response_data, room=room)
         
         # Also emit to receiver's personal room (for notifications)
         receiver_room = f"user_{receiver_id}"
-        emit('new_message', message_data, room=receiver_room)
+        emit('new_message', response_data, room=receiver_room)
         
-        print(f"[Socket.IO] Message from {sender_id} to {receiver_id}")
+        print(f"[Socket.IO] Message from {sender_id} to {receiver_id} (img={bool(image_url)})")
     
     @socketio.on('typing')
     def handle_typing(data):
