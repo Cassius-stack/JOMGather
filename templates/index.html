@@ -338,7 +338,7 @@
                         {% endif %}
                     </div>
 
-                    <button onclick="sendFriendRequest(this, '{{ person.user_id }}')"
+                    <button onclick="sendFriendRequest('{{ person.user_id }}', this)"
                         style="background: #1e3a5f; color: white; border: none; border-radius: 12px; padding: 0.6rem; font-size: 0.9rem; font-weight: 600; width: 100%; transition: all 0.2s;">
                         Connect
                     </button>
@@ -447,34 +447,4 @@
 {% endblock %}
 
 {% block scripts %}
-<script>
-    function sendFriendRequest(btn, targetId) {
-        btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
-
-        fetch("{{ url_for('social.send_friend_request') }}", {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ target_id: targetId })
-        })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    btn.innerHTML = 'Sent ✓';
-                    btn.style.background = '#22c55e';
-                } else {
-                    btn.disabled = false;
-                    btn.innerHTML = 'Connect';
-                    alert(data.error || 'Failed to send request');
-                }
-            })
-            .catch(error => {
-                btn.disabled = false;
-                btn.innerHTML = 'Connect';
-                console.error('Error:', error);
-            });
-    }
-</script>
 {% endblock %}
