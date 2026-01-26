@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Social Profile - JOMGather{% endblock %}
+
+{% block content %}
+<main>
+    <div class="container py-5">
+        <form method="POST" action="{{ url_for('profile.edit_social') }}">
+            <div class="row justify-content-center mb-4">
+                <div class="col-md-8 text-center">
+                    <h2 class="fw-bold text-dark">Edit Social Profile</h2>
+                    <p class="text-secondary">Update your region, hobbies, and skills</p>
+                </div>
+            </div>
+
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <div class="card border-0 shadow-sm mb-4">
+                        <div class="card-header bg-transparent border-0 pt-4 px-4">
+                            <h5 class="mb-0 fw-bold text-primary"><i class="bi bi-people me-2"></i>Social Profile</h5>
+                        </div>
+                        <div class="card-body p-4">
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label for="region"
+                                        class="form-label small text-uppercase fw-bold text-muted">Region</label>
+                                    <select class="form-select" name="region" id="region">
+                                        <option value="" {% if not user.region %}selected{% endif %}>Select your region
+                                        </option>
+                                        <option value="North" {% if user.region=='North' %}selected{% endif %}>North
+                                        </option>
+                                        <option value="South" {% if user.region=='South' %}selected{% endif %}>South
+                                        </option>
+                                        <option value="East" {% if user.region=='East' %}selected{% endif %}>East
+                                        </option>
+                                        <option value="West" {% if user.region=='West' %}selected{% endif %}>West
+                                        </option>
+                                        <option value="Central" {% if user.region=='Central' %}selected{% endif %}>
+                                            Central</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-12">
+                                    <label for="hobbies"
+                                        class="form-label small text-uppercase fw-bold text-muted">Hobbies</label>
+                                    <input type="text" class="form-control" id="hobbies" name="hobbies"
+                                        value="{{ user.hobbies|join(', ') if user and user.hobbies else '' }}"
+                                        placeholder="Gaming, Hiking, Cooking">
+                                    <div class="form-text">Separate multiple hobbies with a comma.</div>
+                                </div>
+
+                                <div class="col-12">
+                                    <label for="skills"
+                                        class="form-label small text-uppercase fw-bold text-muted">Skills</label>
+                                    <input type="text" class="form-control" id="skills" name="skills"
+                                        value="{{ user.skills|join(', ') if user and user.skills else '' }}"
+                                        placeholder="Python, Public Speaking, Design">
+                                    <div class="form-text">Separate multiple skills with a comma.</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-3 justify-content-center pb-5">
+                        <a href="{{ url_for('profile.view_profile') }}" class="btn btn-outline-secondary px-4">
+                            Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary px-5">
+                            Save Changes
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</main>
+{% endblock %}
