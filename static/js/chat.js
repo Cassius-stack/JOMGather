@@ -63,6 +63,65 @@ socket.on('connect_error', (error) => {
 socket.on('disconnect', (reason) => {
     console.log('[Socket.IO] ⚠️ Disconnected:', reason);
 });
+
+/**
+ * When we receive a validation error from the server
+ * Display user-friendly error messages
+ */
+socket.on('validation_error', (data) => {
+    console.log('[Socket.IO] Validation error:', data);
+
+    // Show error message to user
+    if (data.error) {
+        // Create a toast notification
+        showValidationError(data.error);
+    }
+});
+
+/**
+ * Display validation error as a toast notification
+ */
+function showValidationError(message) {
+    // Remove existing error toast if any
+    const existing = document.querySelector('.validation-toast');
+    if (existing) existing.remove();
+
+    // Create toast element
+    const toast = document.createElement('div');
+    toast.className = 'validation-toast';
+    toast.innerHTML = `
+        <i class="bi bi-exclamation-circle"></i>
+        <span>${message}</span>
+    `;
+
+    // Add styles
+    toast.style.cssText = `
+        position: fixed;
+        bottom: 100px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #dc3545;
+        color: white;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-size: 14px;
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        animation: slideUp 0.3s ease;
+    `;
+
+    document.body.appendChild(toast);
+
+    // Auto-remove after 4 seconds
+    setTimeout(() => {
+        toast.style.animation = 'fadeOut 0.3s ease';
+        setTimeout(() => toast.remove(), 300);
+    }, 4000);
+}
+
 // Track processed message IDs to avoid duplicates
 const processedMessageIds = new Set();
 
