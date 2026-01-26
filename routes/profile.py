@@ -135,75 +135,90 @@ def delete_account():
     try:
         supabase = get_supabase()
         
-        # Delete related data first (to avoid foreign key constraints)
-        # Delete messages sent by user
+        # 1. CLEANUP SOCIAL & COMMUNICATION (sender/receiver, user_id_1/user_id_2)
+        # Messages
         try:
             supabase.table('messages').delete().eq('sender_id', user_id).execute()
-        except:
-            pass
-        
-        # Delete messages received by user
-        try:
             supabase.table('messages').delete().eq('receiver_id', user_id).execute()
-        except:
-            pass
+        except: pass
         
-        # Delete friendships (delete ALL where this user is involved)
+        # Friendships (Crucial: uses user_id_1 and user_id_2)
         try:
-            supabase.table('friendships').delete().eq('user_id', user_id).execute()
-        except Exception as e:
-            print(f"Error deleting friendships (user_id): {e}")
-        
-        try:
+            supabase.table('friendships').delete().eq('user_id_1', user_id).execute()
             supabase.table('friendships').delete().eq('user_id_2', user_id).execute()
         except Exception as e:
-            print(f"Error deleting friendships (user_id_2): {e}")
-        
-        # Delete friend requests
+            print(f"Error deleting friendships: {e}")
+            
+        # Friend Requests (handled in friendships table for now, but keeping if separate exists)
         try:
             supabase.table('friend_requests').delete().eq('sender_id', user_id).execute()
             supabase.table('friend_requests').delete().eq('receiver_id', user_id).execute()
-        except:
-            pass
-        
-        # Delete slice of life entries
+        except: pass
+
+        # 2. CLEANUP SUPPORT SWAP (helper_id, user_id)
+        # Support Matches
         try:
-            supabase.table('slice_of_life').delete().eq('user_id', user_id).execute()
-        except:
-            pass
+            supabase.table('support_matches').delete().eq('helper_id', user_id).execute()
+        except: pass
         
-        # Delete support swap requests
+        # Help Requests (MUST delete matches first if they are child)
         try:
-            supabase.table('support_swap_requests').delete().eq('user_id', user_id).execute()
+            # We already deleted matches where user is helper. 
+            # Now we need to delete matches for THIS user's requests.
+            my_reqs = supabase.table('help_requests').select('id').eq('user_id', user_id).execute()
+            if my_reqs.data:
+                req_ids = [r['id'] for r in my_reqs.data]
+                supabase.table('support_matches').delete().in_('request_id', req_ids).execute()
+            
+            supabase.table('help_requests').delete().eq('user_id', user_id).execute()
         except Exception as e:
-            print(f"Error deleting support_swap_requests: {e}")
-        
-        # Delete replies
+            print(f"Error deleting help_requests/matches: {e}")
+
+        # 3. CLEANUP SLICE OF LIFE (creator_id, partner_id, recipient/sender)
         try:
-            supabase.table('replies').delete().eq('user_id', user_id).execute()
-        except Exception as e:
-            print(f"Error deleting replies: {e}")
-        
-        # Delete posts/questions (Ask a Grandfriend)
+            supabase.table('sol_submissions').delete().eq('user_id', user_id).execute()
+            supabase.table('sol_invites').delete().eq('sender_id', user_id).execute()
+            supabase.table('sol_invites').delete().eq('recipient_id', user_id).execute()
+            # Handle displays where user is creator or partner
+            supabase.table('sol_displays').delete().eq('creator_id', user_id).execute()
+            supabase.table('sol_displays').delete().eq('partner_id', user_id).execute()
+        except: pass
+
+        # 4. CLEANUP ASK A GRANDFRIEND (posts, questions, replies)
         try:
             supabase.table('posts').delete().eq('user_id', user_id).execute()
-        except Exception as e:
-            print(f"Error deleting posts: {e}")
-        
-        try:
             supabase.table('questions').delete().eq('user_id', user_id).execute()
-        except Exception as e:
-            print(f"Error deleting questions: {e}")
-        
-        # Finally, delete the user
+            supabase.table('replies').delete().eq('user_id', user_id).execute()
+        except: pass
+
+        # 5. CLEANUP COMMUNITY
+        try:
+            supabase.table('community_messages').delete().eq('user_id', user_id).execute()
+            supabase.table('community_message_reactions').delete().eq('user_id', user_id).execute()
+            # If user created channels or communities, these might need handling if no cascade
+            # supabase.table('community_channels').delete().eq('created_by', user_id).execute()
+            # supabase.table('communities').delete().eq('created_by', user_id).execute()
+        except: pass
+
+        # 6. OTHER ACTIVITIES
+        try:
+            supabase.table('meetup_history').delete().eq('user1_id', user_id).execute()
+            supabase.table('meetup_history').delete().eq('user2_id', user_id).execute()
+            supabase.table('cyber_challenges').delete().eq('user1_id', user_id).execute()
+            supabase.table('cyber_challenges').delete().eq('user2_id', user_id).execute()
+        except: pass
+
+        # 7. FINALLY DELETE USER (Cascade should handle profiles, coins, skills, membership, sol_streak, etc.)
         supabase.table('users').delete().eq('user_id', user_id).execute()
         
         # Clear the session
         session.clear()
         
-        flash("Your account has been deleted successfully.", "info")
+        flash("Your account and all associated data have been deleted successfully.", "info")
         return redirect(url_for('auth.login'))
+        
     except Exception as e:
         print(f"Delete Account Error: {e}")
+        # Log specific error details if it's a supabase dict error
         flash(f"Error deleting account: {e}", "danger")
         return redirect(url_for('profile.settings'))
