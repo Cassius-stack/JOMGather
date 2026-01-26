@@ -2,23 +2,76 @@
 
 {% block title %}JomGather - Connect & Share{% endblock %}
 
+{% block head %}
+<style>
+    .activity-card {
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05) !important;
+        cursor: pointer;
+    }
+
+    .activity-card:hover {
+        transform: translateY(-8px) scale(1.02);
+        box-shadow: 0 15px 35px rgba(30, 58, 95, 0.12) !important;
+    }
+
+    .main-hero-card {
+        transition: all 0.5s ease;
+        overflow: hidden;
+    }
+
+    .main-hero-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 40px rgba(30, 58, 95, 0.2) !important;
+    }
+
+    .main-hero-card::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 50%;
+        height: 100%;
+        background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.1), transparent);
+        transition: 0.5s;
+    }
+
+    .main-hero-card:hover::after {
+        left: 200%;
+    }
+
+    .friend-suggestion-card {
+        transition: all 0.3s ease;
+    }
+
+    .friend-suggestion-card:hover {
+        transform: scale(1.03);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08) !important;
+    }
+</style>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/hero_vibrant.css') }}">
+{% endblock %}
+
 {% block content %}
 {% if session.get('user_id') %}
 <!-- ============================================ -->
 <!-- LOGGED IN DASHBOARD -->
 <!-- ============================================ -->
 
-<!-- Hero Section - Navy Gradient -->
-<div
-    style="background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%); border-radius: 0 0 30px 30px; padding: 3rem 2rem 2rem; color: white;">
-    <div class="container">
-        <h1 style="font-size: 2.5rem; font-weight: 700; margin-bottom: 0.5rem;">Hello, {{ session.get('username') }}!
-        </h1>
-        <p style="font-size: 1.1rem; opacity: 0.9; margin-bottom: 1.5rem;">
-            Ready to connect with your community today?
+<!-- Hero Section - Vibrant Mesh -->
+<div class="hero-vibrant-bg" style="border-radius: 0 0 50px 50px; padding: 5.5rem 2rem 5rem; color: white;">
+    <div class="mesh-blob blob-1"></div>
+    <div class="mesh-blob blob-2"></div>
+    <div class="mesh-blob blob-3"></div>
+    <div class="container position-relative" style="z-index: 2;">
+        <h1
+            style="font-size: 3.8rem; font-weight: 900; margin-bottom: 0.75rem; letter-spacing: -1.5px; text-shadow: 0 4px 15px rgba(0,0,0,0.15);">
+            Hello, {{ session.get('username') }}!</h1>
+        <p
+            style="font-size: 1.5rem; opacity: 1; margin-bottom: 2.5rem; font-weight: 600; text-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+            What wonderful things shall we do together today?
         </p>
-        <a href="{{ url_for('activities.activity_list') }}" class="btn"
-            style="background: white; color: #1e3a5f; border-radius: 25px; padding: 0.75rem 2rem; font-weight: 600; font-size: 1rem;">
+        <a href="{{ url_for('activities.activity_list') }}" class="vibrant-btn text-decoration-none shadow-lg">
             Explore Activities
         </a>
     </div>
@@ -57,7 +110,8 @@
         <div class="d-flex justify-content-between align-items-center mb-3">
             <span style="font-size: 1.1rem; font-weight: 600; color: #1a1a2e;">Friends ({{ online_friends|length }}
                 Online)</span>
-            <a href="#" style="color: #1e3a5f; font-size: 1rem; text-decoration: none;">See All</a>
+            <a href="{{ url_for('social.friends_list') }}"
+                style="color: #1e3a5f; font-size: 1rem; text-decoration: none;">See All</a>
         </div>
         <div class="d-flex gap-3" style="overflow-x: auto; padding-bottom: 0.5rem;">
             <!-- Add Friend -->
@@ -112,241 +166,287 @@
         <span style="font-size: 1.1rem; font-weight: 600; color: #1a1a2e;">Your Daily Picks</span>
     </div>
 
-    <div class="row g-3 mb-4">
-        <!-- Slice of Life -->
-        <div class="col-md-6">
-            <a href="{{ url_for('slice_of_life.prompt') }}" class="text-decoration-none">
-                <div
-                    style="background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%); border-radius: 20px; padding: 1.5rem; color: white; min-height: 200px; display: flex; flex-direction: column; justify-content: space-between;">
-                    <div>
-                        <p
-                            style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; opacity: 0.8; margin-bottom: 0.5rem;">
-                            Daily Prompt</p>
-                        <p style="font-size: 1.25rem; font-style: italic; line-height: 1.4;">"What is your favourite
-                            thing to do after school/work?"</p>
+    <div class="row g-4 mb-5">
+        <!-- Main Activity: Slice of Life -->
+        <div class="col-lg-7">
+            <a href="{{ url_for('slice_of_life.prompt') }}" class="text-decoration-none h-100 d-block">
+                <div class="main-hero-card glass-card glass-card-hover"
+                    style="position: relative; border-radius: 32px; padding: 3rem; color: #1e3a5f; height: 100%; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden;">
+                    <!-- Decorative background accents -->
+                    <div
+                        style="position: absolute; top: -50px; right: -50px; width: 250px; height: 250px; background: #fff59d; border-radius: 50%; filter: blur(70px); opacity: 0.5; z-index: 1;">
                     </div>
-                    <div class="d-flex justify-content-between align-items-center">
-                        <span style="font-size: 1.25rem; font-weight: 600;">Slice of Life</span>
-                        <div class="d-flex">
-                            <div
-                                style="width: 30px; height: 30px; background: white; border-radius: 50%; opacity: 0.3; margin-left: -8px;">
-                            </div>
-                            <div
-                                style="width: 30px; height: 30px; background: white; border-radius: 50%; opacity: 0.5; margin-left: -8px;">
-                            </div>
+                    <div
+                        style="position: absolute; bottom: -50px; left: -50px; width: 200px; height: 200px; background: #a5d6a7; border-radius: 50%; filter: blur(60px); opacity: 0.4; z-index: 1;">
+                    </div>
+
+                    <div class="glass-content">
+                        <div class="d-flex align-items-center gap-2 mb-3">
+                            <span class="badge"
+                                style="background: #1e3a5f; color: white; border-radius: 10px; padding: 0.6rem 1.25rem; font-weight: 700; font-size: 0.85rem; letter-spacing: 0.5px;">NEW
+                                STORY</span>
+                            {% if sol_streak > 0 %}
+                            <span class="badge"
+                                style="background: #fbbf24; color: #1e3a5f; border-radius: 10px; padding: 0.6rem 1.25rem; font-weight: 700; font-size: 0.85rem;">🔥
+                                {{ sol_streak }} Day Streak</span>
+                            {% endif %}
                         </div>
+                        <h2
+                            style="font-size: 3.2rem; font-weight: 900; margin-bottom: 1.25rem; color: #1e3a5f; letter-spacing: -0.5px;">
+                            Slice of Life</h2>
+                        <p
+                            style="font-size: 1.4rem; line-height: 1.5; opacity: 1; margin-bottom: 2.5rem; max-width: 90%; font-weight: 500;">
+                            Capture a moment, share a thought, and connect with a friend through a shared photo
+                            challenge.
+                        </p>
+                    </div>
+                    <div class="glass-content">
+                        <button class="btn btn-lg px-5 py-3 rounded-pill fw-bold"
+                            style="background: #1e3a5f; color: white; border: none; box-shadow: 0 8px 25px rgba(30, 58, 95, 0.4); font-size: 1.1rem;">
+                            Start Sharing
+                        </button>
                     </div>
                 </div>
             </a>
         </div>
 
-        <!-- Right Column Cards -->
-        <div class="col-md-6">
+        <!-- Secondary Activities Grid -->
+        <div class="col-lg-5">
             <div class="row g-3">
-                <!-- Support Swap (Top Left) -->
                 <div class="col-6">
                     <a href="{{ url_for('support_swap.ss_dashboard') }}" class="text-decoration-none">
-                        <div
-                            style="background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border-radius: 16px; padding: 1.25rem; height: 100%; display: flex; flex-direction: column; justify-content: pointer; min-height: 140px;">
-                            <i class="bi bi-lightbulb mb-2" style="font-size: 1.75rem; color: #f59e0b;"></i>
-                            <span style="font-size: 1rem; font-weight: 600; color: #1e3a5f;">Support Swap</span>
-                            <small class="text-muted mt-1">Learn & Teach</small>
+                        <div class="activity-card"
+                            style="background: #e1f5fe; border-radius: 24px; padding: 1.5rem; height: 100%; min-height: 150px; border: 1px solid #b3e5fc;">
+                            <div
+                                style="width: 50px; height: 50px; background: white; border-radius: 14px; display: flex; align-items: center; justify-content: center; margin-bottom: 1rem; box-shadow: 0 6px 15px rgba(3, 169, 244, 0.15);">
+                                <i class="bi bi-lightbulb" style="font-size: 1.6rem; color: #0288d1;"></i>
+                            </div>
+                            <span style="font-size: 1.1rem; font-weight: 700; color: #1e3a5f; display: block;">Support
+                                Swap</span>
+                            <small class="text-muted fw-medium">Learn & Teach</small>
                         </div>
                     </a>
                 </div>
-
-                <!-- Jukebox (Top Right) -->
                 <div class="col-6">
-                    <a href="{{ url_for('activities.activity_list') }}" class="text-decoration-none">
-                        <div
-                            style="background: linear-gradient(135deg, #3B5BDB 0%, #5B7BFB 100%); border-radius: 16px; padding: 1.25rem; height: 100%; display: flex; flex-direction: column; justify-content: pointer; min-height: 140px; color: white;">
-                            <i class="bi bi-music-note-beamed mb-2" style="font-size: 1.75rem; color: #ffffff;"></i>
-                            <span style="font-size: 1rem; font-weight: 600;">Jukebox</span>
-                            <small style="opacity: 0.8;" class="mt-1">Share a Song</small>
+                    <a href="{{ url_for('social.social_hub') }}" class="text-decoration-none">
+                        <div class="activity-card"
+                            style="background: #f3e5f5; border-radius: 24px; padding: 1.5rem; height: 100%; min-height: 150px; border: 1px solid #e1bee7;">
+                            <div
+                                style="width: 50px; height: 50px; background: white; border-radius: 14px; display: flex; align-items: center; justify-content: center; margin-bottom: 1rem; box-shadow: 0 6px 15px rgba(156, 39, 176, 0.15);">
+                                <i class="bi bi-music-note-beamed" style="font-size: 1.6rem; color: #7b1fa2;"></i>
+                            </div>
+                            <span
+                                style="font-size: 1.1rem; font-weight: 700; color: #1e3a5f; display: block;">Jukebox</span>
+                            <small class="text-muted fw-medium">Social Hub</small>
                         </div>
                     </a>
                 </div>
-
-                <!-- Cyber Challenge (Bottom Left) -->
                 <div class="col-6">
                     <a href="{{ url_for('activities.puzzle_challenge') }}" class="text-decoration-none">
-                        <div
-                            style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-radius: 16px; padding: 1.25rem; height: 100%; display: flex; flex-direction: column; justify-content: pointer; min-height: 140px;">
-                            <i class="bi bi-shield-check mb-2" style="font-size: 1.75rem; color: #ef4444;"></i>
-                            <span style="font-size: 1rem; font-weight: 600; color: #92400e;">Cyber Smart</span>
-                            <small class="text-muted mt-1">Quiz of the Day</small>
+                        <div class="activity-card"
+                            style="background: #fff8e1; border-radius: 24px; padding: 1.5rem; height: 100%; min-height: 150px; border: 1px solid #ffecb3;">
+                            <div
+                                style="width: 50px; height: 50px; background: white; border-radius: 14px; display: flex; align-items: center; justify-content: center; margin-bottom: 1rem; box-shadow: 0 6px 15px rgba(255, 193, 7, 0.15);">
+                                <i class="bi bi-puzzle" style="font-size: 1.6rem; color: #ffa000;"></i>
+                            </div>
+                            <span style="font-size: 1.1rem; font-weight: 700; color: #1e3a5f; display: block;">Cyber
+                                Smart</span>
+                            <small class="text-muted fw-medium">Puzzle Challenge</small>
                         </div>
                     </a>
                 </div>
-
-                <!-- BOOMERang (Bottom Right) -->
                 <div class="col-6">
-                    <a href="{{ url_for('messaging.boomerang') }}" class="text-decoration-none">
-                        <div
-                            style="background: linear-gradient(135deg, #e0e5ec 0%, #f5f7fa 100%); border-radius: 16px; padding: 1.25rem; height: 100%; display: flex; flex-direction: column; justify-content: pointer; min-height: 140px;">
-                            <i class="bi bi-camera-video mb-2" style="font-size: 1.75rem; color: #1e3a5f;"></i>
-                            <span style="font-size: 1rem; font-weight: 600; color: #1e3a5f;">BOOMERang</span>
-                            <small class="text-muted mt-1">Video Chat</small>
+                    <a href="{{ url_for('activities.boomerang') }}" class="text-decoration-none">
+                        <div class="activity-card"
+                            style="background: #fce4ec; border-radius: 24px; padding: 1.5rem; height: 100%; min-height: 150px; border: 1px solid #f8bbd0;">
+                            <div
+                                style="width: 50px; height: 50px; background: white; border-radius: 14px; display: flex; align-items: center; justify-content: center; margin-bottom: 1rem; box-shadow: 0 6px 15px rgba(233, 30, 99, 0.15);">
+                                <i class="bi bi-camera-video" style="font-size: 1.6rem; color: #c2185b;"></i>
+                            </div>
+                            <span
+                                style="font-size: 1.1rem; font-weight: 700; color: #1e3a5f; display: block;">BOOMERang</span>
+                            <small class="text-muted fw-medium">Video Chat</small>
                         </div>
                     </a>
                 </div>
-
-                <div class="col-6">
+                <div class="col-12">
                     <a href="{{ url_for('social.ask_grandfriend') }}" class="text-decoration-none">
-                        <div
-                            style="background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%); border-radius: 16px; padding: 1.25rem;">
-                            <div class="d-flex justify-content-between align-items-start">
-                                <span style="font-size: 1rem; font-weight: 600; color: #166534;">Ask
-                                    A<br>Grandfriend</span>
-                                <i class="bi bi-chat-dots" style="font-size: 1.5rem; color: #22c55e;"></i>
+                        <div class="activity-card"
+                            style="background: #e8f5e9; border-radius: 24px; padding: 1.5rem; border: 1px solid #c8e6c9;">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="d-flex align-items-center gap-4">
+                                    <div
+                                        style="width: 50px; height: 50px; background: white; border-radius: 14px; display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 15px rgba(76, 175, 80, 0.15);">
+                                        <i class="bi bi-chat-dots" style="font-size: 1.6rem; color: #2e7d32;"></i>
+                                    </div>
+                                    <div>
+                                        <span
+                                            style="font-size: 1.15rem; font-weight: 700; color: #1e3a5f; display: block;">Ask
+                                            A Grandfriend</span>
+                                        <small class="text-muted fw-medium">Share wisdom and seek advice</small>
+                                    </div>
+                                </div>
+                                <i class="bi bi-chevron-right text-muted fs-5"></i>
                             </div>
                         </div>
                     </a>
                 </div>
             </div>
+        </div>
+    </div>
 
-            <!-- People You May Know -->
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <span style="font-size: 1.1rem; font-weight: 600; color: #1a1a2e;">People You May Know</span>
-                <a href="#" style="color: #1e3a5f; font-size: 1rem; text-decoration: none;">See All</a>
-            </div>
-
-            <div class="row g-3 mb-4">
-                <div class="col-6 col-md-3">
-                    <div
-                        style="background: white; border-radius: 16px; padding: 1.25rem; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
-                        <img src="https://i.pravatar.cc/60?img=20" alt="Mr. Tan"
-                            style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover; margin-bottom: 0.75rem;">
-                        <p style="font-size: 1rem; font-weight: 600; color: #1a1a2e; margin-bottom: 0.25rem;">Mr. Tan
-                        </p>
-                        <p style="font-size: 0.85rem; color: #6b7280; margin-bottom: 0.75rem;">Senior, Tampines</p>
-                        <button
-                            style="background: #1e3a5f; color: white; border: none; border-radius: 20px; padding: 0.5rem 1.25rem; font-size: 0.9rem; cursor: pointer;">Connect</button>
-                    </div>
-                </div>
-                <div class="col-6 col-md-3">
-                    <div
-                        style="background: white; border-radius: 16px; padding: 1.25rem; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
-                        <img src="https://i.pravatar.cc/60?img=25" alt="Dr. Chloe"
-                            style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover; margin-bottom: 0.75rem;">
-                        <p style="font-size: 1rem; font-weight: 600; color: #1a1a2e; margin-bottom: 0.25rem;">Dr. Chloe
-                        </p>
-                        <p style="font-size: 0.85rem; color: #6b7280; margin-bottom: 0.75rem;">Youth, Clementi</p>
-                        <button
-                            style="background: white; color: #1e3a5f; border: 2px solid #1e3a5f; border-radius: 20px; padding: 0.5rem 1.25rem; font-size: 0.9rem; cursor: pointer;">Connect</button>
-                    </div>
-                </div>
-                <div class="col-6 col-md-3">
-                    <div
-                        style="background: white; border-radius: 16px; padding: 1.25rem; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
-                        <img src="https://i.pravatar.cc/60?img=30" alt="Grandma Rose"
-                            style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover; margin-bottom: 0.75rem;">
-                        <p style="font-size: 1rem; font-weight: 600; color: #1a1a2e; margin-bottom: 0.25rem;">Grandma
-                            Rose</p>
-                        <p style="font-size: 0.85rem; color: #6b7280; margin-bottom: 0.75rem;">Senior, Bishan</p>
-                        <button
-                            style="background: #1e3a5f; color: white; border: none; border-radius: 20px; padding: 0.5rem 1.25rem; font-size: 0.9rem; cursor: pointer;">Connect</button>
-                    </div>
-                </div>
-                <div class="col-6 col-md-3">
-                    <div
-                        style="background: white; border-radius: 16px; padding: 1.25rem; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
-                        <img src="https://i.pravatar.cc/60?img=35" alt="Uncle David"
-                            style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover; margin-bottom: 0.75rem;">
-                        <p style="font-size: 1rem; font-weight: 600; color: #1a1a2e; margin-bottom: 0.25rem;">Uncle
-                            David</p>
-                        <p style="font-size: 0.85rem; color: #6b7280; margin-bottom: 0.75rem;">Senior, Yishun</p>
-                        <button
-                            style="background: white; color: #1e3a5f; border: 2px solid #1e3a5f; border-radius: 20px; padding: 0.5rem 1.25rem; font-size: 0.9rem; cursor: pointer;">Connect</button>
-
-                    </div>
-                </div>
-            </div>
+    <!-- People You May Know -->
+    <div class="mb-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h3 style="font-size: 1.25rem; font-weight: 700; color: #1a1a2e; margin: 0;">People You May Know</h3>
+            <a href="{{ url_for('social.social_hub') }}"
+                style="color: #1e3a5f; font-size: 0.95rem; text-decoration: none; font-weight: 600;">View All
+                Suggestions</a>
         </div>
 
-        {% else %}
-        <!-- ============================================ -->
-        <!-- PUBLIC LANDING PAGE (GUEST) -->
-        <!-- ============================================ -->
+        <div class="row g-4">
+            {% if suggested_friends %}
+            {% for person in suggested_friends %}
+            <div class="col-6 col-md-3">
+                <div class="friend-suggestion-card"
+                    style="background: white; border-radius: 20px; padding: 1.5rem; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.05); border: 1px solid #f1f5f9; transition: all 0.3s ease; height: 100%; display: flex; flex-direction: column; justify-content: space-between;">
+                    <div>
+                        <div style="position: relative; display: inline-block; margin-bottom: 1rem;">
+                            <img src="https://i.pravatar.cc/80?u={{ person.user_id }}" alt="{{ person.username }}"
+                                style="width: 70px; height: 70px; border-radius: 50%; object-fit: cover; border: 3px solid #f8fafc;">
+                            {% if person.score >= 5 %}
+                            <span
+                                style="position: absolute; -top: 5px; -right: 5px; background: #22c55e; color: white; font-size: 0.65rem; padding: 2px 6px; border-radius: 10px; font-weight: 700;">Top
+                                Match</span>
+                            {% endif %}
+                        </div>
+                        <h5 style="font-size: 1.05rem; font-weight: 700; color: #1e3a5f; margin-bottom: 0.25rem;">{{
+                            person.username }}</h5>
+                        <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 0.5rem;">{{
+                            person.user_type|capitalize }}, {{ person.region or 'Nearby' }}</p>
 
-        <!-- Hero Section -->
+                        {% if person.hobbies %}
+                        <div class="d-flex flex-wrap justify-content-center gap-1 mb-3">
+                            {% set hobby_list = person.hobbies if person.hobbies is iterable and person.hobbies is
+                            not
+                            string else person.hobbies.split(',') %}
+                            {% for hobby in hobby_list[:2] %}
+                            <span
+                                style="font-size: 0.65rem; background: #f1f5f9; padding: 2px 8px; border-radius: 10px; color: #64748b;">{{
+                                hobby.strip() }}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <button onclick="sendFriendRequest('{{ person.user_id }}', this)"
+                        style="background: #1e3a5f; color: white; border: none; border-radius: 12px; padding: 0.6rem; font-size: 0.9rem; font-weight: 600; width: 100%; transition: all 0.2s;">
+                        Connect
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+            {% else %}
+            <div class="col-12">
+                <div class="p-5 text-center bg-light rounded-4" style="border: 2px dashed #e2e8f0;">
+                    <i class="bi bi-person-plus text-muted mb-3" style="font-size: 2.5rem;"></i>
+                    <h4 class="text-dark fw-bold">No Suggestions Yet</h4>
+                    <p class="text-muted">Once more users join from your region or with similar hobbies, they'll
+                        appear
+                        here!</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% else %}
+<!-- ============================================ -->
+<!-- PUBLIC LANDING PAGE (GUEST) -->
+<!-- ============================================ -->
+
+<!-- Hero Section -->
+<div
+    style="background: linear-gradient(135deg, #1e3a5f 0%, #0f172a 100%); border-radius: 0 0 50px 50px; padding: 5rem 2rem 4rem; color: white; text-align: center; margin-bottom: 3rem;">
+    <div class="container" style="max-width: 800px;">
         <div
-            style="background: linear-gradient(135deg, #1e3a5f 0%, #0f172a 100%); border-radius: 0 0 50px 50px; padding: 5rem 2rem 4rem; color: white; text-align: center; margin-bottom: 3rem;">
-            <div class="container" style="max-width: 800px;">
-                <div
-                    style="width: 80px; height: 80px; background: rgba(255,255,255,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
-                    <i class="bi bi-heart-pulse-fill" style="font-size: 2.5rem; color: #60a5fa;"></i>
-                </div>
-                <h1 style="font-size: 3.5rem; font-weight: 800; margin-bottom: 1rem; line-height: 1.2;">
-                    Connecting Generations,<br>Sharing Wisdom
-                </h1>
-                <p
-                    style="font-size: 1.25rem; opacity: 0.8; margin-bottom: 2.5rem; max-width: 600px; margin-left: auto; margin-right: auto;">
-                    Join our community to bridge the gap between youth and seniors through stories, skills, and fun
-                    activities.
-                </p>
-                <div class="d-flex gap-3 justify-content-center flex-wrap">
-                    <a href="{{ url_for('auth.login') }}" class="btn btn-light btn-lg"
-                        style="border-radius: 16px; padding: 1rem 2.5rem; font-weight: 700; color: #1e3a5f;">
-                        Log In
-                    </a>
-                    <a href="{{ url_for('auth.register') }}" class="btn btn-outline-light btn-lg"
-                        style="border-radius: 16px; padding: 1rem 2.5rem; font-weight: 600;">
-                        Sign Up
-                    </a>
-                </div>
-            </div>
+            style="width: 80px; height: 80px; background: rgba(255,255,255,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
+            <i class="bi bi-heart-pulse-fill" style="font-size: 2.5rem; color: #60a5fa;"></i>
         </div>
+        <h1 style="font-size: 3.5rem; font-weight: 800; margin-bottom: 1rem; line-height: 1.2;">
+            Connecting Generations,<br>Sharing Wisdom
+        </h1>
+        <p
+            style="font-size: 1.25rem; opacity: 0.8; margin-bottom: 2.5rem; max-width: 600px; margin-left: auto; margin-right: auto;">
+            Join our community to bridge the gap between youth and seniors through stories, skills, and fun
+            activities.
+        </p>
+        <div class="d-flex gap-3 justify-content-center flex-wrap">
+            <a href="{{ url_for('auth.login') }}" class="btn btn-light btn-lg"
+                style="border-radius: 16px; padding: 1rem 2.5rem; font-weight: 700; color: #1e3a5f;">
+                Log In
+            </a>
+            <a href="{{ url_for('auth.register') }}" class="btn btn-outline-light btn-lg"
+                style="border-radius: 16px; padding: 1rem 2.5rem; font-weight: 600;">
+                Sign Up
+            </a>
+        </div>
+    </div>
+</div>
 
-        <!-- Feature Highlights -->
-        <div class="container mb-5">
-            <div class="row g-4">
-                <div class="col-md-4">
-                    <div
-                        style="background: white; border-radius: 24px; padding: 2rem; height: 100%; box-shadow: 0 4px 20px rgba(0,0,0,0.05); text-align: center;">
-                        <div
-                            style="width: 60px; height: 60px; background: #e0f2fe; border-radius: 16px; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
-                            <i class="bi bi-camera" style="font-size: 1.75rem; color: #0284c7;"></i>
-                        </div>
-                        <h3 style="font-size: 1.35rem; font-weight: 700; color: #1e3a5f; margin-bottom: 0.75rem;">Slice
-                            of Life
-                        </h3>
-                        <p style="color: #64748b;">Share detailed photo stories from your daily life and discover how
-                            other
-                            generations live.</p>
-                    </div>
+<!-- Feature Highlights -->
+<div class="container mb-5">
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div
+                style="background: white; border-radius: 24px; padding: 2rem; height: 100%; box-shadow: 0 4px 20px rgba(0,0,0,0.05); text-align: center;">
+                <div
+                    style="width: 60px; height: 60px; background: #e0f2fe; border-radius: 16px; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
+                    <i class="bi bi-camera" style="font-size: 1.75rem; color: #0284c7;"></i>
                 </div>
-                <div class="col-md-4">
-                    <div
-                        style="background: white; border-radius: 24px; padding: 2rem; height: 100%; box-shadow: 0 4px 20px rgba(0,0,0,0.05); text-align: center;">
-                        <div
-                            style="width: 60px; height: 60px; background: #fef3c7; border-radius: 16px; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
-                            <i class="bi bi-lightbulb" style="font-size: 1.75rem; color: #d97706;"></i>
-                        </div>
-                        <h3 style="font-size: 1.35rem; font-weight: 700; color: #1e3a5f; margin-bottom: 0.75rem;">
-                            Support Swap
-                        </h3>
-                        <p style="color: #64748b;">Exchange skills and help. Elders teach life wisdom, youth teach
-                            digital
-                            skills.</p>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div
-                        style="background: white; border-radius: 24px; padding: 2rem; height: 100%; box-shadow: 0 4px 20px rgba(0,0,0,0.05); text-align: center;">
-                        <div
-                            style="width: 60px; height: 60px; background: #dcfce7; border-radius: 16px; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
-                            <i class="bi bi-controller" style="font-size: 1.75rem; color: #16a34a;"></i>
-                        </div>
-                        <h3 style="font-size: 1.35rem; font-weight: 700; color: #1e3a5f; margin-bottom: 0.75rem;">Fun
-                            Activities
-                        </h3>
-                        <p style="color: #64748b;">Play intergenerational games, solve puzzles, and bridge the gap
-                            through fun.
-                        </p>
-                    </div>
-                </div>
+                <h3 style="font-size: 1.35rem; font-weight: 700; color: #1e3a5f; margin-bottom: 0.75rem;">Slice
+                    of Life
+                </h3>
+                <p style="color: #64748b;">Share detailed photo stories from your daily life and discover how
+                    other
+                    generations live.</p>
             </div>
         </div>
-        {% endif %}
-        {% endblock %}
+        <div class="col-md-4">
+            <div
+                style="background: white; border-radius: 24px; padding: 2rem; height: 100%; box-shadow: 0 4px 20px rgba(0,0,0,0.05); text-align: center;">
+                <div
+                    style="width: 60px; height: 60px; background: #fef3c7; border-radius: 16px; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
+                    <i class="bi bi-lightbulb" style="font-size: 1.75rem; color: #d97706;"></i>
+                </div>
+                <h3 style="font-size: 1.35rem; font-weight: 700; color: #1e3a5f; margin-bottom: 0.75rem;">
+                    Support Swap
+                </h3>
+                <p style="color: #64748b;">Exchange skills and help. Elders teach life wisdom, youth teach
+                    digital
+                    skills.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div
+                style="background: white; border-radius: 24px; padding: 2rem; height: 100%; box-shadow: 0 4px 20px rgba(0,0,0,0.05); text-align: center;">
+                <div
+                    style="width: 60px; height: 60px; background: #dcfce7; border-radius: 16px; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
+                    <i class="bi bi-controller" style="font-size: 1.75rem; color: #16a34a;"></i>
+                </div>
+                <h3 style="font-size: 1.35rem; font-weight: 700; color: #1e3a5f; margin-bottom: 0.75rem;">Fun
+                    Activities
+                </h3>
+                <p style="color: #64748b;">Play intergenerational games, solve puzzles, and bridge the gap
+                    through fun.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{% endblock %}

@@ -1,8 +1,6 @@
 {% extends "base.html" %}
 
-{% extends "base.html" %}
-
-{% block title %}Memory Library - JomGather{% endblock %}
+{% block title %}Memory Library - Slice of Life{% endblock %}
 
 {% block content %}
 <style>
@@ -255,13 +253,9 @@
             class="tab-item {{ 'active' if current_filter == 'public' }}">
             <i class="bi bi-globe-americas"></i> Public Gallery
         </a>
-        <a href="{{ url_for('slice_of_life.catalog', filter='friends') }}"
-            class="tab-item {{ 'active' if current_filter == 'friends' }}">
-            <i class="bi bi-people-fill"></i> Friends' Circle
-        </a>
         <a href="{{ url_for('slice_of_life.catalog', filter='private') }}"
             class="tab-item {{ 'active' if current_filter == 'private' }}">
-            <i class="bi bi-shield-lock-fill"></i> Private Archive
+            <i class="bi bi-shield-lock-fill"></i> Private Archive & Friends
         </a>
     </div>
 
@@ -270,46 +264,83 @@
         {% if displays %}
         {% for display in displays %}
         <div class="col-md-6 col-lg-4">
-            <div class="memory-card">
-                <!-- Header Image (Using a placeholder logic for card background if we don't have a display cover) -->
-                <!-- Ideally, we fetch one of the submissions' images to show as cover -->
-                <div class="card-header-img">
-                    <img src="https://images.unsplash.com/photo-1544027993-37dbfe43562a?auto=format&fit=crop&w=600&q=80"
-                        alt="Memory Cover" style="filter: brightness(0.9);"> <!-- Placeholder for now -->
+            <div class="memory-card" data-url="{{ url_for('slice_of_life.review', display_id=display.display_id) }}"
+                onclick="window.location.href=this.getAttribute('data-url');" style="cursor: pointer;">
+                <!-- Combined Image Header -->
+                <div class="card-header-img" style="height: 220px; display: flex; background: #000;">
+                    {% if display.submissions|length >= 2 %}
+                    <div style="flex: 1; height: 100%; border-right: 2px solid white;">
+                        <img src="{{ display.submissions[0].image_url }}"
+                            style="width: 100%; height: 100%; object-fit: cover;" alt="Memory 1">
+                    </div>
+                    <div style="flex: 1; height: 100%;">
+                        <img src="{{ display.submissions[1].image_url }}"
+                            style="width: 100%; height: 100%; object-fit: cover;" alt="Memory 2">
+                    </div>
+                    {% elif display.submissions|length == 1 %}
+                    <img src="{{ display.submissions[0].image_url }}"
+                        style="width: 100%; height: 100%; object-fit: cover;" alt="Memory">
+                    {% else %}
+                    <div class="w-100 d-flex align-items-center justify-content-center bg-light">
+                        <i class="bi bi-images text-muted fs-1"></i>
+                    </div>
+                    {% endif %}
 
-                    {% if display.is_private %}
+                    {% if display.is_private and current_filter != 'public' %}
                     <span class="card-badge"><i class="bi bi-lock-fill"></i> Private</span>
                     {% endif %}
                 </div>
 
                 <div class="card-body-custom">
-                    <h5 class="card-title">Slice of Life #{{ display.display_id }}</h5>
-                    <div class="card-meta">
-                        <!-- Creator & Partner Avatars -->
-                        <div class="d-flex">
-                            <img src="https://i.pravatar.cc/100?img={{ (display.creator_id * 5) % 70 }}"
-                                class="user-avatar-small" style="z-index: 2;">
-                            <img src="https://i.pravatar.cc/100?img={{ (display.partner_id * 5) % 70 }}"
-                                class="user-avatar-small" style="margin-left: -10px; z-index: 1;">
-                        </div>
-                        <small class="text-muted" style="font-weight: 500;">
-                            Shared {{ display.created_at[:10] }}
-                        </small>
+                    <!-- AI Summary Title -->
+                    <h5 class="card-title fw-bold"
+                        style="color: #1e3a5f; min-height: 2.5em; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                        {{ display.title or "A New Shared Memory" }}
+                    </h5>
+
+                    <!-- Prompt Context -->
+                    <div class="mb-3 p-2 rounded-3" style="background: #f1f5f9; border-left: 3px solid #3b82f6;">
+                        <small class="text-muted d-block"
+                            style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase;">Question of the
+                            Day</small>
+                        <p class="mb-0 small fw-medium" style="color: #475569;">{{ display.prompt_text }}</p>
                     </div>
-                    <p class="text-muted small mb-0 line-clamp-3">
-                        A beautiful conversation captured between two generations. Click to unfold their story.
-                    </p>
+
+                    <!-- Comments Preview (Max 3) -->
+                    {% if display.comments_preview %}
+                    <div class="mb-3">
+                        <small class="text-muted fw-bold" style="font-size: 0.7rem;">RECENT COMMENTS</small>
+                        {% for comm in display.comments_preview %}
+                        <div class="small text-truncate text-muted mt-1">
+                            <i class="bi bi-chat-dots me-1"></i> {{ comm.content }}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
                 </div>
 
                 <div class="card-footer-custom">
-                    <div class="d-flex gap-2">
-                        <button class="action-btn" title="Like">
-                            <i class="bi bi-heart"></i>
-                        </button>
-                        <span class="small text-muted align-self-center">{{ display.likes or 0 }}</span>
+                    <div class="d-flex gap-3">
+                        <!-- Like Feature (Only for Public) -->
+                        {% if current_filter == 'public' %}
+                        <form action="{{ url_for('slice_of_life.like_display', display_id=display.display_id) }}"
+                            method="POST">
+                            <button type="submit" class="border-0 bg-transparent p-0 d-flex align-items-center gap-1"
+                                title="Like">
+                                <i class="bi bi-heart-fill text-danger"></i>
+                                <span class="small fw-bold text-muted">{{ display.likes or 0 }}</span>
+                            </button>
+                        </form>
+                        {% endif %}
+
+                        <div class="d-flex align-items-center gap-1">
+                            <i class="bi bi-chat-text text-primary"></i>
+                            <span class="small fw-bold text-muted">{{ display.comments_preview|length if
+                                display.comments_preview else 0 }}</span>
+                        </div>
                     </div>
                     <a href="{{ url_for('slice_of_life.review', display_id=display.display_id) }}" class="view-link">
-                        Read Story <i class="bi bi-arrow-right"></i>
+                        View <i class="bi bi-arrow-right"></i>
                     </a>
                 </div>
             </div>
@@ -317,14 +348,16 @@
         {% endfor %}
         {% else %}
         <div class="col-12 py-5 text-center">
-            <div class="bg-light rounded-circle d-inline-flex p-5 mb-4 text-muted" style="background: #f1f5f9;">
-                <i class="bi bi-journal-bookmark fs-1" style="color: #cbd5e1;"></i>
+            <div class="bg-white rounded-5 shadow-sm p-5 d-inline-block">
+                <div class="bg-light rounded-circle d-inline-flex p-5 mb-4 text-muted" style="background: #f8fafc;">
+                    <i class="bi bi-journal-x fs-1" style="color: #cbd5e1;"></i>
+                </div>
+                <h3 class="fw-bold text-dark mb-2">No Slice of Life Yet</h3>
+                <p class="text-muted mb-4 lead">Be the first to share a memory in this collection.</p>
+                <a href="{{ url_for('slice_of_life.prompt') }}" class="btn-create-slice">
+                    Start a Conversation
+                </a>
             </div>
-            <h3 class="fw-bold text-dark mb-2">It's quiet here...</h3>
-            <p class="text-muted mb-4 lead">Be the first to share a memory in this collection.</p>
-            <a href="{{ url_for('slice_of_life.prompt') }}" class="btn-create-slice">
-                Start a Conversation
-            </a>
         </div>
         {% endif %}
     </div>
