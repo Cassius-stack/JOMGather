@@ -21,6 +21,21 @@ ALTER TABLE coins ENABLE ROW LEVEL SECURITY;
 ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE communities ENABLE ROW LEVEL SECURITY;
 ALTER TABLE community_members ENABLE ROW LEVEL SECURITY;
+ALTER TABLE activities ENABLE ROW LEVEL SECURITY;
+ALTER TABLE support_requests ENABLE ROW LEVEL SECURITY;
+ALTER TABLE pairs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE interests ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_interests ENABLE ROW LEVEL SECURITY;
+ALTER TABLE languages ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_languages ENABLE ROW LEVEL SECURITY;
+ALTER TABLE skills ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_skills ENABLE ROW LEVEL SECURITY;
+ALTER TABLE badges ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_badges ENABLE ROW LEVEL SECURITY;
+ALTER TABLE questions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE replies ENABLE ROW LEVEL SECURITY;
+ALTER TABLE question_likes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE reply_likes ENABLE ROW LEVEL SECURITY;
 
 -- 2. Define Policies
 
@@ -62,8 +77,9 @@ CREATE POLICY "Coin balance access" ON coins FOR SELECT USING (user_id = get_int
 -- NOTIFICATIONS: Own only
 CREATE POLICY "Notification access" ON notifications FOR ALL USING (user_id = get_internal_uid());
 
--- GLOBAL CONTENT (Prompts, Skills, Badges): Public read
+-- GLOBAL CONTENT: Public read
 CREATE POLICY "Public Prompts read" ON sol_prompts FOR SELECT USING (true);
+CREATE POLICY "Public Activities read" ON activities FOR SELECT USING (true);
 CREATE POLICY "Public Interests read" ON interests FOR SELECT USING (true);
 CREATE POLICY "Public Languages read" ON languages FOR SELECT USING (true);
 CREATE POLICY "Public Skills read" ON skills FOR SELECT USING (true);
@@ -102,7 +118,6 @@ CREATE POLICY "Grandfriend Questions write" ON questions FOR INSERT WITH CHECK (
 CREATE POLICY "Grandfriend Replies view" ON replies FOR SELECT USING (true);
 CREATE POLICY "Grandfriend Replies write" ON replies FOR INSERT WITH CHECK (true);
 
-ALTER TABLE question_likes ENABLE ROW LEVEL SECURITY;
-ALTER TABLE reply_likes ENABLE ROW LEVEL SECURITY;
+-- LIKES: Check by auth.uid() directly since questions might use UUIDs
 CREATE POLICY "Like question" ON question_likes FOR ALL USING (user_id::text = auth.uid()::text);
 CREATE POLICY "Like reply" ON reply_likes FOR ALL USING (user_id::text = auth.uid()::text);

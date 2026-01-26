@@ -89,7 +89,7 @@
 
 {% block scripts %}
 <script>
-    const CURRENT_USER_ID = {{ session.get('user_id') | default ('null') }};
+    const CURRENT_USER_ID = {{ session.get('user_id') | default ('null', true) }};
     const CURRENT_USERNAME = "{{ session.get('username') }}";
 </script>
 <script src="{{ url_for('static', filename='js/chat.js') }}"></script>
