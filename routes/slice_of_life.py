@@ -429,12 +429,18 @@ def catalog():
 # ============================================
 
 @slice_of_life_bp.route('/respond/<int:invite_id>', methods=['GET', 'POST'])
+@login_required
 def receiver_respond(invite_id):
     """Receiver responds to invite."""
     # 1. Fetch Invite
     invite = fetch_one('sol_invites', invite_id=invite_id)
     if not invite:
         return "Invite not found", 404
+
+    # Check if current user is the intended recipient
+    if get_current_user_id() != invite['recipient_id']:
+        flash("You are not authorized to respond to this invite.", "danger")
+        return redirect(url_for('index'))
         
     # 2. Fetch Display and Sender Submission
     display_id = invite['display_id']

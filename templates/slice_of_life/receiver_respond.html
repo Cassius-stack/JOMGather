@@ -34,7 +34,7 @@
             <h1 style="font-size: 2.25rem; font-weight: 700; color: #1e3a5f; margin-bottom: 0.5rem;">
                 <i class="bi bi-reply me-2"></i>Share Your Response
             </h1>
-            <p style="font-size: 1.15rem; color: #475569;">Add your photo and comment on Jeremy's submission</p>
+            <p style="font-size: 1.15rem; color: #475569;">Add your photo and thought to complete the Slice of Life</p>
         </div>
 
         <!-- Prompt Card -->
@@ -173,16 +173,14 @@
 
     function checkFormValidity() {
         const hasThought = document.getElementById('yourThought').value.trim().length > 10;
-        const hasComment = document.getElementById('commentOnSender').value.trim().length > 5;
         const submitBtn = document.getElementById('submitBtn');
 
-        const isValid = imageSelected && hasThought && hasComment;
+        const isValid = imageSelected && hasThought;
         submitBtn.disabled = !isValid;
         submitBtn.style.opacity = isValid ? '1' : '0.5';
     }
 
     document.getElementById('yourThought').addEventListener('input', checkFormValidity);
-    document.getElementById('commentOnSender').addEventListener('input', checkFormValidity);
 
     function submitResponse() {
         document.getElementById('successModal').style.display = 'flex';
