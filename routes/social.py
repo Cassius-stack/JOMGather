@@ -328,7 +328,11 @@ def get_contacts():
                 preview = ''
                 if last_msg:
                     prefix = 'You: ' if last_msg['sender_id'] == current_user_id else ''
-                    preview = f"{prefix}{last_msg['content'][:30]}"
+                    content = last_msg['content']
+                    if 'Slice of Life Invite' in content:
+                        preview = f"{prefix}🎨 Slice of Life Invite"
+                    else:
+                        preview = f"{prefix}{content[:30]}"
                 
                 # Determine online status from last_seen
                 status = 'Active now' if is_online(user_data) else 'Offline'

@@ -121,3 +121,27 @@ CREATE POLICY "Grandfriend Replies write" ON replies FOR INSERT WITH CHECK (true
 -- LIKES: Check by auth.uid() directly since questions might use UUIDs
 CREATE POLICY "Like question" ON question_likes FOR ALL USING (user_id::text = auth.uid()::text);
 CREATE POLICY "Like reply" ON reply_likes FOR ALL USING (user_id::text = auth.uid()::text);
+
+-- =====================================================
+-- 3. STORAGE POLICIES (Fix for 403 Upload Error)
+-- =====================================================
+
+-- Ensure the 'images' bucket exists and is public
+INSERT INTO storage.buckets (id, name, public) 
+VALUES ('images', 'images', true) 
+ON CONFLICT (id) DO NOTHING;
+
+-- Allow Public READ access to styles/images
+CREATE POLICY "Public Access" 
+ON storage.objects FOR SELECT 
+USING ( bucket_id = 'images' );
+
+-- Allow Authenticated Users to UPLOAD
+CREATE POLICY "Authenticated Upload" 
+ON storage.objects FOR INSERT 
+WITH CHECK ( bucket_id = 'images' AND auth.role() = 'authenticated' );
+
+-- Allow Users to DELETE their own files (Optional but good)
+CREATE POLICY "Owner Delete" 
+ON storage.objects FOR DELETE 
+USING ( bucket_id = 'images' AND owner = auth.uid() );

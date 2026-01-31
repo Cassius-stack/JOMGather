@@ -24,18 +24,29 @@ def get_current_user_id():
 def index():
     """Smart router: Go to waiting room if pending, else prompt."""
     current_uid = get_current_user_id()
-    # Check for ANY pending displays (as creator or partner)
-    # We'll see if there's anything not 'completed'
-    pending_creator = fetch_all('sol_displays', creator_id=current_uid, status='pending')
-    pending_partner = fetch_all('sol_displays', partner_id=current_uid, status='pending')
+    today = datetime.now().date().isoformat()
     
-    # If forced to start new (from button in waiting room), skip to prompt
-    if request.args.get('force_new'):
+    # 0. Find today's prompt
+    prompts = fetch_all('sol_prompts', active_date=today)
+    if not prompts:
+        # If no prompt today, generate one immediately or go to prompt page to handle it
         return redirect(url_for('slice_of_life.prompt'))
-
-    if pending_creator or pending_partner:
-        return redirect(url_for('slice_of_life.waiting_room'))
     
+    prompt_id = prompts[0]['prompt_id']
+
+    # 1. Check if user already has an active or completed display for TODAY'S prompt
+    # Users can only do one SOL per day.
+    existing_today = fetch_all('sol_displays', prompt_id=prompt_id)
+    # Check if I am creator or partner in any of these
+    for disp in existing_today:
+        if disp['creator_id'] == current_uid or disp['partner_id'] == current_uid:
+            if disp['status'] == 'pending':
+                return redirect(url_for('slice_of_life.waiting_room'))
+            else:
+                # If completed, maybe they want to see the catalog or review their specific memory
+                return redirect(url_for('slice_of_life.review', display_id=disp['display_id']))
+
+    # If nothing found for today, proceed to prompt
     return redirect(url_for('slice_of_life.prompt'))
 
 @slice_of_life_bp.route('/prompt')
@@ -62,8 +73,11 @@ def prompt():
         # Re-fetch to get ID
         prompt_data = fetch_all('sol_prompts', active_date=today)[0]
     
-    # Removed 1-per-day restriction to allow "Stacking"
-    # User can now create multiple slices for the same prompt or different ones.
+    # Enforce 1-per-day here too as a safety net
+    existing_today = fetch_all('sol_displays', prompt_id=prompt_data['prompt_id'])
+    for disp in existing_today:
+        if disp['creator_id'] == current_uid or disp['partner_id'] == current_uid:
+            return redirect(url_for('slice_of_life.waiting_room'))
             
     session['sol_prompt_id'] = prompt_data['prompt_id']
     user_state = session.get('sol_state', 'new')
@@ -267,6 +281,31 @@ def send_invites():
                 'read': False
             })
 
+            # 5a. Emit Socket.IO Event for Real-Time Sync
+            try:
+                from flask import current_app
+                # Get the room name (consistent with chat_events.py)
+                ids = sorted([int(sender_id), int(recipient_id)])
+                room = f"chat_{ids[0]}_{ids[1]}"
+                
+                socketio = current_app.extensions.get('socketio')
+                if socketio:
+                    response_data = {
+                        'id': f"sol_{int(datetime.now().timestamp())}_{recipient_id}", # Temp ID
+                        'sender_id': sender_id,
+                        'receiver_id': recipient_id,
+                        'text': msg_content,
+                        'image_url': None,
+                        'is_cyber_challenge': False,
+                        'challenge_id': None,
+                        'scenario_id': None
+                    }
+                    # Emit to both the shared room and receiver's room
+                    socketio.emit('new_message', response_data, room=room)
+                    socketio.emit('new_message', response_data, room=f"user_{recipient_id}")
+            except Exception as se:
+                print(f"Socket emit failed: {se}")
+
         # 6. Clear Session & Update State
         session.pop('sol_submission', None)
         # We store the LAST display ID or just flag that we are waiting
@@ -347,6 +386,16 @@ def review(display_id):
     # Fetch all submissions for this display
     submissions = fetch_all('sol_submissions', display_id=display_id)
     display = fetch_one('sol_displays', display_id=display_id)
+    
+    if not display:
+        flash('Display not found.', 'danger')
+        return redirect(url_for('slice_of_life.catalog'))
+        
+    # Security: If status is still pending, they belong in the waiting room
+    # (unless we want them to see their own part, but typically waiting room is for that)
+    if display['status'] == 'pending':
+        return redirect(url_for('slice_of_life.waiting_room'))
+        
     prompt = fetch_one('sol_prompts', prompt_id=display['prompt_id'])
     
     # Fetch interactions

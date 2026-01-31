@@ -465,7 +465,14 @@ function updateContactPreview(contactId, text, type) {
         const preview = contactItem.querySelector('.preview');
         if (preview) {
             const prefix = type === 'sent' ? 'You: ' : '';
-            preview.textContent = `${prefix}${text.substring(0, 25)}${text.length > 25 ? '...' : ''}`;
+
+            // Handle Slice of Life HTML cards in preview
+            let display_text = text;
+            if (text && text.includes('Slice of Life Invite')) {
+                display_text = '🎨 Slice of Life Invite';
+            }
+
+            preview.textContent = `${prefix}${display_text.substring(0, 25)}${display_text.length > 25 ? '...' : ''}`;
         }
     }
 }
