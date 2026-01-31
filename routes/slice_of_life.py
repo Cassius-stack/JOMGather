@@ -720,7 +720,6 @@ def receiver_respond(invite_id):
     invite = fetch_one('sol_invites', invite_id=invite_id)
     if not invite:
         return "Invite not found", 404
-    
     # 1a. Prompt Expiration Check
     today = datetime.now().date().isoformat()
     current_prompts = fetch_all('sol_prompts', active_date=today)
@@ -737,7 +736,7 @@ def receiver_respond(invite_id):
     # Ensure current user is the recipient
     if invite['recipient_id'] != current_uid:
         flash("You are not authorized to respond to this invite.", "danger")
-        return redirect(url_for('main.dashboard')) # Or some other appropriate redirect
+        return redirect(url_for('main.dashboard'))
         
     # 2. Fetch Display and Sender Submission
     display_id = invite['display_id']
