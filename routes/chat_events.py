@@ -466,9 +466,186 @@ def register_chat_events(socketio):
         except Exception as e:
             print(f"[Socket.IO] Error marking read: {e}")
 
+    # ========== VIDEO/VOICE CALL SIGNALING ==========
+    
+    @socketio.on('call_user')
+    def handle_call_user(data):
+        """
+        Called when a user initiates a call.
+        Emit incoming_call to the receiver.
+        """
+        caller_id = data.get('caller_id')
+        callee_id = data.get('callee_id')
+        call_type = data.get('call_type', 'voice')  # 'voice' or 'video'
+        caller_name = data.get('caller_name', 'Unknown')
+        
+        if not caller_id or not callee_id:
+            print("[Socket.IO] call_user: missing caller_id or callee_id")
+            return
+        
+        print(f"[Socket.IO] Call initiated: {caller_id} -> {callee_id} ({call_type})")
+        
+        # Emit to callee's personal room
+        emit('incoming_call', {
+            'caller_id': caller_id,
+            'caller_name': caller_name,
+            'call_type': call_type
+        }, room=f"user_{callee_id}")
+    
+    @socketio.on('call_answer')
+    def handle_call_answer(data):
+        """
+        Called when callee accepts the call.
+        Notify caller to start WebRTC negotiation.
+        """
+        caller_id = data.get('caller_id')
+        callee_id = data.get('callee_id')
+        callee_name = data.get('callee_name', 'Unknown')
+        
+        if not caller_id or not callee_id:
+            return
+        
+        print(f"[Socket.IO] Call answered: {callee_id} accepted call from {caller_id}")
+        
+        # Notify caller that call was accepted
+        emit('call_accepted', {
+            'callee_id': callee_id,
+            'callee_name': callee_name
+        }, room=f"user_{caller_id}")
+    
+    @socketio.on('call_decline')
+    def handle_call_decline(data):
+        """
+        Called when callee declines the call.
+        """
+        caller_id = data.get('caller_id')
+        callee_id = data.get('callee_id')
+        
+        if not caller_id or not callee_id:
+            return
+        
+        print(f"[Socket.IO] Call declined: {callee_id} rejected call from {caller_id}")
+        
+        emit('call_declined', {
+            'callee_id': callee_id
+        }, room=f"user_{caller_id}")
+    
+    @socketio.on('call_end')
+    def handle_call_end(data):
+        """
+        Called when either user ends the call.
+        """
+        user_id = data.get('user_id')
+        other_user_id = data.get('other_user_id')
+        
+        if not user_id or not other_user_id:
+            return
+        
+        print(f"[Socket.IO] Call ended by user {user_id}")
+        
+        # Notify the other user
+        emit('call_ended', {
+            'user_id': user_id
+        }, room=f"user_{other_user_id}")
+    
+    @socketio.on('webrtc_offer')
+    def handle_webrtc_offer(data):
+        """
+        Forward WebRTC offer (SDP) to the callee.
+        """
+        caller_id = data.get('caller_id')
+        callee_id = data.get('callee_id')
+        offer = data.get('offer')
+        
+        if not caller_id or not callee_id or not offer:
+            return
+        
+        print(f"[Socket.IO] WebRTC offer from {caller_id} to {callee_id}")
+        
+        emit('webrtc_offer', {
+            'caller_id': caller_id,
+            'offer': offer
+        }, room=f"user_{callee_id}")
+    
+    @socketio.on('webrtc_answer')
+    def handle_webrtc_answer(data):
+        """
+        Forward WebRTC answer (SDP) to the caller.
+        """
+        caller_id = data.get('caller_id')
+        callee_id = data.get('callee_id')
+        answer = data.get('answer')
+        
+        if not caller_id or not callee_id or not answer:
+            return
+        
+        print(f"[Socket.IO] WebRTC answer from {callee_id} to {caller_id}")
+        
+        emit('webrtc_answer', {
+            'callee_id': callee_id,
+            'answer': answer
+        }, room=f"user_{caller_id}")
+    
+    @socketio.on('ice_candidate')
+    def handle_ice_candidate(data):
+        """
+        Called when a peer has a new ICE candidate.
+        Forward it to the other peer.
+        """
+        from_user_id = data.get('from_user_id')
+        to_user_id = data.get('to_user_id')
+        candidate = data.get('candidate')
+        
+        if not from_user_id or not to_user_id:
+            return
+        
+        emit('ice_candidate', {
+            'from_user_id': from_user_id,
+            'candidate': candidate
+        }, room=f"user_{to_user_id}")
+    
+    @socketio.on('mute_status')
+    def handle_mute_status(data):
+        """
+        Called when a user mutes/unmutes their microphone.
+        Relay the status to the other user.
+        """
+        from_user_id = data.get('from_user_id')
+        to_user_id = data.get('to_user_id')
+        is_muted = data.get('is_muted', False)
+        
+        if not from_user_id or not to_user_id:
+            return
+        
+        print(f"[Socket.IO] User {from_user_id} mute status: {is_muted}")
+        
+        emit('mute_status', {
+            'from_user_id': from_user_id,
+            'is_muted': is_muted
+        }, room=f"user_{to_user_id}")
+    
+    @socketio.on('camera_status')
+    def handle_camera_status(data):
+        """
+        Called when a user turns their camera on/off.
+        Relay the status to the other user.
+        """
+        from_user_id = data.get('from_user_id')
+        to_user_id = data.get('to_user_id')
+        is_camera_off = data.get('is_camera_off', False)
+        
+        if not from_user_id or not to_user_id:
+            return
+        
+        print(f"[Socket.IO] User {from_user_id} camera status: {'OFF' if is_camera_off else 'ON'}")
+        
+        emit('camera_status', {
+            'from_user_id': from_user_id,
+            'is_camera_off': is_camera_off
+        }, room=f"user_{to_user_id}")
+
 
 def get_room_name(user1_id, user2_id):
     """Create a consistent room name for two users."""
     ids = sorted([int(user1_id), int(user2_id)])
-    return f"chat_{ids[0]}_{ids[1]}"
 

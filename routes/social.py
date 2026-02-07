@@ -4,7 +4,7 @@ Now using Supabase for database
 """
 
 from flask import Blueprint, render_template, request, redirect, url_for, jsonify, session
-from utils.supabase_db import get_supabase, fetch_all, fetch_one, insert
+from utils.supabase_db import get_supabase, fetch_all, fetch_one, insert, retry_query
 from utils.auth_middleware import login_required
 import traceback
 
@@ -275,6 +275,24 @@ def reject_friend_request():
 @social_bp.route('/api/contacts')
 def get_contacts():
     """Get accepted friends, sorted by most recent message."""
+    import time
+    
+    def query_with_retry(query_func, max_retries=3):
+        """Execute a query with retry on network errors."""
+        for attempt in range(max_retries):
+            try:
+                return query_func()
+            except Exception as e:
+                error_str = str(e).lower()
+                if "10035" in error_str or "timeout" in error_str or "transport" in error_str or "read" in error_str:
+                    print(f"[Contacts API] Retry {attempt+1}/{max_retries}: {e}")
+                    time.sleep(0.5 * (attempt + 1))  # Exponential backoff
+                    if attempt == max_retries - 1:
+                        raise
+                else:
+                    raise
+        return None
+    
     try:
         current_user_id = get_current_user_id()
         supabase = get_supabase()
@@ -283,14 +301,20 @@ def get_contacts():
         friends = []
         
         # 1. Where I am user_1 (I requested, they accepted)
-        sent_accepted = supabase.table('friendships').select('user_id_2').eq('user_id_1', current_user_id).eq('status', 'accepted').execute()
-        for item in sent_accepted.data:
-            friends.append(item['user_id_2'])
+        sent_accepted = query_with_retry(
+            lambda: supabase.table('friendships').select('user_id_2').eq('user_id_1', current_user_id).eq('status', 'accepted').execute()
+        )
+        if sent_accepted:
+            for item in sent_accepted.data:
+                friends.append(item['user_id_2'])
             
         # 2. Where I am user_2 (They requested, I accepted)
-        received_accepted = supabase.table('friendships').select('user_id_1').eq('user_id_2', current_user_id).eq('status', 'accepted').execute()
-        for item in received_accepted.data:
-            friends.append(item['user_id_1'])
+        received_accepted = query_with_retry(
+            lambda: supabase.table('friendships').select('user_id_1').eq('user_id_2', current_user_id).eq('status', 'accepted').execute()
+        )
+        if received_accepted:
+            for item in received_accepted.data:
+                friends.append(item['user_id_1'])
             
         if not friends:
             return jsonify([])

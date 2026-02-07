@@ -41,8 +41,12 @@
                     </div>
                 </div>
                 <div class="header-actions">
-                    <i class="bi bi-telephone"></i>
-                    <i class="bi bi-camera-video"></i>
+                    <button class="call-btn" id="voiceCallBtn" title="Voice call" onclick="initiateVoiceCall()">
+                        <i class="bi bi-telephone-fill"></i>
+                    </button>
+                    <button class="call-btn" id="videoCallBtn" title="Video call" onclick="initiateVideoCall()">
+                        <i class="bi bi-camera-video-fill"></i>
+                    </button>
                 </div>
             </header>
             <div class="chat-container" id="chat-messages">
@@ -83,6 +87,77 @@
             </footer>
         </main>
 
+        <!-- Incoming Call Popup -->
+        <div id="incomingCallPopup" class="incoming-call-popup">
+            <div class="incoming-call-content">
+                <div class="caller-avatar">
+                    <i class="bi bi-person-fill"></i>
+                </div>
+                <div class="caller-info">
+                    <span class="caller-name">Unknown</span>
+                    <span class="call-type-label">📞 Incoming call</span>
+                </div>
+                <div class="incoming-call-actions">
+                    <button class="call-action-btn accept" onclick="acceptCall()" title="Answer">
+                        <i class="bi bi-telephone-fill"></i>
+                    </button>
+                    <button class="call-action-btn decline" onclick="declineCall()" title="Decline">
+                        <i class="bi bi-telephone-x-fill"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Call Screen Overlay -->
+        <div id="callScreen" class="call-screen-overlay">
+            <div class="call-screen-content">
+                <div class="call-header">
+                    <span class="call-user-name">Unknown</span>
+                    <span class="call-status">Calling...</span>
+                    <span id="callDuration" class="call-duration" style="display: none;">00:00</span>
+                </div>
+                <div class="video-container">
+                    <div class="remote-video-wrapper">
+                        <video id="remoteVideo" autoplay playsinline></video>
+                        <div class="video-placeholder">
+                            <i class="bi bi-person-fill"></i>
+                        </div>
+                        <div id="remoteAvatarPlaceholder" class="avatar-placeholder" style="display: none;">
+                            <i class="bi bi-person-circle"></i>
+                        </div>
+                        <div class="video-name-label">
+                            <span id="remoteUserName"></span>
+                            <i id="remoteMuteIcon" class="bi bi-mic-mute-fill mute-indicator"
+                                style="display: none;"></i>
+                            <i id="remoteCameraOffIcon" class="bi bi-camera-video-off-fill mute-indicator"
+                                style="display: none;"></i>
+                        </div>
+                    </div>
+                    <div class="local-video-wrapper">
+                        <video id="localVideo" autoplay playsinline muted></video>
+                        <div id="localAvatarPlaceholder" class="avatar-placeholder" style="display: none;">
+                            <i class="bi bi-person-circle"></i>
+                        </div>
+                        <div class="video-name-label">
+                            <span>You</span>
+                            <i id="localMuteIcon" class="bi bi-mic-mute-fill mute-indicator" style="display: none;"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="call-controls">
+                    <button id="toggleMicBtn" class="control-btn" onclick="toggleMic()" title="Toggle microphone">
+                        <i class="bi bi-mic-fill"></i>
+                    </button>
+                    <button id="toggleCameraBtn" class="control-btn" onclick="toggleCamera()" title="Toggle camera">
+                        <i class="bi bi-camera-video-fill"></i>
+                    </button>
+                    <button id="endCallBtn" class="control-btn hangup" onclick="endCall()" title="End call">
+                        <i class="bi bi-telephone-x-fill"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
     </div>
 </div>
 {% endblock %}
@@ -91,6 +166,27 @@
 <script>
     const CURRENT_USER_ID = {{ session.get('user_id') | default ('null', true) }};
     const CURRENT_USERNAME = "{{ session.get('username') }}";
+    const CURRENT_USER_NAME = "{{ session.get('username') }}";
+
+    // Helper functions for call buttons (use currentContactId from chat.js)
+    function initiateVoiceCall() {
+        if (!currentContactId) {
+            showToast('Please select a contact first', 'warning');
+            return;
+        }
+        const contactName = document.getElementById('chat-contact-name').textContent || 'Unknown';
+        startCall(currentContactId, contactName, 'voice');
+    }
+
+    function initiateVideoCall() {
+        if (!currentContactId) {
+            showToast('Please select a contact first', 'warning');
+            return;
+        }
+        const contactName = document.getElementById('chat-contact-name').textContent || 'Unknown';
+        startCall(currentContactId, contactName, 'video');
+    }
 </script>
+<script src="{{ url_for('static', filename='js/call.js') }}"></script>
 <script src="{{ url_for('static', filename='js/chat.js') }}"></script>
 {% endblock %}

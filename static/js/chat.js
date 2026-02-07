@@ -1382,7 +1382,30 @@ function showExplanationModal(challengeId, scenarioId) {
 async function loadMessages(contactId) {
     try {
         const response = await fetch(`/social/api/messages/${contactId}?user=${CURRENT_USER_ID}`);
+
+        // Check if response is OK
+        if (!response.ok) {
+            console.error('Messages API error:', response.status, response.statusText);
+            renderMessages([]);
+            return [];
+        }
+
         const messages = await response.json();
+
+        // Handle error responses from backend
+        if (messages.error) {
+            console.error('Messages API returned error:', messages.error);
+            renderMessages([]);
+            return [];
+        }
+
+        // Validate that messages is an array
+        if (!Array.isArray(messages)) {
+            console.error('Invalid messages response - expected array:', messages);
+            renderMessages([]);
+            return [];
+        }
+
         renderMessages(messages);
         return messages;
     } catch (error) {
@@ -1398,7 +1421,24 @@ async function loadMessages(contactId) {
 async function loadContacts() {
     try {
         const response = await fetch(`/social/api/contacts?user=${CURRENT_USER_ID}`);
+
+        // Check if response is OK
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
         const contacts = await response.json();
+
+        // Handle error responses from backend
+        if (contacts.error) {
+            throw new Error(contacts.error);
+        }
+
+        // Validate that contacts is an array
+        if (!Array.isArray(contacts)) {
+            console.error('Invalid contacts response:', contacts);
+            throw new Error('Invalid response format - expected array');
+        }
 
         // Clear loading message
         contactList.innerHTML = '';
