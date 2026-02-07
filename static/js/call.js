@@ -14,7 +14,8 @@ let currentCall = {
     localStream: null,
     remoteStream: null,
     startTime: null,
-    durationTimer: null
+    durationTimer: null,
+    offerSent: false  // Track if we've already sent an offer
 };
 
 // WebRTC configuration - using public STUN servers
@@ -62,16 +63,39 @@ async function startCall(contactId, contactName, callType = 'video') {
 
     // Request media access
     try {
+        // Always request video so user can toggle camera on during voice calls
         const constraints = {
             audio: true,
-            video: callType === 'video'
+            video: true
         };
         currentCall.localStream = await navigator.mediaDevices.getUserMedia(constraints);
+
+        // For voice calls, disable video track initially (can be enabled later)
+        if (callType === 'voice') {
+            currentCall.localStream.getVideoTracks().forEach(track => {
+                track.enabled = false;
+                console.log(`[Call] Voice call - video track disabled initially`);
+            });
+        }
+
+        // Explicitly enable audio tracks
+        currentCall.localStream.getAudioTracks().forEach(track => {
+            track.enabled = true;
+            console.log(`[Call] Track ${track.kind} enabled:`, track.enabled);
+        });
 
         // Show local video preview
         const localVideo = document.getElementById('localVideo');
         if (localVideo && currentCall.localStream) {
             localVideo.srcObject = currentCall.localStream;
+            // Reset video opacity based on call type
+            localVideo.style.opacity = callType === 'voice' ? '0' : '1';
+        }
+
+        // Reset local avatar placeholder based on call type
+        const localAvatar = document.getElementById('localAvatarPlaceholder');
+        if (localAvatar) {
+            localAvatar.style.display = callType === 'voice' ? 'flex' : 'none';
         }
     } catch (err) {
         console.error('[Call] Media access error:', err);
@@ -124,15 +148,38 @@ async function acceptCall() {
 
     // Request media access
     try {
+        // Always request video so user can toggle camera on during voice calls
         const constraints = {
             audio: true,
-            video: currentCall.callType === 'video'
+            video: true
         };
         currentCall.localStream = await navigator.mediaDevices.getUserMedia(constraints);
+
+        // For voice calls, disable video track initially (can be enabled later)
+        if (currentCall.callType === 'voice') {
+            currentCall.localStream.getVideoTracks().forEach(track => {
+                track.enabled = false;
+                console.log(`[Call] Voice call - video track disabled initially`);
+            });
+        }
+
+        // Explicitly enable audio tracks
+        currentCall.localStream.getAudioTracks().forEach(track => {
+            track.enabled = true;
+            console.log(`[Call] Track ${track.kind} enabled:`, track.enabled);
+        });
 
         const localVideo = document.getElementById('localVideo');
         if (localVideo && currentCall.localStream) {
             localVideo.srcObject = currentCall.localStream;
+            // Reset video opacity based on call type
+            localVideo.style.opacity = currentCall.callType === 'voice' ? '0' : '1';
+        }
+
+        // Reset local avatar placeholder based on call type
+        const localAvatar = document.getElementById('localAvatarPlaceholder');
+        if (localAvatar) {
+            localAvatar.style.display = currentCall.callType === 'voice' ? 'flex' : 'none';
         }
     } catch (err) {
         console.error('[Call] Media access error:', err);
@@ -142,6 +189,8 @@ async function acceptCall() {
     }
 
     // Notify caller that we accepted
+    console.log('[Call] Emitting call_answer to caller:', currentCall.remoteUserId);
+
     socket.emit('call_answer', {
         caller_id: currentCall.remoteUserId,
         callee_id: CURRENT_USER_ID,
@@ -245,6 +294,9 @@ function setupPeerConnection() {
             console.log('[Call] ✅ WebRTC connection established');
             // Update UI to show connected status
             updateCallScreen('connected');
+
+            // Send initial camera/mic status to remote user
+            sendInitialMediaStatus();
         } else if (currentCall.peerConnection.connectionState === 'disconnected') {
             console.log('[Call] ⚠️ Connection disconnected');
             setTimeout(() => {
@@ -267,10 +319,12 @@ function setupPeerConnection() {
 // ========== CREATE & SEND OFFER (CALLER) ==========
 async function createAndSendOffer() {
     // Guard: only create offer once per call
-    if (currentCall.peerConnection && currentCall.peerConnection.signalingState !== 'closed') {
-        console.log('[Call] Ignoring duplicate createAndSendOffer - offer already created');
+    if (currentCall.offerSent) {
+        console.log('[Call] Ignoring duplicate createAndSendOffer - offer already sent');
         return;
     }
+
+    currentCall.offerSent = true;  // Mark as sent before async operations
 
     setupPeerConnection();
 
@@ -287,6 +341,7 @@ async function createAndSendOffer() {
         console.log('[Call] Offer sent');
     } catch (err) {
         console.error('[Call] Error creating offer:', err);
+        currentCall.offerSent = false;  // Reset flag on error
         endCall();
     }
 }
@@ -295,7 +350,13 @@ async function createAndSendOffer() {
 async function handleWebRTCOffer(data) {
     console.log('[Call] Received offer from', data.caller_id);
 
-    // Prevent processing duplicate offers if peer connection already exists
+    // Only process offers from the caller we're expecting (the one we accepted a call from)
+    if (!currentCall.active || currentCall.remoteUserId != data.caller_id) {
+        console.log('[Call] Ignoring offer - not in active call with this caller');
+        return;
+    }
+
+    // Prevent processing duplicate offers if peer connection already exists and is not closed
     if (currentCall.peerConnection && currentCall.peerConnection.signalingState !== 'closed') {
         console.log('[Call] Ignoring duplicate offer - peer connection already established');
         return;
@@ -383,7 +444,7 @@ function toggleMic() {
 
         // Broadcast mute status to remote user
         if (currentCall.remoteUserId) {
-            socket.emit('mute_status', {
+            socket.emit('mic_status', {
                 from_user_id: CURRENT_USER_ID,
                 to_user_id: currentCall.remoteUserId,
                 is_muted: isMuted
@@ -430,6 +491,35 @@ function toggleCamera() {
             });
         }
     }
+}
+
+// ========== SEND INITIAL MEDIA STATUS ==========
+function sendInitialMediaStatus() {
+    if (!currentCall.localStream || !currentCall.remoteUserId) return;
+
+    // Get current camera status
+    const videoTracks = currentCall.localStream.getVideoTracks();
+    const isCameraOff = videoTracks.length === 0 || !videoTracks[0]?.enabled;
+
+    // Get current mic status
+    const audioTracks = currentCall.localStream.getAudioTracks();
+    const isMicMuted = audioTracks.length === 0 || !audioTracks[0]?.enabled;
+
+    console.log('[Call] Sending initial media status - camera off:', isCameraOff, 'mic muted:', isMicMuted);
+
+    // Send camera status
+    socket.emit('camera_status', {
+        from_user_id: CURRENT_USER_ID,
+        to_user_id: currentCall.remoteUserId,
+        is_camera_off: isCameraOff
+    });
+
+    // Send mic status
+    socket.emit('mic_status', {
+        from_user_id: CURRENT_USER_ID,
+        to_user_id: currentCall.remoteUserId,
+        is_muted: isMicMuted
+    });
 }
 
 // ========== UI FUNCTIONS ==========
@@ -484,7 +574,14 @@ function showCallScreen(state, userName, callType) {
         videoSection.style.display = 'flex';
     }
 
-    // Always show camera button - it will be in "off" state for voice calls
+    // Reset mic button to ON (unmuted) state for new calls
+    const micBtn = document.getElementById('toggleMicBtn');
+    if (micBtn) {
+        micBtn.innerHTML = '<i class="bi bi-mic-fill"></i>';
+        micBtn.classList.remove('muted');
+    }
+
+    // Reset camera button based on call type
     const camBtn = document.getElementById('toggleCameraBtn');
     if (camBtn) {
         camBtn.style.display = 'flex';
@@ -496,6 +593,39 @@ function showCallScreen(state, userName, callType) {
             camBtn.innerHTML = '<i class="bi bi-camera-video-fill"></i>';
             camBtn.classList.remove('camera-off');
         }
+    }
+
+    // Reset local video placeholder visibility
+    const localPlaceholder = document.querySelector('.local-video-wrapper .video-placeholder');
+    if (localPlaceholder) {
+        localPlaceholder.style.display = callType === 'voice' ? 'flex' : 'none';
+    }
+
+    // Reset local mute indicator
+    const localMuteIndicator = document.getElementById('localMuteIcon');
+    if (localMuteIndicator) {
+        localMuteIndicator.style.display = 'none';
+    }
+
+    // Reset remote user UI elements to default (show video, hide mute/camera icons)
+    const remoteMuteIcon = document.getElementById('remoteMuteIcon');
+    if (remoteMuteIcon) {
+        remoteMuteIcon.style.display = 'none';
+    }
+
+    const remoteCameraIcon = document.getElementById('remoteCameraOffIcon');
+    if (remoteCameraIcon) {
+        remoteCameraIcon.style.display = 'none';
+    }
+
+    const remoteAvatar = document.getElementById('remoteAvatarPlaceholder');
+    if (remoteAvatar) {
+        remoteAvatar.style.display = 'none';
+    }
+
+    const remoteVideo = document.getElementById('remoteVideo');
+    if (remoteVideo) {
+        remoteVideo.style.opacity = '1';
     }
 
     screen.classList.add('show');
@@ -594,7 +724,8 @@ function cleanupCall() {
         localStream: null,
         remoteStream: null,
         startTime: null,
-        durationTimer: null
+        durationTimer: null,
+        offerSent: false
     };
 }
 
@@ -667,6 +798,16 @@ function registerCallSocketEvents() {
             if (remoteCameraIcon) remoteCameraIcon.style.display = 'none';
         }
     });
+
+    // Mic status updates
+    socket.on('mic_status', (data) => {
+        console.log('[Call] Remote user mic status:', data.is_muted ? 'MUTED' : 'UNMUTED');
+        const remoteMuteIcon = document.getElementById('remoteMuteIcon');
+
+        if (remoteMuteIcon) {
+            remoteMuteIcon.style.display = data.is_muted ? 'inline-block' : 'none';
+        }
+    });
 }
 
 // Initialize on page load
@@ -674,9 +815,20 @@ document.addEventListener('DOMContentLoaded', () => {
     // Wait for socket to be available
     if (typeof socket !== 'undefined') {
         // Register user with Socket.IO to join personal room for call notifications
+        const registerUser = () => {
+            console.log('[Socket.IO] ✅ Registering user', CURRENT_USER_ID, 'for call notifications');
+            socket.emit('register', { user_id: CURRENT_USER_ID });
+        };
+
+        // If socket is already connected, register immediately
+        if (socket.connected) {
+            registerUser();
+        }
+
+        // Also register on connect/reconnect events
         socket.on('connect', () => {
             console.log('[Socket.IO] ✅ Connected to server as user', CURRENT_USER_ID);
-            socket.emit('register', { user_id: CURRENT_USER_ID });
+            registerUser();
         });
 
         socket.on('disconnect', () => {

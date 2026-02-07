@@ -61,7 +61,15 @@ socket.on('connect_error', (error) => {
 });
 
 socket.on('disconnect', (reason) => {
-    console.log('[Socket.IO] ⚠️ Disconnected:', reason);
+    console.log('[Socket.IO] ⚠️ Disconnected:', reason, 'Socket ID was:', socket.id);
+});
+
+socket.on('reconnect', (attemptNumber) => {
+    console.log('[Socket.IO] 🔄 Reconnected after', attemptNumber, 'attempts. New Socket ID:', socket.id);
+});
+
+socket.on('reconnect_attempt', (attemptNumber) => {
+    console.log('[Socket.IO] 🔄 Reconnecting... attempt', attemptNumber);
 });
 
 /**

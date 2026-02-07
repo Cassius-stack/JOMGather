@@ -21,6 +21,11 @@ online_users = {}
 def register_chat_events(socketio):
     """Register all chat-related Socket.IO events."""
     
+    # Catch-all handler to debug ALL incoming events
+    @socketio.on('*')
+    def catch_all(event, data):
+        print(f"[Socket.IO DEBUG] Event received: {event}", flush=True)
+    
     @socketio.on('connect')
     def handle_connect():
         """Called when a client connects to the WebSocket."""
@@ -76,19 +81,28 @@ def register_chat_events(socketio):
         user_id = data.get('user_id')
         other_user_id = data.get('contact_id')
         if not user_id or not other_user_id:
-            return  # Skip if either ID is missing
+            print(f"[Socket.IO] Skipping join_chat - missing user_id ({user_id}) or contact_id ({other_user_id})")
+            return
         room = get_room_name(user_id, other_user_id)
-        join_room(room)
-        print(f"[Socket.IO] User {user_id} joined room: {room}")
+        if room:
+            join_room(room)
+            print(f"[Socket.IO] User {user_id} joined room: {room}")
     
     @socketio.on('leave_chat')
     def handle_leave_chat(data):
         """Called when a user switches to a different chat."""
         user_id = data.get('user_id')
         other_user_id = data.get('contact_id')
+        
+        # Guard: don't try to leave if either ID is missing
+        if not user_id or not other_user_id:
+            print(f"[Socket.IO] Skipping leave_chat - missing user_id ({user_id}) or contact_id ({other_user_id})")
+            return
+            
         room = get_room_name(user_id, other_user_id)
-        leave_room(room)
-        print(f"[Socket.IO] User {user_id} left room: {room}")
+        if room:
+            leave_room(room)
+            print(f"[Socket.IO] User {user_id} left room: {room}")
     
     @socketio.on('send_message')
     def handle_send_message(data):
@@ -498,20 +512,24 @@ def register_chat_events(socketio):
         Called when callee accepts the call.
         Notify caller to start WebRTC negotiation.
         """
+        print(f"[Socket.IO] *** call_answer event received! Data: {data}", flush=True)
         caller_id = data.get('caller_id')
         callee_id = data.get('callee_id')
         callee_name = data.get('callee_name', 'Unknown')
         
         if not caller_id or not callee_id:
+            print(f"[Socket.IO] call_answer: missing caller_id ({caller_id}) or callee_id ({callee_id})", flush=True)
             return
         
-        print(f"[Socket.IO] Call answered: {callee_id} accepted call from {caller_id}")
+        target_room = f"user_{caller_id}"
+        print(f"[Socket.IO] Call answered: {callee_id} accepted call from {caller_id}", flush=True)
+        print(f"[Socket.IO] Emitting call_accepted to room: {target_room}", flush=True)
         
         # Notify caller that call was accepted
         emit('call_accepted', {
             'callee_id': callee_id,
             'callee_name': callee_name
-        }, room=f"user_{caller_id}")
+        }, room=target_room)
     
     @socketio.on('call_decline')
     def handle_call_decline(data):
@@ -642,6 +660,26 @@ def register_chat_events(socketio):
         emit('camera_status', {
             'from_user_id': from_user_id,
             'is_camera_off': is_camera_off
+        }, room=f"user_{to_user_id}")
+    
+    @socketio.on('mic_status')
+    def handle_mic_status(data):
+        """
+        Called when a user mutes/unmutes their microphone.
+        Relay the status to the other user.
+        """
+        from_user_id = data.get('from_user_id')
+        to_user_id = data.get('to_user_id')
+        is_muted = data.get('is_muted', False)
+        
+        if not from_user_id or not to_user_id:
+            return
+        
+        print(f"[Socket.IO] User {from_user_id} mic status: {'MUTED' if is_muted else 'UNMUTED'}")
+        
+        emit('mic_status', {
+            'from_user_id': from_user_id,
+            'is_muted': is_muted
         }, room=f"user_{to_user_id}")
 
 

@@ -35,7 +35,11 @@ def create_app(config_name='default'):
     # Initialize SocketIO with the app
     # Using async_mode='threading' to avoid conflict with Supabase's httpx
     # (eventlet monkey-patching breaks httpx)
-    socketio.init_app(app, cors_allowed_origins="*", async_mode='threading')
+    socketio.init_app(app, 
+                      cors_allowed_origins="*", 
+                      async_mode='threading',
+                      ping_timeout=10,  # seconds to wait for pong
+                      ping_interval=5)  # seconds between pings
     
     # Register blueprints
     app.register_blueprint(auth_bp, url_prefix='/auth')
