@@ -352,7 +352,20 @@ def get_contacts():
                 preview = ''
                 if last_msg:
                     prefix = 'You: ' if last_msg['sender_id'] == current_user_id else ''
-                    preview = f"{prefix}{last_msg['content'][:30]}"
+                    content = last_msg['content']
+                    
+                    # Check if this is a call message (JSON format)
+                    if content and content.startswith('{'):
+                        try:
+                            import json
+                            call_data = json.loads(content)
+                            if call_data.get('type') == 'call':
+                                call_type = call_data.get('call_type', 'voice')
+                                content = f"📹 Video call" if call_type == 'video' else f"📞 Voice call"
+                        except:
+                            pass
+                    
+                    preview = f"{prefix}{content[:30]}"
                 
                 # Determine online status from last_seen
                 status = 'Active now' if is_online(user_data) else 'Offline'

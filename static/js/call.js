@@ -14,6 +14,8 @@ let currentCall = {
     localStream: null,
     remoteStream: null,
     startTime: null,
+    connectedTime: null,  // When call actually connected (for duration)
+    wasConnected: false,  // Track if call was ever answered/connected
     durationTimer: null,
     offerSent: false  // Track if we've already sent an offer
 };
@@ -119,7 +121,8 @@ function handleIncomingCall(data) {
         // Busy - auto-decline
         socket.emit('call_decline', {
             caller_id: data.caller_id,
-            callee_id: CURRENT_USER_ID
+            callee_id: CURRENT_USER_ID,
+            call_type: data.call_type
         });
         return;
     }
@@ -208,7 +211,8 @@ function declineCall() {
 
     socket.emit('call_decline', {
         caller_id: currentCall.remoteUserId,
-        callee_id: CURRENT_USER_ID
+        callee_id: CURRENT_USER_ID,
+        call_type: currentCall.callType
     });
 
     resetCallState();
@@ -219,9 +223,19 @@ function endCall() {
     console.log('[Call] Ending call...');
 
     if (currentCall.remoteUserId) {
+        // Calculate call duration if it was connected
+        let duration = 0;
+        if (currentCall.wasConnected && currentCall.connectedTime) {
+            duration = Math.floor((Date.now() - currentCall.connectedTime) / 1000);
+        }
+
         socket.emit('call_end', {
             user_id: CURRENT_USER_ID,
-            other_user_id: currentCall.remoteUserId
+            other_user_id: currentCall.remoteUserId,
+            call_type: currentCall.callType,
+            was_connected: currentCall.wasConnected,
+            duration: duration,
+            is_initiator: currentCall.isInitiator
         });
     }
 
@@ -292,6 +306,11 @@ function setupPeerConnection() {
         console.log('[Call] Connection state:', currentCall.peerConnection.connectionState);
         if (currentCall.peerConnection.connectionState === 'connected') {
             console.log('[Call] ✅ WebRTC connection established');
+
+            // Mark call as connected and record time for duration tracking
+            currentCall.wasConnected = true;
+            currentCall.connectedTime = Date.now();
+
             // Update UI to show connected status
             updateCallScreen('connected');
 
@@ -724,6 +743,8 @@ function cleanupCall() {
         localStream: null,
         remoteStream: null,
         startTime: null,
+        connectedTime: null,
+        wasConnected: false,
         durationTimer: null,
         offerSent: false
     };

@@ -181,6 +181,16 @@ socket.on('new_message', (data) => {
         previewText = '🎮 Cyber Challenge!';
     } else if (!data.text && data.image_url) {
         previewText = '📷 Photo';
+    } else if (data.text && data.text.startsWith('{')) {
+        // Check if this is a call message
+        try {
+            const parsed = JSON.parse(data.text);
+            if (parsed.type === 'call') {
+                previewText = parsed.call_type === 'video' ? '📹 Video call' : '📞 Voice call';
+            }
+        } catch (e) {
+            // Not JSON, use as-is
+        }
     }
 
     updateContactPreview(otherUserId, previewText, messageType);
@@ -420,7 +430,59 @@ function appendMessage(msg) {
     messageDiv.className = `message ${msg.type}`;
     if (msg.id) messageDiv.dataset.messageId = msg.id;
 
-    // Add action buttons for sent messages
+    // Check if this is a call message
+    let callData = null;
+    try {
+        if (msg.text && msg.text.startsWith('{')) {
+            const parsed = JSON.parse(msg.text);
+            if (parsed.type === 'call') {
+                callData = parsed;
+            }
+        }
+    } catch (e) {
+        // Not a JSON message, treat as regular text
+    }
+
+    // Render call message card
+    if (callData) {
+        const isVideo = callData.call_type === 'video';
+        const isMissed = callData.status === 'missed';
+        const icon = isVideo
+            ? (isMissed ? 'bi-camera-video-off' : 'bi-camera-video')
+            : (isMissed ? 'bi-telephone-x' : 'bi-telephone');
+
+        const title = isMissed
+            ? `Missed ${callData.call_type} call`
+            : `${callData.call_type.charAt(0).toUpperCase() + callData.call_type.slice(1)} call`;
+
+        let subtitle = '';
+        if (isMissed) {
+            subtitle = 'Tap to call back';
+        } else if (callData.duration > 0) {
+            const mins = Math.floor(callData.duration / 60);
+            const secs = callData.duration % 60;
+            subtitle = mins > 0 ? `${mins} min ${secs} sec` : `${secs} sec`;
+        }
+
+        messageDiv.classList.add('call-message');
+        messageDiv.innerHTML = `
+            <div class="call-card ${isMissed ? 'missed' : 'completed'}" ${isMissed ? `onclick="startCall(${currentContactId}, '${currentContactName}', '${callData.call_type}')"` : ''}>
+                <div class="call-icon ${isMissed ? 'missed' : ''}">
+                    <i class="bi ${icon}"></i>
+                </div>
+                <div class="call-info">
+                    <div class="call-title">${title}</div>
+                    <div class="call-subtitle">${subtitle}</div>
+                </div>
+            </div>
+        `;
+
+        chatMessages.appendChild(messageDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+        return;
+    }
+
+    // Regular message rendering
     const showEdit = !msg.image_url;
     const actionsHtml = `
         <div class="message-actions">
@@ -587,47 +649,96 @@ function renderMessages(messages) {
             // Async check if this challenge is completed and update the card
             checkAndUpdateChallengeCard(effectiveChallengeId, effectiveScenarioId);
         } else {
-            // Add action buttons for messages
-            const showEdit = !msg.image_url;
-            const actionsHtml = `
-                <div class="message-actions">
-                    ${msg.type === 'sent' ? `
-                        ${showEdit ? `
-                        <button class="message-action-btn edit" title="Edit message" onclick="startEditMessage(this)">
-                            <i class="bi bi-pencil"></i>
-                        </button>
-                        ` : ''}
-                        <button class="message-action-btn delete" title="Delete message" onclick="showDeleteModal(this)">
-                            <i class="bi bi-trash"></i>
-                        </button>
-                    ` : ''}
-                    <button class="react-btn" onclick="toggleReactionPicker(this)" title="Add reaction">😊</button>
-                </div>
-            `;
+            // Check if this is a call message
+            let callData = null;
+            try {
+                if (msg.text && msg.text.startsWith('{')) {
+                    const parsed = JSON.parse(msg.text);
+                    if (parsed.type === 'call') {
+                        callData = parsed;
+                    }
+                }
+            } catch (e) {
+                // Not JSON, treat as regular text
+            }
 
-            const editedIndicator = msg.edited ? '<span class="edited-indicator">(edited)</span>' : '';
+            if (callData) {
+                // Render call message card
+                const isVideo = callData.call_type === 'video';
+                const isMissed = callData.status === 'missed';
+                const icon = isVideo
+                    ? (isMissed ? 'bi-camera-video-off' : 'bi-camera-video')
+                    : (isMissed ? 'bi-telephone-x' : 'bi-telephone');
 
-            // Image HTML
-            const imageHtml = msg.image_url ? `
-                <div class="message-image" style="margin-bottom: 5px;">
-                    <img src="${msg.image_url}" alt="Attachment" style="max-width: 200px; border-radius: 8px; cursor: pointer;" onclick="window.open(this.src, '_blank')">
-                </div>
-            ` : '';
+                const title = isMissed
+                    ? `Missed ${callData.call_type} call`
+                    : `${callData.call_type.charAt(0).toUpperCase() + callData.call_type.slice(1)} call`;
 
-            chatMessages.innerHTML += `
-                <div class="message ${msg.type}" data-message-id="${msg.id || ''}">
-                    ${actionsHtml}
-                    <div class="message-content">
-                        <div class="bubble">
-                            ${imageHtml}
-                            ${msg.text ? `<p style="margin: 0;">${msg.text}</p>` : ''}
-                            ${editedIndicator}
-                            ${msg.type === 'sent' ? `<span class="message-tick ${msg.read ? 'read' : ''}"><i class="bi bi-check${msg.read ? '-all' : ''}"></i></span>` : ''}
+                let subtitle = '';
+                if (isMissed) {
+                    subtitle = 'Tap to call back';
+                } else if (callData.duration > 0) {
+                    const mins = Math.floor(callData.duration / 60);
+                    const secs = callData.duration % 60;
+                    subtitle = mins > 0 ? `${mins} min ${secs} sec` : `${secs} sec`;
+                }
+
+                chatMessages.innerHTML += `
+                    <div class="message ${msg.type} call-message" data-message-id="${msg.id || ''}">
+                        <div class="call-card ${isMissed ? 'missed' : 'completed'}" ${isMissed ? `onclick="startCall(${currentContactId}, '${currentContactName}', '${callData.call_type}')"` : ''}>
+                            <div class="call-icon ${isMissed ? 'missed' : ''}">
+                                <i class="bi ${icon}"></i>
+                            </div>
+                            <div class="call-info">
+                                <div class="call-title">${title}</div>
+                                <div class="call-subtitle">${subtitle}</div>
+                            </div>
                         </div>
-                        <div class="msg-reactions-chat"></div>
                     </div>
-                </div>
-            `;
+                `;
+            } else {
+                // Regular message rendering
+                const showEdit = !msg.image_url;
+                const actionsHtml = `
+                    <div class="message-actions">
+                        ${msg.type === 'sent' ? `
+                            ${showEdit ? `
+                            <button class="message-action-btn edit" title="Edit message" onclick="startEditMessage(this)">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            ` : ''}
+                            <button class="message-action-btn delete" title="Delete message" onclick="showDeleteModal(this)">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        ` : ''}
+                        <button class="react-btn" onclick="toggleReactionPicker(this)" title="Add reaction">😊</button>
+                    </div>
+                `;
+
+                const editedIndicator = msg.edited ? '<span class="edited-indicator">(edited)</span>' : '';
+
+                // Image HTML
+                const imageHtml = msg.image_url ? `
+                    <div class="message-image" style="margin-bottom: 5px;">
+                        <img src="${msg.image_url}" alt="Attachment" style="max-width: 200px; border-radius: 8px; cursor: pointer;" onclick="window.open(this.src, '_blank')">
+                    </div>
+                ` : '';
+
+                chatMessages.innerHTML += `
+                    <div class="message ${msg.type}" data-message-id="${msg.id || ''}">
+                        ${actionsHtml}
+                        <div class="message-content">
+                            <div class="bubble">
+                                ${imageHtml}
+                                ${msg.text ? `<p style="margin: 0;">${msg.text}</p>` : ''}
+                                ${editedIndicator}
+                                ${msg.type === 'sent' ? `<span class="message-tick ${msg.read ? 'read' : ''}"><i class="bi bi-check${msg.read ? '-all' : ''}"></i></span>` : ''}
+                            </div>
+                            <div class="msg-reactions-chat"></div>
+                        </div>
+                    </div>
+                `;
+            }
         }
     });
 

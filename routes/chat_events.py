@@ -535,36 +535,122 @@ def register_chat_events(socketio):
     def handle_call_decline(data):
         """
         Called when callee declines the call.
+        Saves a missed call message for the caller.
         """
+        import json
+        
         caller_id = data.get('caller_id')
         callee_id = data.get('callee_id')
+        call_type = data.get('call_type', 'voice')
         
         if not caller_id or not callee_id:
             return
         
-        print(f"[Socket.IO] Call declined: {callee_id} rejected call from {caller_id}")
+        print(f"[Socket.IO] Call declined: {callee_id} rejected {call_type} call from {caller_id}")
         
         emit('call_declined', {
             'callee_id': callee_id
         }, room=f"user_{caller_id}")
+        
+        # Save missed call message (from callee's perspective as a "missed" notification for caller)
+        call_content = json.dumps({
+            'type': 'call',
+            'call_type': call_type,
+            'status': 'missed',
+            'duration': 0
+        })
+        
+        # Message is from caller (who initiated) to callee (who missed/declined)
+        message_data = {
+            'sender_id': caller_id,
+            'receiver_id': callee_id,
+            'content': call_content
+        }
+        
+        new_message = insert('messages', message_data)
+        
+        if new_message:
+            print(f"[Socket.IO] Saved missed call message: {call_type}")
+            
+            # Emit to both users' personal rooms
+            response_data = {
+                'id': new_message['message_id'],
+                'sender_id': caller_id,
+                'receiver_id': callee_id,
+                'text': call_content,
+                'is_call_message': True
+            }
+            
+            emit('new_message', response_data, room=f"user_{caller_id}")
+            emit('new_message', response_data, room=f"user_{callee_id}")
     
     @socketio.on('call_end')
     def handle_call_end(data):
         """
         Called when either user ends the call.
+        Saves a call message to the database and notifies both users.
         """
+        import json
+        
         user_id = data.get('user_id')
         other_user_id = data.get('other_user_id')
+        call_type = data.get('call_type', 'voice')
+        was_connected = data.get('was_connected', False)
+        duration = data.get('duration', 0)
+        is_initiator = data.get('is_initiator', True)  # Who initiated the call
         
         if not user_id or not other_user_id:
             return
         
-        print(f"[Socket.IO] Call ended by user {user_id}")
+        # Determine who initiated the call (caller) and who received (callee)
+        if is_initiator:
+            caller_id = user_id
+            callee_id = other_user_id
+        else:
+            caller_id = other_user_id
+            callee_id = user_id
         
-        # Notify the other user
+        print(f"[Socket.IO] Call ended - caller: {caller_id}, callee: {callee_id}, type: {call_type}, connected: {was_connected}, duration: {duration}s")
+        
+        # Notify the other user that call ended
         emit('call_ended', {
             'user_id': user_id
         }, room=f"user_{other_user_id}")
+        
+        # Only save call message if it was connected (completed call)
+        if was_connected and duration > 0:
+            # Create call message content as JSON
+            call_content = json.dumps({
+                'type': 'call',
+                'call_type': call_type,
+                'status': 'completed',
+                'duration': duration
+            })
+            
+            # Sender is who INITIATED the call (caller), not who ended it
+            message_data = {
+                'sender_id': caller_id,
+                'receiver_id': callee_id,
+                'content': call_content
+            }
+            
+            new_message = insert('messages', message_data)
+            
+            if new_message:
+                print(f"[Socket.IO] Saved completed call message: {call_type}, {duration}s")
+                
+                # Emit to both users so their chats update
+                response_data = {
+                    'id': new_message['message_id'],
+                    'sender_id': caller_id,
+                    'receiver_id': callee_id,
+                    'text': call_content,
+                    'is_call_message': True
+                }
+                
+                # Send to both users' personal rooms
+                emit('new_message', response_data, room=f"user_{caller_id}")
+                emit('new_message', response_data, room=f"user_{callee_id}")
     
     @socketio.on('webrtc_offer')
     def handle_webrtc_offer(data):

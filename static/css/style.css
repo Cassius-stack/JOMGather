@@ -3215,3 +3215,115 @@ input:valid:not(:placeholder-shown) {
         justify-content: center;
     }
 }
+
+/* ============================================ */
+/* Call Message Cards in Chat */
+/* ============================================ */
+.message.call-message {
+    width: 100%;
+    display: flex;
+    margin: 12px 0;
+    flex-direction: row !important;
+}
+
+.message.call-message.sent {
+    justify-content: flex-end !important;
+    align-self: flex-end !important;
+}
+
+.message.call-message.sent .call-card {
+    margin-left: auto;
+    margin-right: 0;
+}
+
+.message.call-message.received {
+    justify-content: flex-start !important;
+    align-self: flex-start !important;
+}
+
+.message.call-message.received .call-card {
+    margin-right: auto;
+    margin-left: 0;
+}
+
+.call-card {
+    border-radius: 16px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 200px;
+    max-width: 280px;
+    transition: transform 0.2s, background 0.2s;
+    /* Default: white like received message bubbles */
+    background: white;
+    border: 1px solid #e0e0e0;
+}
+
+.call-card .call-title {
+    color: #333;
+}
+
+.call-card .call-subtitle {
+    color: #666;
+}
+
+.call-card .call-icon {
+    background: #f0f0f0;
+    color: #333;
+}
+
+/* Sent call cards - blue like sent messages */
+.message.call-message.sent .call-card {
+    background: #2b60de !important;
+    border: none;
+}
+
+.message.call-message.sent .call-card .call-title,
+.message.call-message.sent .call-card .call-subtitle {
+    color: #fff;
+}
+
+.message.call-message.sent .call-card .call-icon {
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+}
+
+/* Missed call styling */
+.call-card.missed {
+    cursor: pointer;
+}
+
+.call-card.missed:hover {
+    transform: scale(1.02);
+    filter: brightness(1.1);
+}
+
+.call-icon.missed {
+    background: rgba(220, 53, 69, 0.2) !important;
+    color: #dc3545 !important;
+}
+
+.call-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+}
+
+.call-info {
+    flex: 1;
+}
+
+.call-title {
+    font-weight: 600;
+    font-size: 0.95rem;
+    margin-bottom: 2px;
+}
+
+.call-subtitle {
+    font-size: 0.8rem;
+}
