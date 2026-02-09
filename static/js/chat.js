@@ -37,6 +37,20 @@ const chatContactStatus = document.getElementById('chat-contact-status');
 const chatMessages = document.getElementById('chat-messages');
 const messageInput = document.getElementById('message-input');
 const sendBtn = document.getElementById('send-btn');
+const micBtn = document.getElementById('mic-btn');
+
+// Voice Recording Elements
+const voiceRecordingContainer = document.getElementById('voice-recording-container');
+const voiceTimer = document.getElementById('voice-timer');
+const voiceDeleteBtn = document.getElementById('voice-delete-btn');
+
+// Voice Recording State
+let isRecording = false;
+let mediaRecorder = null;
+let audioChunks = [];
+let recordingStartTime = null;
+let timerInterval = null;
+
 
 // ============================================
 // SOCKET.IO EVENT LISTENERS
@@ -129,6 +143,60 @@ function showValidationError(message) {
         setTimeout(() => toast.remove(), 300);
     }, 4000);
 }
+
+/**
+ * Generic toast notification
+ */
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `custom-toast ${type}`;
+
+    let icon = 'bi-info-circle';
+    let bgColor = '#1e3a5f'; // Navy (primary)
+
+    if (type === 'success') {
+        icon = 'bi-check-circle';
+        bgColor = '#22c55e';
+    } else if (type === 'error') {
+        icon = 'bi-exclamation-triangle';
+        bgColor = '#dc3545';
+    } else if (type === 'warning') {
+        icon = 'bi-exclamation-circle';
+        bgColor = '#f59e0b';
+    }
+
+    toast.innerHTML = `
+        <i class="bi ${icon}"></i>
+        <span>${message}</span>
+    `;
+
+    toast.style.cssText = `
+        position: fixed;
+        bottom: 100px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: ${bgColor};
+        color: white;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-size: 14px;
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        animation: slideUp 0.3s ease;
+    `;
+
+    document.body.appendChild(toast);
+
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 0.3s ease';
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
 
 // Track processed message IDs to avoid duplicates
 const processedMessageIds = new Set();
@@ -430,63 +498,28 @@ function appendMessage(msg) {
     messageDiv.className = `message ${msg.type}`;
     if (msg.id) messageDiv.dataset.messageId = msg.id;
 
-    // Check if this is a call message
+    // Check if this is a call or voice message
     let callData = null;
+    let voiceData = null;
     try {
         if (msg.text && msg.text.startsWith('{')) {
             const parsed = JSON.parse(msg.text);
             if (parsed.type === 'call') {
                 callData = parsed;
+            } else if (parsed.type === 'voice') {
+                voiceData = parsed;
             }
         }
     } catch (e) {
         // Not a JSON message, treat as regular text
     }
 
-    // Render call message card
-    if (callData) {
-        const isVideo = callData.call_type === 'video';
-        const isMissed = callData.status === 'missed';
-        const icon = isVideo
-            ? (isMissed ? 'bi-camera-video-off' : 'bi-camera-video')
-            : (isMissed ? 'bi-telephone-x' : 'bi-telephone');
-
-        const title = isMissed
-            ? `Missed ${callData.call_type} call`
-            : `${callData.call_type.charAt(0).toUpperCase() + callData.call_type.slice(1)} call`;
-
-        let subtitle = '';
-        if (isMissed) {
-            subtitle = 'Tap to call back';
-        } else if (callData.duration > 0) {
-            const mins = Math.floor(callData.duration / 60);
-            const secs = callData.duration % 60;
-            subtitle = mins > 0 ? `${mins} min ${secs} sec` : `${secs} sec`;
-        }
-
-        messageDiv.classList.add('call-message');
-        messageDiv.innerHTML = `
-            <div class="call-card ${isMissed ? 'missed' : 'completed'}" ${isMissed ? `onclick="startCall(${currentContactId}, '${currentContactName}', '${callData.call_type}')"` : ''}>
-                <div class="call-icon ${isMissed ? 'missed' : ''}">
-                    <i class="bi ${icon}"></i>
-                </div>
-                <div class="call-info">
-                    <div class="call-title">${title}</div>
-                    <div class="call-subtitle">${subtitle}</div>
-                </div>
-            </div>
-        `;
-
-        chatMessages.appendChild(messageDiv);
-        chatMessages.scrollTop = chatMessages.scrollHeight;
-        return;
-    }
-
     // Regular message rendering
-    const showEdit = !msg.image_url;
+    const isSent = msg.type === 'sent';
+    const showEdit = !msg.image_url && !voiceData && !callData;
     const actionsHtml = `
         <div class="message-actions">
-            ${msg.type === 'sent' ? `
+            ${isSent ? `
                 ${showEdit ? `
                 <button class="message-action-btn edit" title="Edit message" onclick="startEditMessage(this)">
                     <i class="bi bi-pencil"></i>
@@ -509,21 +542,95 @@ function appendMessage(msg) {
         </div>
     ` : '';
 
+    let contentHtml = '';
+    if (callData) {
+        messageDiv.classList.add('call-message');
+        const isVideo = callData.call_type === 'video';
+        const isMissed = callData.status === 'missed';
+        const icon = isVideo
+            ? (isMissed ? 'bi-camera-video-off' : 'bi-camera-video')
+            : (isMissed ? 'bi-telephone-x' : 'bi-telephone');
+
+        const title = isMissed
+            ? `Missed ${callData.call_type} call`
+            : `${callData.call_type.charAt(0).toUpperCase() + callData.call_type.slice(1)} call`;
+
+        let subtitle = '';
+        if (isMissed) {
+            subtitle = 'Tap to call back';
+        } else if (callData.duration > 0) {
+            const mins = Math.floor(callData.duration / 60);
+            const secs = callData.duration % 60;
+            subtitle = mins > 0 ? `${mins} min ${secs} sec` : `${secs} sec`;
+        }
+
+        contentHtml = `
+            <div class="call-card ${isMissed ? 'missed' : 'completed'}" ${isMissed ? `onclick="startCall(${currentContactId}, '${currentContactName}', '${callData.call_type}')"` : ''}>
+                <div class="call-icon ${isMissed ? 'missed' : ''}">
+                    <i class="bi ${icon}"></i>
+                </div>
+                <div class="call-info">
+                    <div class="call-title">${title}</div>
+                    <div class="call-subtitle">${subtitle}</div>
+                </div>
+            </div>
+        `;
+    } else if (voiceData) {
+        contentHtml = `
+            <div class="voice-message-player">
+                <button class="voice-play-btn" onclick="toggleVoicePlayback(this, '${voiceData.audio_url}')">
+                    <i class="bi bi-play-fill"></i>
+                </button>
+                <div class="voice-progress-container">
+                    <div class="voice-progress-bar" onclick="seekVoice(event, this)">
+                        <div class="voice-progress-fill"></div>
+                    </div>
+                    <div class="voice-time">0:00 / ${voiceData.duration ? (typeof voiceData.duration === 'string' ? voiceData.duration : formatDuration(voiceData.duration)) : '0:00'}</div>
+                </div>
+                <audio src="${voiceData.audio_url}" ontimeupdate="updateVoiceProgress(this)" onended="resetVoicePlayer(this)"></audio>
+            </div>
+        `;
+    } else {
+        contentHtml = `<p style="margin: 0;">${msg.text}</p>`;
+    }
+
     messageDiv.innerHTML = `
-        ${actionsHtml}
         <div class="message-content">
             <div class="bubble">
                 ${imageHtml}
-                ${msg.text ? `<p style="margin: 0;">${msg.text}</p>` : ''}
+                ${contentHtml}
                 ${editedIndicator}
-                ${msg.type === 'sent' ? `<span class="message-tick ${msg.read ? 'read' : ''}"><i class="bi bi-check${msg.read ? '-all' : ''}"></i></span>` : ''}
+                ${isSent ? `<span class="message-tick ${msg.read ? 'read' : ''}"><i class="bi bi-check${msg.read ? '-all' : ''}"></i></span>` : ''}
             </div>
             <div class="msg-reactions-chat"></div>
         </div>
+        ${actionsHtml}
     `;
 
     chatMessages.appendChild(messageDiv);
     chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+/**
+ * Format message text for the contact preview (sidebar)
+ */
+function getPreviewText(text) {
+    if (!text) return 'No messages yet';
+
+    try {
+        if (text.startsWith('{')) {
+            const parsed = JSON.parse(text);
+            if (parsed.type === 'voice') {
+                return '🎙️ Voice message';
+            } else if (parsed.type === 'call') {
+                return parsed.status === 'missed' ? '📞 Missed call' : '📞 Call';
+            }
+        }
+    } catch (e) {
+        // Not JSON, return as-is
+    }
+
+    return text;
 }
 
 /**
@@ -535,7 +642,8 @@ function updateContactPreview(contactId, text, type) {
         const preview = contactItem.querySelector('.preview');
         if (preview) {
             const prefix = type === 'sent' ? 'You: ' : '';
-            preview.textContent = `${prefix}${text.substring(0, 25)}${text.length > 25 ? '...' : ''}`;
+            const displayMessage = getPreviewText(text);
+            preview.textContent = `${prefix}${displayMessage.substring(0, 25)}${displayMessage.length > 25 ? '...' : ''}`;
         }
     }
 }
@@ -651,21 +759,42 @@ function renderMessages(messages) {
                 // Async check if this challenge is completed and update the card
                 checkAndUpdateChallengeCard(effectiveChallengeId, effectiveScenarioId);
             } else {
-                // Check if this is a call message
+                // Check if this is a call or voice message
                 let callData = null;
+                let voiceData = null;
                 try {
                     if (msg.text && msg.text.startsWith('{')) {
                         const parsed = JSON.parse(msg.text);
                         if (parsed.type === 'call') {
                             callData = parsed;
+                        } else if (parsed.type === 'voice') {
+                            voiceData = parsed;
                         }
                     }
                 } catch (e) {
                     // Not JSON, treat as regular text
                 }
 
+                const isSent = msg.type === 'sent';
+                let contentHtml = '';
+                const showEdit = !msg.image_url && !voiceData && !callData;
+                const actionsHtml = `
+                    <div class="message-actions">
+                        ${isSent ? `
+                            ${showEdit ? `
+                            <button class="message-action-btn edit" title="Edit message" onclick="startEditMessage(this)">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            ` : ''}
+                            <button class="message-action-btn delete" title="Delete message" onclick="showDeleteModal(this)">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        ` : ''}
+                        <button class="react-btn" onclick="toggleReactionPicker(this)" title="Add reaction">😊</button>
+                    </div>
+                `;
+
                 if (callData) {
-                    // Render call message card
                     const isVideo = callData.call_type === 'video';
                     const isMissed = callData.status === 'missed';
                     const icon = isVideo
@@ -685,13 +814,12 @@ function renderMessages(messages) {
                         subtitle = mins > 0 ? `${mins} min ${secs} sec` : `${secs} sec`;
                     }
 
-                    // Safely escape contact name for onclick (use window scope to avoid ReferenceError)
+                    // Safely escape contact name for onclick
                     const contactName = typeof window.currentContactName !== 'undefined' ? window.currentContactName : '';
                     const contactId = typeof window.currentContactId !== 'undefined' ? window.currentContactId : 0;
                     const safeName = (contactName || '').replace(/'/g, "\\'");
 
-                    chatMessages.innerHTML += `
-                    <div class="message ${msg.type} call-message" data-message-id="${msg.id || ''}">
+                    contentHtml = `
                         <div class="call-card ${isMissed ? 'missed' : 'completed'}" ${isMissed ? `onclick="startCall(${contactId}, '${safeName}', '${callData.call_type}')"` : ''}>
                             <div class="call-icon ${isMissed ? 'missed' : ''}">
                                 <i class="bi ${icon}"></i>
@@ -701,51 +829,49 @@ function renderMessages(messages) {
                                 <div class="call-subtitle">${subtitle}</div>
                             </div>
                         </div>
-                    </div>
-                `;
+                    `;
+                } else if (voiceData) {
+                    contentHtml = `
+                        <div class="voice-message-player">
+                            <button class="voice-play-btn" onclick="toggleVoicePlayback(this, '${voiceData.audio_url}')">
+                                <i class="bi bi-play-fill"></i>
+                            </button>
+                            <div class="voice-progress-container">
+                                <div class="voice-progress-bar" onclick="seekVoice(event, this)">
+                                    <div class="voice-progress-fill"></div>
+                                </div>
+                                <div class="voice-time">${voiceData.duration ? (typeof voiceData.duration === 'string' ? voiceData.duration : formatDuration(voiceData.duration)) : '0:00'}</div>
+                            </div>
+                            <audio src="${voiceData.audio_url}" ontimeupdate="updateVoiceProgress(this)" onended="resetVoicePlayer(this)"></audio>
+                        </div>
+                    `;
                 } else {
-                    // Regular message rendering
-                    const showEdit = !msg.image_url;
-                    const actionsHtml = `
-                    <div class="message-actions">
-                        ${msg.type === 'sent' ? `
-                            ${showEdit ? `
-                            <button class="message-action-btn edit" title="Edit message" onclick="startEditMessage(this)">
-                                <i class="bi bi-pencil"></i>
-                            </button>
-                            ` : ''}
-                            <button class="message-action-btn delete" title="Delete message" onclick="showDeleteModal(this)">
-                                <i class="bi bi-trash"></i>
-                            </button>
-                        ` : ''}
-                        <button class="react-btn" onclick="toggleReactionPicker(this)" title="Add reaction">😊</button>
-                    </div>
-                `;
+                    contentHtml = msg.text ? `<p style="margin: 0;">${msg.text}</p>` : '';
+                }
 
-                    const editedIndicator = msg.edited ? '<span class="edited-indicator">(edited)</span>' : '';
+                const editedIndicator = msg.edited ? '<span class="edited-indicator">(edited)</span>' : '';
 
-                    // Image HTML
-                    const imageHtml = msg.image_url ? `
+                // Image HTML
+                const imageHtml = msg.image_url ? `
                     <div class="message-image" style="margin-bottom: 5px;">
                         <img src="${msg.image_url}" alt="Attachment" style="max-width: 200px; border-radius: 8px; cursor: pointer;" onclick="window.open(this.src, '_blank')">
                     </div>
                 ` : '';
 
-                    chatMessages.innerHTML += `
-                    <div class="message ${msg.type}" data-message-id="${msg.id || ''}">
-                        ${actionsHtml}
+                chatMessages.innerHTML += `
+                    <div class="message ${msg.type} ${callData ? 'call-message' : ''}" data-message-id="${msg.id || ''}">
                         <div class="message-content">
                             <div class="bubble">
                                 ${imageHtml}
-                                ${msg.text ? `<p style="margin: 0;">${msg.text}</p>` : ''}
+                                ${contentHtml}
                                 ${editedIndicator}
-                                ${msg.type === 'sent' ? `<span class="message-tick ${msg.read ? 'read' : ''}"><i class="bi bi-check${msg.read ? '-all' : ''}"></i></span>` : ''}
+                                ${isSent ? `<span class="message-tick ${msg.read ? 'read' : ''}"><i class="bi bi-check${msg.read ? '-all' : ''}"></i></span>` : ''}
                             </div>
                             <div class="msg-reactions-chat"></div>
                         </div>
+                        ${actionsHtml}
                     </div>
                 `;
-                }
             }
         } catch (e) {
             console.error('[Chat] Error rendering message', index, msg, e);
@@ -1592,7 +1718,7 @@ async function loadContacts() {
                 </div>
                 <div class="contact-info">
                     <span class="name">${contact.name}</span>
-                    <span class="preview">${contact.lastMessage || 'No messages yet'}</span>
+                    <span class="preview">${getPreviewText(contact.lastMessage)}</span>
                 </div>
                 ${contact.unreadCount > 0 ? `<span class="unread-badge">${contact.unreadCount > 9 ? '9+' : contact.unreadCount}</span>` : ''}
             `;
@@ -1609,6 +1735,8 @@ async function loadContacts() {
         if (contacts.length > 0 && !currentContactId) {
             const firstContact = contacts[0];
             currentContactId = firstContact.id;
+            window.currentContactId = firstContact.id;
+            window.currentContactName = firstContact.name;
 
             // Mark first contact as active in UI
             const firstItem = document.querySelector(`[data-contact-id="${firstContact.id}"]`);
@@ -1794,6 +1922,9 @@ async function sendMessage() {
     document.getElementById('image-preview-container').style.display = 'none';
     document.getElementById('image-preview').src = '';
     document.getElementById('image-input').value = ''; // Reset file input
+
+    // Ensure button state is updated (return to mic if empty)
+    toggleMicSendButton();
 }
 
 // --- Image Upload Event Listeners ---
@@ -1828,6 +1959,7 @@ document.addEventListener('DOMContentLoaded', () => {
             imageInput.value = '';
             imagePreviewContainer.style.display = 'none';
             imagePreview.src = '';
+            toggleMicSendButton();
         });
     }
 });
@@ -1871,7 +2003,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // Send button
-    sendBtn.addEventListener('click', sendMessage);
+    sendBtn.addEventListener('click', () => {
+        if (isRecording) {
+            stopRecording();
+        } else {
+            sendMessage();
+        }
+    });
 
     // Enter key to send
     messageInput.addEventListener('keypress', (e) => {
@@ -1880,8 +2018,21 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
-    // Typing indicator
-    messageInput.addEventListener('input', handleTyping);
+    // Typing indicator + mic/send button toggle
+    messageInput.addEventListener('input', (e) => {
+        handleTyping();
+        toggleMicSendButton();
+    });
+
+    // Mic button - start recording
+    if (micBtn) {
+        micBtn.addEventListener('click', startRecording);
+    }
+
+    // Voice delete button - cancel recording
+    if (voiceDeleteBtn) {
+        voiceDeleteBtn.addEventListener('click', cancelRecording);
+    }
 
     // Search filter
     const searchInput = document.getElementById('contact-search');
@@ -1897,7 +2048,338 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         });
     });
+
+    // Initialize mic/send button state
+    toggleMicSendButton();
 });
+
+// ============================================
+// VOICE RECORDING FUNCTIONS
+// ============================================
+
+/**
+ * Toggle between mic and send button based on input state
+ */
+function toggleMicSendButton() {
+    const hasText = messageInput.value.trim().length > 0;
+    const hasImage = selectedImageFile !== null;
+
+    if (hasText || hasImage || isRecording) {
+        // Show send button
+        if (micBtn) micBtn.style.display = 'none';
+        if (sendBtn) sendBtn.style.display = 'flex';
+    } else {
+        // Show mic button
+        if (micBtn) micBtn.style.display = 'flex';
+        if (sendBtn) sendBtn.style.display = 'none';
+    }
+}
+
+/**
+ * Start voice recording
+ */
+async function startRecording() {
+    if (!currentContactId) {
+        showToast('Please select a contact first', 'warning');
+        return;
+    }
+
+    try {
+        // Request microphone permission
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+        // Create MediaRecorder
+        mediaRecorder = new MediaRecorder(stream, {
+            mimeType: 'audio/webm;codecs=opus'
+        });
+
+        audioChunks = [];
+
+        mediaRecorder.ondataavailable = (e) => {
+            if (e.data.size > 0) {
+                audioChunks.push(e.data);
+            }
+        };
+
+        mediaRecorder.onstop = () => {
+            // Stop all tracks
+            stream.getTracks().forEach(track => track.stop());
+        };
+
+        // Start recording
+        mediaRecorder.start(100); // Collect data every 100ms
+        isRecording = true;
+        recordingStartTime = Date.now();
+
+        // Start timer
+        timerInterval = setInterval(updateTimer, 1000);
+
+        // Show recording UI
+        showRecordingUI();
+
+        console.log('[Voice] Recording started');
+
+    } catch (error) {
+        console.error('[Voice] Error starting recording:', error);
+        if (error.name === 'NotAllowedError') {
+            showToast('Microphone access denied. Please allow microphone access.', 'error');
+        } else {
+            showToast('Could not start recording. Please try again.', 'error');
+        }
+    }
+}
+
+/**
+ * Stop recording and send voice message
+ */
+async function stopRecording() {
+    if (!mediaRecorder || mediaRecorder.state === 'inactive') {
+        console.log('[Voice] No active recording to stop');
+        return;
+    }
+
+    // Stop the recorder
+    mediaRecorder.stop();
+
+    // Wait for data to be collected
+    await new Promise(resolve => setTimeout(resolve, 200));
+
+    // Create audio blob
+    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+
+    // Get duration
+    const duration = Math.floor((Date.now() - recordingStartTime) / 1000);
+
+    // Hide recording UI first
+    hideRecordingUI();
+
+    // Send voice message
+    await sendVoiceMessage(audioBlob, duration);
+
+    // Reset state
+    isRecording = false;
+    mediaRecorder = null;
+    audioChunks = [];
+    recordingStartTime = null;
+    clearInterval(timerInterval);
+    timerInterval = null;
+
+    // Update button state
+    toggleMicSendButton();
+
+    console.log('[Voice] Recording stopped, duration:', duration, 'seconds');
+}
+
+/**
+ * Cancel recording without sending
+ */
+function cancelRecording() {
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();
+    }
+
+    // Reset state
+    isRecording = false;
+    mediaRecorder = null;
+    audioChunks = [];
+    recordingStartTime = null;
+    clearInterval(timerInterval);
+    timerInterval = null;
+
+    // Hide recording UI
+    hideRecordingUI();
+
+    // Update button state
+    toggleMicSendButton();
+
+    console.log('[Voice] Recording cancelled');
+}
+
+/**
+ * Send voice message to server
+ */
+async function sendVoiceMessage(audioBlob, duration) {
+    try {
+        // Show uploading state
+        sendBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+        sendBtn.disabled = true;
+
+        // Upload audio file
+        const formData = new FormData();
+        formData.append('file', audioBlob, 'voice_message.webm');
+
+        const response = await fetch('/social/api/upload_audio', {
+            method: 'POST',
+            body: formData
+        });
+
+        if (!response.ok) throw new Error('Upload failed');
+
+        const data = await response.json();
+        const audioUrl = data.url;
+
+        // Send message with audio URL via Socket.IO
+        const voiceMessageContent = JSON.stringify({
+            type: 'voice',
+            audio_url: audioUrl,
+            duration: duration
+        });
+
+        socket.emit('send_message', {
+            sender_id: CURRENT_USER_ID,
+            receiver_id: currentContactId,
+            content: voiceMessageContent
+        });
+
+        console.log('[Voice] Voice message sent:', audioUrl);
+
+    } catch (error) {
+        console.error('[Voice] Error sending voice message:', error);
+        showToast('Failed to send voice message. Please try again.', 'error');
+    } finally {
+        sendBtn.innerHTML = '<i class="bi bi-send"></i>';
+        sendBtn.disabled = false;
+    }
+}
+
+/**
+ * Update recording timer display
+ */
+function updateTimer() {
+    if (!recordingStartTime) return;
+
+    const elapsed = Math.floor((Date.now() - recordingStartTime) / 1000);
+    const minutes = Math.floor(elapsed / 60);
+    const seconds = elapsed % 60;
+
+    voiceTimer.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+}
+
+/**
+ * Show recording UI
+ */
+function showRecordingUI() {
+    const inputArea = document.querySelector('.input-area');
+    inputArea.classList.add('recording');
+
+    // Hide message input and actions
+    messageInput.style.display = 'none';
+    document.querySelector('.input-actions').style.display = 'none';
+
+    // Show recording container
+    voiceRecordingContainer.style.display = 'flex';
+    voiceTimer.textContent = '0:00';
+
+    // Show send button (for stopping recording)
+    micBtn.style.display = 'none';
+    sendBtn.style.display = 'flex';
+}
+
+/**
+ * Hide recording UI and restore normal state
+ */
+function hideRecordingUI() {
+    const inputArea = document.querySelector('.input-area');
+    inputArea.classList.remove('recording');
+
+    // Show message input and actions
+    messageInput.style.display = '';
+    document.querySelector('.input-actions').style.display = '';
+
+    // Hide recording container
+    voiceRecordingContainer.style.display = 'none';
+}
+
+// ============================================
+// AUDIO PLAYBACK FUNCTIONS
+// ============================================
+
+/**
+ * Toggle between play and pause for voice message
+ */
+function toggleVoicePlayback(button, audioUrl) {
+    const player = button.closest('.voice-message-player');
+    const audio = player.querySelector('audio');
+    const icon = button.querySelector('i');
+
+    // Stop any other playing audio
+    document.querySelectorAll('audio').forEach(a => {
+        if (a !== audio && !a.paused) {
+            a.pause();
+            const btn = a.parentElement.querySelector('.voice-play-btn i');
+            if (btn) btn.className = 'bi bi-play-fill';
+        }
+    });
+
+    if (audio.paused) {
+        audio.play();
+        icon.className = 'bi bi-pause-fill';
+    } else {
+        audio.pause();
+        icon.className = 'bi bi-play-fill';
+    }
+}
+
+/**
+ * Update progress bar and time during playback
+ */
+function updateVoiceProgress(audio) {
+    const player = audio.closest('.voice-message-player');
+    const progressFill = player.querySelector('.voice-progress-fill');
+    const durationText = player.querySelector('.voice-duration');
+
+    const percent = (audio.currentTime / audio.duration) * 100;
+    progressFill.style.width = `${percent}%`;
+
+    // Show current time / total duration
+    if (!isNaN(audio.duration)) {
+        durationText.textContent = `${formatDuration(audio.currentTime)} / ${formatDuration(audio.duration)}`;
+    }
+}
+
+/**
+ * Reset player UI when audio ends
+ */
+function resetVoicePlayer(audio) {
+    const player = audio.closest('.voice-message-player');
+    const icon = player.querySelector('.voice-play-btn i');
+    const progressFill = player.querySelector('.voice-progress-fill');
+    const durationText = player.querySelector('.voice-duration');
+
+    icon.className = 'bi bi-play-fill';
+    progressFill.style.width = '0%';
+
+    if (!isNaN(audio.duration)) {
+        durationText.textContent = formatDuration(audio.duration);
+    }
+}
+
+/**
+ * Seek to a specific position in the audio
+ */
+function seekVoice(event, progressBar) {
+    const audio = progressBar.closest('.voice-message-player').querySelector('audio');
+    const rect = progressBar.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const width = rect.width;
+    const percent = x / width;
+
+    if (!isNaN(audio.duration)) {
+        audio.currentTime = percent * audio.duration;
+    }
+}
+
+/**
+ * Format duration in seconds to M:SS
+ */
+function formatDuration(seconds) {
+    if (isNaN(seconds)) return '0:00';
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+}
+
+
 // --- Emoji Picker Logic ---
 document.addEventListener('DOMContentLoaded', () => {
     const emojiBtn = document.getElementById('emoji-btn');
@@ -1937,6 +2419,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 const newPos = start + emoji.length;
                 messageInput.setSelectionRange(newPos, newPos);
                 messageInput.focus();
+
+                // Update button state
+                toggleMicSendButton();
 
                 // Optional: Close picker after selection
                 // emojiPicker.style.display = 'none';

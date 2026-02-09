@@ -86,6 +86,20 @@
                     <button id="remove-image-btn"><i class="bi bi-x"></i></button>
                 </div>
 
+                <!-- Voice Recording UI (Hidden by default) -->
+                <div class="voice-recording-container" id="voice-recording-container" style="display: none;">
+                    <span class="voice-timer" id="voice-timer">0:00</span>
+                    <div class="voice-waveform" id="voice-waveform">
+                        <span></span><span></span><span></span><span></span><span></span>
+                        <span></span><span></span><span></span><span></span><span></span>
+                        <span></span><span></span><span></span><span></span><span></span>
+                        <span></span><span></span><span></span><span></span><span></span>
+                    </div>
+                    <button class="voice-delete-btn" id="voice-delete-btn" title="Cancel recording">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+
                 <!-- Hidden File Input -->
                 <input type="file" id="image-input" accept="image/*" style="display: none;">
                 <input type="text" placeholder="Type your message..." id="message-input" required maxlength="500"
@@ -94,7 +108,12 @@
                     <i class="bi bi-emoji-smile" id="emoji-btn" style="cursor: pointer;"></i>
                     <i class="bi bi-paperclip" id="clip-btn" style="cursor: pointer;"></i>
                 </div>
-                <button class="send-btn" id="send-btn">
+                <!-- Mic Button (shown when no text) -->
+                <button class="send-btn mic-btn" id="mic-btn" title="Record voice message">
+                    <i class="bi bi-mic-fill"></i>
+                </button>
+                <!-- Send Button (hidden when no text) -->
+                <button class="send-btn" id="send-btn" style="display: none;">
                     <i class="bi bi-send"></i>
                 </button>
             </footer>

@@ -358,10 +358,12 @@ def get_contacts():
                     if content and content.startswith('{'):
                         try:
                             import json
-                            call_data = json.loads(content)
-                            if call_data.get('type') == 'call':
-                                call_type = call_data.get('call_type', 'voice')
+                            parsed_data = json.loads(content)
+                            if parsed_data.get('type') == 'call':
+                                call_type = parsed_data.get('call_type', 'voice')
                                 content = f"📹 Video call" if call_type == 'video' else f"📞 Voice call"
+                            elif parsed_data.get('type') == 'voice':
+                                content = "🎙️ Voice message"
                         except:
                             pass
                     
@@ -447,6 +449,41 @@ def upload_chat_image():
             
     except Exception as e:
         print(f"Error uploading image: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@social_bp.route('/api/upload_audio', methods=['POST'])
+def upload_chat_audio():
+    """Upload an audio file for voice messages."""
+    try:
+        if 'file' not in request.files:
+            return jsonify({'error': 'No file part'}), 400
+        
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({'error': 'No selected file'}), 400
+            
+        if file:
+            import os
+            import time
+            
+            # Ensure upload directory exists
+            upload_folder = os.path.join('static', 'uploads', 'audio')
+            os.makedirs(upload_folder, exist_ok=True)
+            
+            # Generate unique filename with timestamp
+            timestamp = int(time.time() * 1000)
+            filename = f"voice_{timestamp}.webm"
+            
+            file_path = os.path.join(upload_folder, filename)
+            file.save(file_path)
+            
+            # Return web-accessible URL
+            url = f"/static/uploads/audio/{filename}"
+            return jsonify({'url': url})
+            
+    except Exception as e:
+        print(f"Error uploading audio: {e}")
         return jsonify({'error': str(e)}), 500
 
 
