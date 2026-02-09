@@ -537,8 +537,8 @@ function appendMessage(msg) {
 
     // Image HTML
     const imageHtml = msg.image_url ? `
-        <div class="message-image" style="margin-bottom: 5px;">
-            <img src="${msg.image_url}" alt="Attachment" style="max-width: 200px; border-radius: 8px; cursor: pointer;" onclick="window.open(this.src, '_blank')">
+        <div class="message-image">
+            <img src="${msg.image_url}" alt="Attachment" onclick="window.open(this.src, '_blank')">
         </div>
     ` : '';
 
@@ -853,8 +853,8 @@ function renderMessages(messages) {
 
                 // Image HTML
                 const imageHtml = msg.image_url ? `
-                    <div class="message-image" style="margin-bottom: 5px;">
-                        <img src="${msg.image_url}" alt="Attachment" style="max-width: 200px; border-radius: 8px; cursor: pointer;" onclick="window.open(this.src, '_blank')">
+                    <div class="message-image">
+                        <img src="${msg.image_url}" alt="Attachment" onclick="window.open(this.src, '_blank')">
                     </div>
                 ` : '';
 
@@ -1951,6 +1951,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     imagePreviewContainer.style.display = 'flex';
                 };
                 reader.readAsDataURL(selectedImageFile);
+
+                // Switch voice bubble to send bubble
+                toggleMicSendButton();
             }
         });
 

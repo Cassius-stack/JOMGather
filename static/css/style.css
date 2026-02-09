@@ -1332,6 +1332,26 @@ body {
     width: fit-content;
     background-color: inherit;
     color: inherit;
+    overflow: hidden;
+    /* Prevent image overflow */
+}
+
+.message-image {
+    margin-bottom: 8px;
+    max-width: 300px;
+}
+
+.message-image img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 12px;
+    display: block;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.message-image img:hover {
+    transform: scale(1.01);
 }
 
 .received .bubble {
