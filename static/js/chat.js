@@ -620,18 +620,20 @@ function hideTypingIndicator() {
  */
 function renderMessages(messages) {
     chatMessages.innerHTML = '';
+    console.log('[Chat] Rendering', messages.length, 'messages');
 
-    messages.forEach(msg => {
-        if (msg.type === 'timestamp') {
-            chatMessages.innerHTML += `<div class="timestamp">${msg.text}</div>`;
-        } else if (msg.text === '!cyber' || msg.type === 'cyber-challenge') {
-            // This is a cyber challenge - render as a challenge card
-            // Use a random scenario for display (scenario was stored in DB but we use local for now)
-            const scenario = cyberScenarios[Math.floor(Math.random() * cyberScenarios.length)];
-            const effectiveChallengeId = msg.challenge_id || `msg_${msg.id}`;
-            const effectiveScenarioId = msg.scenario_id || scenario.id;
+    messages.forEach((msg, index) => {
+        try {
+            if (msg.type === 'timestamp') {
+                chatMessages.innerHTML += `<div class="timestamp">${msg.text}</div>`;
+            } else if (msg.text === '!cyber' || msg.type === 'cyber-challenge') {
+                // This is a cyber challenge - render as a challenge card
+                // Use a random scenario for display (scenario was stored in DB but we use local for now)
+                const scenario = cyberScenarios[Math.floor(Math.random() * cyberScenarios.length)];
+                const effectiveChallengeId = msg.challenge_id || `msg_${msg.id}`;
+                const effectiveScenarioId = msg.scenario_id || scenario.id;
 
-            chatMessages.innerHTML += `
+                chatMessages.innerHTML += `
                 <div class="cyber-challenge-card" data-message-id="${msg.id}" data-challenge-id="${effectiveChallengeId}" data-scenario-id="${effectiveScenarioId}" id="cyber-card-${effectiveChallengeId}">
                     <h3>🎮 Cyber Challenge!</h3>
                     <p>Can you detect if this scenario is safe or a scam?</p>
@@ -646,46 +648,51 @@ function renderMessages(messages) {
                 </div>
             `;
 
-            // Async check if this challenge is completed and update the card
-            checkAndUpdateChallengeCard(effectiveChallengeId, effectiveScenarioId);
-        } else {
-            // Check if this is a call message
-            let callData = null;
-            try {
-                if (msg.text && msg.text.startsWith('{')) {
-                    const parsed = JSON.parse(msg.text);
-                    if (parsed.type === 'call') {
-                        callData = parsed;
+                // Async check if this challenge is completed and update the card
+                checkAndUpdateChallengeCard(effectiveChallengeId, effectiveScenarioId);
+            } else {
+                // Check if this is a call message
+                let callData = null;
+                try {
+                    if (msg.text && msg.text.startsWith('{')) {
+                        const parsed = JSON.parse(msg.text);
+                        if (parsed.type === 'call') {
+                            callData = parsed;
+                        }
                     }
-                }
-            } catch (e) {
-                // Not JSON, treat as regular text
-            }
-
-            if (callData) {
-                // Render call message card
-                const isVideo = callData.call_type === 'video';
-                const isMissed = callData.status === 'missed';
-                const icon = isVideo
-                    ? (isMissed ? 'bi-camera-video-off' : 'bi-camera-video')
-                    : (isMissed ? 'bi-telephone-x' : 'bi-telephone');
-
-                const title = isMissed
-                    ? `Missed ${callData.call_type} call`
-                    : `${callData.call_type.charAt(0).toUpperCase() + callData.call_type.slice(1)} call`;
-
-                let subtitle = '';
-                if (isMissed) {
-                    subtitle = 'Tap to call back';
-                } else if (callData.duration > 0) {
-                    const mins = Math.floor(callData.duration / 60);
-                    const secs = callData.duration % 60;
-                    subtitle = mins > 0 ? `${mins} min ${secs} sec` : `${secs} sec`;
+                } catch (e) {
+                    // Not JSON, treat as regular text
                 }
 
-                chatMessages.innerHTML += `
+                if (callData) {
+                    // Render call message card
+                    const isVideo = callData.call_type === 'video';
+                    const isMissed = callData.status === 'missed';
+                    const icon = isVideo
+                        ? (isMissed ? 'bi-camera-video-off' : 'bi-camera-video')
+                        : (isMissed ? 'bi-telephone-x' : 'bi-telephone');
+
+                    const title = isMissed
+                        ? `Missed ${callData.call_type} call`
+                        : `${callData.call_type.charAt(0).toUpperCase() + callData.call_type.slice(1)} call`;
+
+                    let subtitle = '';
+                    if (isMissed) {
+                        subtitle = 'Tap to call back';
+                    } else if (callData.duration > 0) {
+                        const mins = Math.floor(callData.duration / 60);
+                        const secs = callData.duration % 60;
+                        subtitle = mins > 0 ? `${mins} min ${secs} sec` : `${secs} sec`;
+                    }
+
+                    // Safely escape contact name for onclick (use window scope to avoid ReferenceError)
+                    const contactName = typeof window.currentContactName !== 'undefined' ? window.currentContactName : '';
+                    const contactId = typeof window.currentContactId !== 'undefined' ? window.currentContactId : 0;
+                    const safeName = (contactName || '').replace(/'/g, "\\'");
+
+                    chatMessages.innerHTML += `
                     <div class="message ${msg.type} call-message" data-message-id="${msg.id || ''}">
-                        <div class="call-card ${isMissed ? 'missed' : 'completed'}" ${isMissed ? `onclick="startCall(${currentContactId}, '${currentContactName}', '${callData.call_type}')"` : ''}>
+                        <div class="call-card ${isMissed ? 'missed' : 'completed'}" ${isMissed ? `onclick="startCall(${contactId}, '${safeName}', '${callData.call_type}')"` : ''}>
                             <div class="call-icon ${isMissed ? 'missed' : ''}">
                                 <i class="bi ${icon}"></i>
                             </div>
@@ -696,10 +703,10 @@ function renderMessages(messages) {
                         </div>
                     </div>
                 `;
-            } else {
-                // Regular message rendering
-                const showEdit = !msg.image_url;
-                const actionsHtml = `
+                } else {
+                    // Regular message rendering
+                    const showEdit = !msg.image_url;
+                    const actionsHtml = `
                     <div class="message-actions">
                         ${msg.type === 'sent' ? `
                             ${showEdit ? `
@@ -715,16 +722,16 @@ function renderMessages(messages) {
                     </div>
                 `;
 
-                const editedIndicator = msg.edited ? '<span class="edited-indicator">(edited)</span>' : '';
+                    const editedIndicator = msg.edited ? '<span class="edited-indicator">(edited)</span>' : '';
 
-                // Image HTML
-                const imageHtml = msg.image_url ? `
+                    // Image HTML
+                    const imageHtml = msg.image_url ? `
                     <div class="message-image" style="margin-bottom: 5px;">
                         <img src="${msg.image_url}" alt="Attachment" style="max-width: 200px; border-radius: 8px; cursor: pointer;" onclick="window.open(this.src, '_blank')">
                     </div>
                 ` : '';
 
-                chatMessages.innerHTML += `
+                    chatMessages.innerHTML += `
                     <div class="message ${msg.type}" data-message-id="${msg.id || ''}">
                         ${actionsHtml}
                         <div class="message-content">
@@ -738,7 +745,10 @@ function renderMessages(messages) {
                         </div>
                     </div>
                 `;
+                }
             }
+        } catch (e) {
+            console.error('[Chat] Error rendering message', index, msg, e);
         }
     });
 
