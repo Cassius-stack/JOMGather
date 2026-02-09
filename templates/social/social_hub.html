@@ -13,7 +13,17 @@
         </nav>
         <aside class="inbox-pane">
             <div class="inbox-header">
-                <h1>Inbox</h1>
+                <div class="inbox-title-row">
+                    <h1>Inbox</h1>
+                    <div class="mobile-nav-icons">
+                        <a href="{{ url_for('social.social_hub') }}" class="mobile-nav-btn active" title="Chat">
+                            <i class="bi bi-chat-fill"></i>
+                        </a>
+                        <a href="{{ url_for('community.community_hub') }}" class="mobile-nav-btn" title="Communities">
+                            <i class="bi bi-people-fill"></i>
+                        </a>
+                    </div>
+                </div>
                 <div class="search-bar">
                     <i class="bi bi-search"></i>
                     <input type="search" placeholder="Search for a contact..." id="contact-search" minlength="2"
@@ -31,6 +41,9 @@
 
         <main class="chat-window">
             <header class="chat-header">
+                <button class="mobile-back-btn" id="mobile-back-btn" onclick="showContactList()">
+                    <i class="bi bi-arrow-left"></i>
+                </button>
                 <div class="user-details">
                     <div class="avatar large">
                         <i class="bi bi-person-fill"></i>

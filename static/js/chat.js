@@ -1645,6 +1645,10 @@ function switchContact(contactId, contactName, contactStatus) {
 
     currentContactId = contactId;
 
+    // Store contact name globally for call cards
+    window.currentContactId = contactId;
+    window.currentContactName = contactName;
+
     // Join the new room
     socket.emit('join_chat', { user_id: CURRENT_USER_ID, contact_id: contactId });
 
@@ -1674,6 +1678,35 @@ function switchContact(contactId, contactName, contactStatus) {
 
     // Load messages from server
     loadMessages(contactId);
+
+    // On mobile, show the chat window
+    showChatView();
+}
+
+/**
+ * Show chat view (for mobile)
+ */
+function showChatView() {
+    const inboxPane = document.querySelector('.inbox-pane');
+    const chatWindow = document.querySelector('.chat-window');
+
+    if (inboxPane && chatWindow) {
+        inboxPane.classList.add('hidden-mobile');
+        chatWindow.classList.add('active-mobile');
+    }
+}
+
+/**
+ * Show contact list (for mobile back button)
+ */
+function showContactList() {
+    const inboxPane = document.querySelector('.inbox-pane');
+    const chatWindow = document.querySelector('.chat-window');
+
+    if (inboxPane && chatWindow) {
+        inboxPane.classList.remove('hidden-mobile');
+        chatWindow.classList.remove('active-mobile');
+    }
 }
 
 /**
