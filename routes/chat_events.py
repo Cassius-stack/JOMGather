@@ -171,7 +171,8 @@ def register_chat_events(socketio):
             'image_url': image_url,
             'is_cyber_challenge': is_cyber_challenge,
             'challenge_id': challenge_id,
-            'scenario_id': scenario_id
+            'scenario_id': scenario_id,
+            'sent_at': new_message.get('sent_at')
         }
         
         # Emit to the chat room (both users in the conversation)
@@ -578,7 +579,8 @@ def register_chat_events(socketio):
                 'sender_id': caller_id,
                 'receiver_id': callee_id,
                 'text': call_content,
-                'is_call_message': True
+                'is_call_message': True,
+                'sent_at': new_message.get('sent_at')
             }
             
             emit('new_message', response_data, room=f"user_{caller_id}")
@@ -645,7 +647,8 @@ def register_chat_events(socketio):
                     'sender_id': caller_id,
                     'receiver_id': callee_id,
                     'text': call_content,
-                    'is_call_message': True
+                    'is_call_message': True,
+                    'sent_at': new_message.get('sent_at')
                 }
                 
                 # Send to both users' personal rooms

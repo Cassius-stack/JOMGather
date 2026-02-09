@@ -1322,18 +1322,60 @@ body {
 }
 
 .bubble {
-    padding: 12px 16px 22px 16px;
-    border-radius: 18px;
+    padding: 8px 14px;
+    border-radius: 16px;
     font-size: 15px;
     line-height: 1.4;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
     position: relative;
-    min-width: 60px;
+    min-width: 110px;
     width: fit-content;
     background-color: inherit;
     color: inherit;
-    overflow: hidden;
-    /* Prevent image overflow */
+    word-wrap: break-word;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Voice message specific stacking */
+.bubble.voice-message .message-body {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 2px;
+}
+
+.bubble.voice-message .message-metadata {
+    margin-top: 4px;
+    margin-bottom: -2px;
+}
+
+.message-body {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    min-height: 24px;
+    /* Ensure enough room for centering */
+}
+
+.message-text {
+    flex: 1;
+    display: inline-block;
+    align-self: center;
+    /* Center the text vertically */
+}
+
+.message-metadata {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: auto;
+    align-self: flex-end;
+    /* Push metadata to the bottom */
+    line-height: 1;
+    position: relative;
+    bottom: -1px;
+    /* Minimal adjustment for baseline */
 }
 
 .message-image {
@@ -1365,6 +1407,10 @@ body {
     background-color: #2b60de !important;
     color: #ffffff !important;
     border-bottom-right-radius: 4px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    text-align: right;
 }
 
 /* Message Actions - Edit & Delete icons */
@@ -1410,17 +1456,31 @@ body {
 }
 
 /* Message Ticks for Read Receipts */
-/* Message Ticks for Read Receipts */
 .message-tick {
-    position: absolute;
-    bottom: 5px;
-    right: 10px;
     font-size: 0.85em;
-    color: rgba(255, 255, 255, 0.7);
+    color: rgba(255, 255, 255, 0.6);
+    display: flex;
+    align-items: center;
 }
 
 .message-tick.read {
     color: #4fc3f7;
+}
+
+/* Message Time */
+.message-time {
+    font-size: 0.68rem;
+    pointer-events: none;
+    font-weight: 400;
+    white-space: nowrap;
+}
+
+.received .message-time {
+    color: rgba(30, 41, 59, 0.45);
+}
+
+.sent .message-time {
+    color: rgba(255, 255, 255, 0.65);
 }
 
 /* Edit mode input */
@@ -1452,12 +1512,12 @@ body {
 }
 
 .edit-actions .save-btn {
-    background: #22c55e;
+    background: #2b60de;
     color: white;
 }
 
 .edit-actions .save-btn:hover {
-    background: #16a34a;
+    background: #1a4ab9;
 }
 
 .edit-actions .cancel-btn {
@@ -1471,9 +1531,9 @@ body {
 
 /* Edited message indicator */
 .edited-indicator {
-    font-size: 11px;
+    font-size: 10px;
     opacity: 0.7;
-    margin-top: 4px;
+    margin-right: 4px;
     font-style: italic;
 }
 
@@ -3015,6 +3075,94 @@ input:valid:not(:placeholder-shown) {
     }
 }
 
+/* Call Cards */
+.call-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 250px;
+    max-width: 100%;
+}
+
+.call-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: #f1f5f9;
+    /* Regular call background */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.call-icon i {
+    font-size: 1.25rem;
+    color: #1e293b;
+}
+
+.call-card.missed .call-icon {
+    background: #fee2e2;
+    /* Missed call pink background */
+}
+
+.call-card.missed .call-icon i {
+    color: #ef4444;
+    /* Missed call red icon */
+}
+
+.sent .call-icon {
+    background: rgba(255, 255, 255, 0.2) !important;
+}
+
+.sent .call-icon i {
+    color: #ffffff !important;
+}
+
+.sent .call-card.missed .call-icon {
+    background: rgba(255, 255, 255, 0.3) !important;
+}
+
+.sent .call-card.missed .call-icon i {
+    color: #ffdce0 !important;
+    /* Lighter red/pink for better visibility on blue */
+}
+
+.call-info {
+    flex: 1;
+}
+
+.call-title {
+    font-weight: 700;
+    font-size: 1rem;
+    color: inherit;
+    line-height: 1.2;
+    margin-top: 1px;
+    /* Slight adjustment for centering */
+}
+
+.call-subtitle {
+    font-size: 0.85rem;
+    opacity: 0.7;
+    margin-top: 1px;
+    /* Tighter gap */
+}
+
+.message.call-message .bubble {
+    padding-top: 12px;
+    /* Extra top space for visual balance */
+}
+
+.message.call-message .bubble .message-body {
+    flex-direction: column;
+    align-items: stretch;
+}
+
+.message.call-message .bubble .message-metadata {
+    margin-top: 6px;
+    align-self: flex-end;
+}
+
 .incoming-call-content {
     display: flex;
     align-items: center;
@@ -3643,11 +3791,12 @@ input:valid:not(:placeholder-shown) {
 }
 
 .voice-play-btn {
-    width: 36px;
-    height: 36px;
+    width: 38px;
+    height: 38px;
     border-radius: 50%;
     border: none;
-    background: var(--primary-blue);
+    background: #545454;
+    /* Dark gray as per reference */
     color: white;
     display: flex;
     align-items: center;
@@ -3655,6 +3804,11 @@ input:valid:not(:placeholder-shown) {
     cursor: pointer;
     transition: all 0.2s ease;
     flex-shrink: 0;
+}
+
+.sent .voice-play-btn {
+    background: rgba(255, 255, 255, 0.2);
+    /* Semi-transparent white for sent */
 }
 
 .voice-play-btn:hover {
@@ -3675,30 +3829,39 @@ input:valid:not(:placeholder-shown) {
 
 .voice-progress-bar {
     width: 100%;
-    height: 4px;
-    background: rgba(0, 0, 0, 0.1);
+    height: 3px;
+    /* Slender progress bar */
+    background: rgba(0, 0, 0, 0.08);
     border-radius: 2px;
     cursor: pointer;
     position: relative;
     overflow: hidden;
 }
 
+.sent .voice-progress-bar {
+    background: rgba(255, 255, 255, 0.15);
+}
+
 .voice-progress-fill {
     height: 100%;
-    background: var(--primary-blue);
+    background: #545454;
     border-radius: 2px;
     width: 0%;
     transition: width 0.1s linear;
 }
 
-.message.received .voice-progress-fill {
-    background: #555;
+.sent .voice-progress-fill {
+    background: #ffffff;
 }
 
-.voice-duration {
-    font-size: 0.75rem;
-    color: inherit;
-    opacity: 0.8;
+.voice-time {
+    font-size: 0.85rem;
+    color: #545454;
+    font-weight: 400;
+}
+
+.sent .voice-time {
+    color: rgba(255, 255, 255, 0.9);
 }
 
 /* Hide message input when recording */

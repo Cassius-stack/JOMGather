@@ -505,7 +505,7 @@ def get_messages(contact_id):
             'id': m['message_id'],
             'type': 'sent' if m['sender_id'] == current_user_id else 'received',
             'text': m['content'],
-            'time': m['sent_at'],
+            'sent_at': m['sent_at'],
             'read': m.get('read', False),
             'image_url': m.get('image_url')
         } for m in messages])

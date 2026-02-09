@@ -234,7 +234,8 @@ socket.on('new_message', (data) => {
                 id: data.id,
                 type: messageType,
                 text: data.text,
-                image_url: data.image_url
+                image_url: data.image_url,
+                sent_at: data.sent_at
             });
         }
     } else if (messageType === 'received') {
@@ -491,12 +492,32 @@ function updateInboxAfterDelete(senderId, receiverId) {
 // ============================================
 
 /**
- * Append a single message to the chat (for real-time updates)
+ * Generate HTML for a single message
  */
-function appendMessage(msg) {
-    const messageDiv = document.createElement('div');
-    messageDiv.className = `message ${msg.type}`;
-    if (msg.id) messageDiv.dataset.messageId = msg.id;
+function getMessageHtml(msg) {
+    if (msg.type === 'timestamp') {
+        return `<div class="timestamp">${msg.text}</div>`;
+    }
+
+    if (msg.text === '!cyber' || msg.type === 'cyber-challenge') {
+        const scenario = cyberScenarios[Math.floor(Math.random() * cyberScenarios.length)];
+        const effectiveChallengeId = msg.challenge_id || `msg_${msg.id}`;
+        const effectiveScenarioId = msg.scenario_id || scenario.id;
+        return `
+            <div class="cyber-challenge-card" data-message-id="${msg.id || ''}" data-challenge-id="${effectiveChallengeId}" data-scenario-id="${effectiveScenarioId}" id="cyber-card-${effectiveChallengeId}">
+                <h3>🎮 Cyber Challenge!</h3>
+                <p>Can you detect if this scenario is safe or a scam?</p>
+                <div class="reward-info">
+                    <span class="reward-label">Rewards:</span>
+                    <div class="reward-value">
+                        <img src="/static/images/credit.svg" class="credit-icon-small2" onerror="this.style.display='none'">
+                        <span>15</span>
+                    </div>
+                </div>
+                <button class="btn-view" onclick="showCyberChallengeModal('${effectiveChallengeId}', ${effectiveScenarioId})">View</button>
+            </div>
+        `;
+    }
 
     // Check if this is a call or voice message
     let callData = null;
@@ -514,7 +535,6 @@ function appendMessage(msg) {
         // Not a JSON message, treat as regular text
     }
 
-    // Regular message rendering
     const isSent = msg.type === 'sent';
     const showEdit = !msg.image_url && !voiceData && !callData;
     const actionsHtml = `
@@ -533,7 +553,9 @@ function appendMessage(msg) {
         </div>
     `;
 
-    const editedIndicator = msg.edited ? '<span class="edited-indicator">(edited)</span>' : '';
+    // Detect edited status using zero-width space marker
+    const isEdited = msg.text && msg.text.endsWith('\u200b');
+    const editedIndicator = isEdited ? '<span class="edited-indicator">(edited)</span>' : '';
 
     // Image HTML
     const imageHtml = msg.image_url ? `
@@ -544,7 +566,6 @@ function appendMessage(msg) {
 
     let contentHtml = '';
     if (callData) {
-        messageDiv.classList.add('call-message');
         const isVideo = callData.call_type === 'video';
         const isMissed = callData.status === 'missed';
         const icon = isVideo
@@ -564,8 +585,11 @@ function appendMessage(msg) {
             subtitle = mins > 0 ? `${mins} min ${secs} sec` : `${secs} sec`;
         }
 
+        const safeName = (typeof currentContactName !== 'undefined' ? currentContactName : '').replace(/'/g, "\\'");
+        const contactId = typeof currentContactId !== 'undefined' ? currentContactId : 0;
+
         contentHtml = `
-            <div class="call-card ${isMissed ? 'missed' : 'completed'}" ${isMissed ? `onclick="startCall(${currentContactId}, '${currentContactName}', '${callData.call_type}')"` : ''}>
+            <div class="call-card ${isMissed ? 'missed' : 'completed'}" ${isMissed ? `onclick="startCall(${contactId}, '${safeName}', '${callData.call_type}')"` : ''}>
                 <div class="call-icon ${isMissed ? 'missed' : ''}">
                     <i class="bi ${icon}"></i>
                 </div>
@@ -576,6 +600,7 @@ function appendMessage(msg) {
             </div>
         `;
     } else if (voiceData) {
+        const durationDisplay = voiceData.duration ? (typeof voiceData.duration === 'string' ? voiceData.duration : formatDuration(voiceData.duration)) : '0:00';
         contentHtml = `
             <div class="voice-message-player">
                 <button class="voice-play-btn" onclick="toggleVoicePlayback(this, '${voiceData.audio_url}')">
@@ -585,30 +610,59 @@ function appendMessage(msg) {
                     <div class="voice-progress-bar" onclick="seekVoice(event, this)">
                         <div class="voice-progress-fill"></div>
                     </div>
-                    <div class="voice-time">0:00 / ${voiceData.duration ? (typeof voiceData.duration === 'string' ? voiceData.duration : formatDuration(voiceData.duration)) : '0:00'}</div>
+                    <div class="voice-time">0:00 / ${durationDisplay}</div>
                 </div>
                 <audio src="${voiceData.audio_url}" ontimeupdate="updateVoiceProgress(this)" onended="resetVoicePlayer(this)"></audio>
             </div>
         `;
     } else {
-        contentHtml = `<p style="margin: 0;">${msg.text}</p>`;
+        // Remove zero-width space for clean display in message text
+        let displayText = msg.text || '';
+        if (displayText.endsWith('\u200b')) {
+            displayText = displayText.slice(0, -1);
+        }
+        contentHtml = `<span class="message-text">${displayText}</span>`;
     }
 
-    messageDiv.innerHTML = `
-        <div class="message-content">
-            <div class="bubble">
-                ${imageHtml}
-                ${contentHtml}
-                ${editedIndicator}
-                ${isSent ? `<span class="message-tick ${msg.read ? 'read' : ''}"><i class="bi bi-check${msg.read ? '-all' : ''}"></i></span>` : ''}
+    return `
+        <div class="message ${msg.type} ${callData ? 'call-message' : ''}" data-message-id="${msg.id || ''}">
+            <div class="message-content">
+                <div class="bubble ${voiceData ? 'voice-message' : ''}">
+                    ${imageHtml}
+                    <div class="message-body">
+                        ${contentHtml}
+                        <div class="message-metadata">
+                            ${editedIndicator}
+                            <span class="message-time">${formatMessageTime(msg.sent_at || new Date())}</span>
+                            ${isSent ? `<span class="message-tick ${msg.read ? 'read' : ''}"><i class="bi bi-check${msg.read ? '-all' : ''}"></i></span>` : ''}
+                        </div>
+                    </div>
+                </div>
+                <div class="msg-reactions-chat"></div>
             </div>
-            <div class="msg-reactions-chat"></div>
+            ${actionsHtml}
         </div>
-        ${actionsHtml}
     `;
+}
 
-    chatMessages.appendChild(messageDiv);
+// Append a single message to the chat (for real-time updates)
+function appendMessage(msg) {
+    if (!chatMessages) return;
+
+    const messageHtml = getMessageHtml(msg);
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = messageHtml.trim();
+    const messageElement = tempDiv.firstChild;
+
+    chatMessages.appendChild(messageElement);
     chatMessages.scrollTop = chatMessages.scrollHeight;
+
+    // Async check for challenges
+    if (msg.type === 'cyber-challenge' || msg.text === '!cyber') {
+        const effectiveChallengeId = msg.challenge_id || `msg_${msg.id}`;
+        const effectiveScenarioId = msg.scenario_id || (cyberScenarios[0].id);
+        checkAndUpdateChallengeCard(effectiveChallengeId, effectiveScenarioId);
+    }
 }
 
 /**
@@ -730,152 +784,30 @@ function renderMessages(messages) {
     chatMessages.innerHTML = '';
     console.log('[Chat] Rendering', messages.length, 'messages');
 
-    messages.forEach((msg, index) => {
+    let fullHtml = '';
+    const challengesToUpdate = [];
+
+    messages.forEach((msg) => {
         try {
-            if (msg.type === 'timestamp') {
-                chatMessages.innerHTML += `<div class="timestamp">${msg.text}</div>`;
-            } else if (msg.text === '!cyber' || msg.type === 'cyber-challenge') {
-                // This is a cyber challenge - render as a challenge card
-                // Use a random scenario for display (scenario was stored in DB but we use local for now)
-                const scenario = cyberScenarios[Math.floor(Math.random() * cyberScenarios.length)];
-                const effectiveChallengeId = msg.challenge_id || `msg_${msg.id}`;
-                const effectiveScenarioId = msg.scenario_id || scenario.id;
+            fullHtml += getMessageHtml(msg);
 
-                chatMessages.innerHTML += `
-                <div class="cyber-challenge-card" data-message-id="${msg.id}" data-challenge-id="${effectiveChallengeId}" data-scenario-id="${effectiveScenarioId}" id="cyber-card-${effectiveChallengeId}">
-                    <h3>🎮 Cyber Challenge!</h3>
-                    <p>Can you detect if this scenario is safe or a scam?</p>
-                    <div class="reward-info">
-                        <span class="reward-label">Rewards:</span>
-                        <div class="reward-value">
-                            <img src="/static/images/credit.svg" class="credit-icon-small2" onerror="this.style.display='none'">
-                            <span>15</span>
-                        </div>
-                    </div>
-                    <button class="btn-view" onclick="showCyberChallengeModal('${effectiveChallengeId}', ${effectiveScenarioId})">View</button>
-                </div>
-            `;
-
-                // Async check if this challenge is completed and update the card
-                checkAndUpdateChallengeCard(effectiveChallengeId, effectiveScenarioId);
-            } else {
-                // Check if this is a call or voice message
-                let callData = null;
-                let voiceData = null;
-                try {
-                    if (msg.text && msg.text.startsWith('{')) {
-                        const parsed = JSON.parse(msg.text);
-                        if (parsed.type === 'call') {
-                            callData = parsed;
-                        } else if (parsed.type === 'voice') {
-                            voiceData = parsed;
-                        }
-                    }
-                } catch (e) {
-                    // Not JSON, treat as regular text
-                }
-
-                const isSent = msg.type === 'sent';
-                let contentHtml = '';
-                const showEdit = !msg.image_url && !voiceData && !callData;
-                const actionsHtml = `
-                    <div class="message-actions">
-                        ${isSent ? `
-                            ${showEdit ? `
-                            <button class="message-action-btn edit" title="Edit message" onclick="startEditMessage(this)">
-                                <i class="bi bi-pencil"></i>
-                            </button>
-                            ` : ''}
-                            <button class="message-action-btn delete" title="Delete message" onclick="showDeleteModal(this)">
-                                <i class="bi bi-trash"></i>
-                            </button>
-                        ` : ''}
-                        <button class="react-btn" onclick="toggleReactionPicker(this)" title="Add reaction">😊</button>
-                    </div>
-                `;
-
-                if (callData) {
-                    const isVideo = callData.call_type === 'video';
-                    const isMissed = callData.status === 'missed';
-                    const icon = isVideo
-                        ? (isMissed ? 'bi-camera-video-off' : 'bi-camera-video')
-                        : (isMissed ? 'bi-telephone-x' : 'bi-telephone');
-
-                    const title = isMissed
-                        ? `Missed ${callData.call_type} call`
-                        : `${callData.call_type.charAt(0).toUpperCase() + callData.call_type.slice(1)} call`;
-
-                    let subtitle = '';
-                    if (isMissed) {
-                        subtitle = 'Tap to call back';
-                    } else if (callData.duration > 0) {
-                        const mins = Math.floor(callData.duration / 60);
-                        const secs = callData.duration % 60;
-                        subtitle = mins > 0 ? `${mins} min ${secs} sec` : `${secs} sec`;
-                    }
-
-                    // Safely escape contact name for onclick
-                    const contactName = typeof window.currentContactName !== 'undefined' ? window.currentContactName : '';
-                    const contactId = typeof window.currentContactId !== 'undefined' ? window.currentContactId : 0;
-                    const safeName = (contactName || '').replace(/'/g, "\\'");
-
-                    contentHtml = `
-                        <div class="call-card ${isMissed ? 'missed' : 'completed'}" ${isMissed ? `onclick="startCall(${contactId}, '${safeName}', '${callData.call_type}')"` : ''}>
-                            <div class="call-icon ${isMissed ? 'missed' : ''}">
-                                <i class="bi ${icon}"></i>
-                            </div>
-                            <div class="call-info">
-                                <div class="call-title">${title}</div>
-                                <div class="call-subtitle">${subtitle}</div>
-                            </div>
-                        </div>
-                    `;
-                } else if (voiceData) {
-                    contentHtml = `
-                        <div class="voice-message-player">
-                            <button class="voice-play-btn" onclick="toggleVoicePlayback(this, '${voiceData.audio_url}')">
-                                <i class="bi bi-play-fill"></i>
-                            </button>
-                            <div class="voice-progress-container">
-                                <div class="voice-progress-bar" onclick="seekVoice(event, this)">
-                                    <div class="voice-progress-fill"></div>
-                                </div>
-                                <div class="voice-time">${voiceData.duration ? (typeof voiceData.duration === 'string' ? voiceData.duration : formatDuration(voiceData.duration)) : '0:00'}</div>
-                            </div>
-                            <audio src="${voiceData.audio_url}" ontimeupdate="updateVoiceProgress(this)" onended="resetVoicePlayer(this)"></audio>
-                        </div>
-                    `;
-                } else {
-                    contentHtml = msg.text ? `<p style="margin: 0;">${msg.text}</p>` : '';
-                }
-
-                const editedIndicator = msg.edited ? '<span class="edited-indicator">(edited)</span>' : '';
-
-                // Image HTML
-                const imageHtml = msg.image_url ? `
-                    <div class="message-image">
-                        <img src="${msg.image_url}" alt="Attachment" onclick="window.open(this.src, '_blank')">
-                    </div>
-                ` : '';
-
-                chatMessages.innerHTML += `
-                    <div class="message ${msg.type} ${callData ? 'call-message' : ''}" data-message-id="${msg.id || ''}">
-                        <div class="message-content">
-                            <div class="bubble">
-                                ${imageHtml}
-                                ${contentHtml}
-                                ${editedIndicator}
-                                ${isSent ? `<span class="message-tick ${msg.read ? 'read' : ''}"><i class="bi bi-check${msg.read ? '-all' : ''}"></i></span>` : ''}
-                            </div>
-                            <div class="msg-reactions-chat"></div>
-                        </div>
-                        ${actionsHtml}
-                    </div>
-                `;
+            // Collect challenges for post-render update
+            if (msg.type === 'cyber-challenge' || msg.text === '!cyber') {
+                challengesToUpdate.push({
+                    id: msg.challenge_id || `msg_${msg.id}`,
+                    scenarioId: msg.scenario_id
+                });
             }
         } catch (e) {
-            console.error('[Chat] Error rendering message', index, msg, e);
+            console.error('[Chat] Error generating message HTML', msg, e);
         }
+    });
+
+    chatMessages.innerHTML = fullHtml;
+
+    // After setting HTML, trigger async challenge checks
+    challengesToUpdate.forEach(c => {
+        checkAndUpdateChallengeCard(c.id, c.scenarioId);
     });
 
     chatMessages.scrollTop = chatMessages.scrollHeight;
@@ -934,8 +866,13 @@ async function checkAndUpdateChallengeCard(challengeId, scenarioId) {
 function startEditMessage(button) {
     const messageDiv = button.closest('.message');
     const bubble = messageDiv.querySelector('.bubble');
-    const pElement = bubble.querySelector('p');
-    const currentText = pElement ? pElement.textContent : '';
+    const textElement = bubble.querySelector('.message-text');
+    let currentText = textElement ? textElement.textContent : '';
+
+    // Remove zero-width space marker if present
+    if (currentText.endsWith('\u200b')) {
+        currentText = currentText.slice(0, -1);
+    }
     const messageId = messageDiv.dataset.messageId;
 
     // Hide the bubble and show edit input
@@ -978,24 +915,33 @@ function saveEditMessage(button, messageId) {
     const newText = editContainer.querySelector('.edit-input').value.trim();
 
     if (!newText) {
-        alert('Message cannot be empty');
+        showToast('Message cannot be empty', 'error');
         return;
     }
 
     // Emit edit event via Socket.IO
+    // Append zero-width space as a marker for "edited" status persistence
+    const markedText = newText + '\u200b';
+
     socket.emit('edit_message', {
         message_id: messageId,
         user_id: CURRENT_USER_ID,
-        new_content: newText
+        new_content: markedText
     });
 
     // Update UI immediately (optimistic update)
     const bubble = messageDiv.querySelector('.bubble');
-    bubble.querySelector('p').textContent = newText;
+    const textElement = bubble.querySelector('.message-text');
+    if (textElement) {
+        textElement.textContent = newText;
+    }
 
-    // Add edited indicator if not already there
+    // Add edited indicator if not already there, aligned inline with metadata
     if (!bubble.querySelector('.edited-indicator')) {
-        bubble.innerHTML += '<span class="edited-indicator">(edited)</span>';
+        const metadata = bubble.querySelector('.message-metadata');
+        if (metadata) {
+            metadata.insertAdjacentHTML('afterbegin', '<span class="edited-indicator">(edited)</span>');
+        }
     }
 
     // Remove edit container and show bubble
@@ -2329,7 +2275,7 @@ function toggleVoicePlayback(button, audioUrl) {
 function updateVoiceProgress(audio) {
     const player = audio.closest('.voice-message-player');
     const progressFill = player.querySelector('.voice-progress-fill');
-    const durationText = player.querySelector('.voice-duration');
+    const durationText = player.querySelector('.voice-time');
 
     const percent = (audio.currentTime / audio.duration) * 100;
     progressFill.style.width = `${percent}%`;
@@ -2347,13 +2293,13 @@ function resetVoicePlayer(audio) {
     const player = audio.closest('.voice-message-player');
     const icon = player.querySelector('.voice-play-btn i');
     const progressFill = player.querySelector('.voice-progress-fill');
-    const durationText = player.querySelector('.voice-duration');
+    const durationText = player.querySelector('.voice-time');
 
     icon.className = 'bi bi-play-fill';
     progressFill.style.width = '0%';
 
     if (!isNaN(audio.duration)) {
-        durationText.textContent = formatDuration(audio.duration);
+        durationText.textContent = `0:00 / ${formatDuration(audio.duration)}`;
     }
 }
 
@@ -2370,6 +2316,46 @@ function seekVoice(event, progressBar) {
     if (!isNaN(audio.duration)) {
         audio.currentTime = percent * audio.duration;
     }
+}
+
+/**
+ * Format timestamp to HH:mm AM/PM
+ * Ensures that UTC strings from the server are converted to local browser time
+ */
+function formatMessageTime(sentAt) {
+    if (!sentAt) return '';
+
+    let date;
+    if (sentAt instanceof Date) {
+        date = sentAt;
+    } else {
+        // Handle various string formats, ensuring UTC is recognized
+        let dateStr = String(sentAt).trim();
+
+        // If it's a standard ISO format but missing a timezone, assume UTC
+        if (dateStr.includes('T') && !dateStr.includes('Z') && !dateStr.includes('+')) {
+            dateStr += 'Z';
+        } else if (!dateStr.includes('T') && dateStr.includes(' ')) {
+            // Convert "YYYY-MM-DD HH:mm:ss" to "YYYY-MM-DDTHH:mm:ss"
+            dateStr = dateStr.replace(' ', 'T');
+            if (!dateStr.includes('Z') && !dateStr.includes('+')) {
+                dateStr += 'Z';
+            }
+        }
+
+        date = new Date(dateStr);
+    }
+
+    // Fallback for invalid dates
+    if (isNaN(date.getTime())) {
+        return '';
+    }
+
+    return date.toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+    });
 }
 
 /**
