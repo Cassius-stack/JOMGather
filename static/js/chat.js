@@ -1888,7 +1888,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
         imageInput.addEventListener('change', (e) => {
             if (e.target.files && e.target.files[0]) {
-                selectedImageFile = e.target.files[0];
+                const file = e.target.files[0];
+
+                // Validate file type (frontend)
+                if (!file.type.startsWith('image/')) {
+                    showToast('Only image files are allowed as attachments.', 'error');
+                    imageInput.value = ''; // Reset input
+                    selectedImageFile = null;
+                    return;
+                }
+
+                selectedImageFile = file;
 
                 // Show preview
                 const reader = new FileReader();

@@ -415,9 +415,15 @@ def mark_messages_read(contact_id):
         return jsonify({'error': str(e)}), 500
 
 
+ALLOWED_IMAGE_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+
+def allowed_file(filename, allowed_extensions):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in allowed_extensions
+
 @social_bp.route('/api/upload_image', methods=['POST'])
 def upload_chat_image():
-    """Upload an image for chat."""
+    """Upload an image for chat (Strictly images only)."""
     try:
         if 'file' not in request.files:
             return jsonify({'error': 'No file part'}), 400
@@ -430,6 +436,10 @@ def upload_chat_image():
             import os
             from werkzeug.utils import secure_filename
             
+            # Server-side validation for images only
+            if not allowed_file(file.filename, ALLOWED_IMAGE_EXTENSIONS):
+                return jsonify({'error': 'Only image files (jpg, jpeg, png, gif) are allowed.'}), 400
+
             # Ensure upload directory exists
             upload_folder = os.path.join('static', 'uploads', 'chat')
             os.makedirs(upload_folder, exist_ok=True)
