@@ -4,7 +4,7 @@ Now using Supabase for database
 """
 
 from flask import Blueprint, render_template, request, redirect, url_for, jsonify, session
-from utils.supabase_db import get_supabase, fetch_all, fetch_one, insert
+from utils.supabase_db import get_supabase, fetch_all, fetch_one, insert, retry_query
 from utils.auth_middleware import login_required
 import traceback
 
@@ -275,6 +275,24 @@ def reject_friend_request():
 @social_bp.route('/api/contacts')
 def get_contacts():
     """Get accepted friends, sorted by most recent message."""
+    import time
+    
+    def query_with_retry(query_func, max_retries=3):
+        """Execute a query with retry on network errors."""
+        for attempt in range(max_retries):
+            try:
+                return query_func()
+            except Exception as e:
+                error_str = str(e).lower()
+                if "10035" in error_str or "timeout" in error_str or "transport" in error_str or "read" in error_str:
+                    print(f"[Contacts API] Retry {attempt+1}/{max_retries}: {e}")
+                    time.sleep(0.5 * (attempt + 1))  # Exponential backoff
+                    if attempt == max_retries - 1:
+                        raise
+                else:
+                    raise
+        return None
+    
     try:
         current_user_id = get_current_user_id()
         supabase = get_supabase()
@@ -283,14 +301,20 @@ def get_contacts():
         friends = []
         
         # 1. Where I am user_1 (I requested, they accepted)
-        sent_accepted = supabase.table('friendships').select('user_id_2').eq('user_id_1', current_user_id).eq('status', 'accepted').execute()
-        for item in sent_accepted.data:
-            friends.append(item['user_id_2'])
+        sent_accepted = query_with_retry(
+            lambda: supabase.table('friendships').select('user_id_2').eq('user_id_1', current_user_id).eq('status', 'accepted').execute()
+        )
+        if sent_accepted:
+            for item in sent_accepted.data:
+                friends.append(item['user_id_2'])
             
         # 2. Where I am user_2 (They requested, I accepted)
-        received_accepted = supabase.table('friendships').select('user_id_1').eq('user_id_2', current_user_id).eq('status', 'accepted').execute()
-        for item in received_accepted.data:
-            friends.append(item['user_id_1'])
+        received_accepted = query_with_retry(
+            lambda: supabase.table('friendships').select('user_id_1').eq('user_id_2', current_user_id).eq('status', 'accepted').execute()
+        )
+        if received_accepted:
+            for item in received_accepted.data:
+                friends.append(item['user_id_1'])
             
         if not friends:
             return jsonify([])
@@ -329,6 +353,18 @@ def get_contacts():
                 if last_msg:
                     prefix = 'You: ' if last_msg['sender_id'] == current_user_id else ''
                     content = last_msg['content']
+                    if content and content.startswith('{'):
+                        try:
+                            import json
+                            parsed_data = json.loads(content)
+                            if parsed_data.get('type') == 'call':
+                                call_type = parsed_data.get('call_type', 'voice')
+                                content = f"📹 Video call" if call_type == 'video' else f"📞 Voice call"
+                            elif parsed_data.get('type') == 'voice':
+                                content = "🎙️ Voice message"
+                        except:
+                            pass
+                    
                     if 'Slice of Life Invite' in content:
                         preview = f"{prefix}🎨 Slice of Life Invite"
                     else:
@@ -380,9 +416,15 @@ def mark_messages_read(contact_id):
         return jsonify({'error': str(e)}), 500
 
 
+ALLOWED_IMAGE_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+
+def allowed_file(filename, allowed_extensions):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in allowed_extensions
+
 @social_bp.route('/api/upload_image', methods=['POST'])
 def upload_chat_image():
-    """Upload an image for chat."""
+    """Upload an image for chat (Strictly images only)."""
     try:
         if 'file' not in request.files:
             return jsonify({'error': 'No file part'}), 400
@@ -395,6 +437,10 @@ def upload_chat_image():
             import os
             from werkzeug.utils import secure_filename
             
+            # Server-side validation for images only
+            if not allowed_file(file.filename, ALLOWED_IMAGE_EXTENSIONS):
+                return jsonify({'error': 'Only image files (jpg, jpeg, png, gif) are allowed.'}), 400
+
             # Ensure upload directory exists
             upload_folder = os.path.join('static', 'uploads', 'chat')
             os.makedirs(upload_folder, exist_ok=True)
@@ -417,6 +463,41 @@ def upload_chat_image():
         return jsonify({'error': str(e)}), 500
 
 
+@social_bp.route('/api/upload_audio', methods=['POST'])
+def upload_chat_audio():
+    """Upload an audio file for voice messages."""
+    try:
+        if 'file' not in request.files:
+            return jsonify({'error': 'No file part'}), 400
+        
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({'error': 'No selected file'}), 400
+            
+        if file:
+            import os
+            import time
+            
+            # Ensure upload directory exists
+            upload_folder = os.path.join('static', 'uploads', 'audio')
+            os.makedirs(upload_folder, exist_ok=True)
+            
+            # Generate unique filename with timestamp
+            timestamp = int(time.time() * 1000)
+            filename = f"voice_{timestamp}.webm"
+            
+            file_path = os.path.join(upload_folder, filename)
+            file.save(file_path)
+            
+            # Return web-accessible URL
+            url = f"/static/uploads/audio/{filename}"
+            return jsonify({'url': url})
+            
+    except Exception as e:
+        print(f"Error uploading audio: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
 @social_bp.route('/api/messages/<int:contact_id>')
 def get_messages(contact_id):
     """Get messages between current user and a contact."""
@@ -435,7 +516,7 @@ def get_messages(contact_id):
             'id': m['message_id'],
             'type': 'sent' if m['sender_id'] == current_user_id else 'received',
             'text': m['content'],
-            'time': m['sent_at'],
+            'sent_at': m['sent_at'],
             'read': m.get('read', False),
             'image_url': m.get('image_url')
         } for m in messages])

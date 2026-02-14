@@ -1093,6 +1093,15 @@ body {
     margin-bottom: 15px;
 }
 
+/* Mobile nav icons - hidden on desktop */
+.mobile-nav-icons {
+    display: none;
+}
+
+.inbox-title-row {
+    display: block;
+}
+
 .search-bar {
     display: flex;
     align-items: center;
@@ -1213,6 +1222,11 @@ body {
     align-items: center;
 }
 
+/* Mobile back button - hidden on desktop */
+.mobile-back-btn {
+    display: none;
+}
+
 .user-details {
     display: flex;
     align-items: center;
@@ -1284,13 +1298,13 @@ body {
 
 .message.sent {
     align-self: flex-end;
-    flex-direction: row;
+    flex-direction: row-reverse;
     align-items: flex-end;
 }
 
 .message.received {
     align-self: flex-start;
-    flex-direction: row-reverse;
+    flex-direction: row;
     align-items: flex-end;
 }
 
@@ -1308,30 +1322,95 @@ body {
 }
 
 .bubble {
-    padding: 12px 18px;
-    border-radius: 18px;
-    font-size: 15px;
+    padding: 8px 14px;
+    border-radius: 16px;
     font-size: 15px;
     line-height: 1.4;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
     position: relative;
-    /* For the tick */
-    padding-bottom: 20px;
-    /* Space for the tick */
+    min-width: 110px;
+    width: fit-content;
+    background-color: inherit;
+    color: inherit;
+    word-wrap: break-word;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Voice message specific stacking */
+.bubble.voice-message .message-body {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 2px;
+}
+
+.bubble.voice-message .message-metadata {
+    margin-top: 4px;
+    margin-bottom: -2px;
+}
+
+.message-body {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    min-height: 24px;
+    /* Ensure enough room for centering */
+}
+
+.message-text {
+    flex: 1;
+    display: inline-block;
+    align-self: center;
+    /* Center the text vertically */
+}
+
+.message-metadata {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: auto;
+    align-self: flex-end;
+    /* Push metadata to the bottom */
+    line-height: 1;
+    position: relative;
+    bottom: -1px;
+    /* Minimal adjustment for baseline */
+}
+
+.message-image {
+    margin-bottom: 8px;
+    max-width: 300px;
+}
+
+.message-image img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 12px;
+    display: block;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.message-image img:hover {
+    transform: scale(1.01);
 }
 
 .received .bubble {
-    background-color: white;
-    border: 1px solid #e0e0e0;
-    color: #333;
+    background-color: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    color: #1e293b !important;
     border-bottom-left-radius: 4px;
 }
 
 .sent .bubble {
-    background-color: #2b60de;
-    /* The blue from the screenshot */
-    color: white;
+    background-color: #2b60de !important;
+    color: #ffffff !important;
     border-bottom-right-radius: 4px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    text-align: right;
 }
 
 /* Message Actions - Edit & Delete icons */
@@ -1341,7 +1420,6 @@ body {
     gap: 4px;
     opacity: 0;
     transition: opacity 0.2s ease;
-    margin-right: 8px;
 }
 
 /* Only show actions on hover for sent messages */
@@ -1378,18 +1456,31 @@ body {
 }
 
 /* Message Ticks for Read Receipts */
-/* Message Ticks for Read Receipts */
 .message-tick {
-    position: absolute;
-    bottom: 5px;
-    right: 10px;
     font-size: 0.85em;
-    color: rgba(255, 255, 255, 0.7);
+    color: rgba(255, 255, 255, 0.6);
+    display: flex;
+    align-items: center;
 }
 
 .message-tick.read {
     color: #4fc3f7;
-    /* Light Blue for read receipt */
+}
+
+/* Message Time */
+.message-time {
+    font-size: 0.68rem;
+    pointer-events: none;
+    font-weight: 400;
+    white-space: nowrap;
+}
+
+.received .message-time {
+    color: rgba(30, 41, 59, 0.45);
+}
+
+.sent .message-time {
+    color: rgba(255, 255, 255, 0.65);
 }
 
 /* Edit mode input */
@@ -1421,12 +1512,12 @@ body {
 }
 
 .edit-actions .save-btn {
-    background: #22c55e;
+    background: #2b60de;
     color: white;
 }
 
 .edit-actions .save-btn:hover {
-    background: #16a34a;
+    background: #1a4ab9;
 }
 
 .edit-actions .cancel-btn {
@@ -1440,9 +1531,9 @@ body {
 
 /* Edited message indicator */
 .edited-indicator {
-    font-size: 11px;
+    font-size: 10px;
     opacity: 0.7;
-    margin-top: 4px;
+    margin-right: 4px;
     font-style: italic;
 }
 
@@ -1751,6 +1842,24 @@ body {
 .sender-info {
     font-size: 14px;
     line-height: 1.4;
+}
+
+.sender-em.call-status {
+    color: #3b82f6;
+    font-size: 16px;
+}
+
+.call-duration {
+    color: #6b7280;
+    font-size: 14px;
+    font-weight: 400;
+}
+
+.call-screen-content {
+    padding: 16px;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #333;
 }
 
 .sender-email {
@@ -2227,48 +2336,137 @@ body {
 
 @media screen and (max-width: 768px) {
 
-    /* Social Hub Layout */
+    /* Social Hub Layout - stack vertically */
     .social-layout {
         flex-direction: column;
         height: auto;
         min-height: calc(100vh - 80px);
     }
 
-    /* Inbox Panel */
-    .inbox-panel {
+    /* Chat Wrapper - make it take full viewport */
+    .chat-wrapper {
+        flex-direction: column;
+        height: calc(100vh - 60px);
+        position: relative;
+    }
+
+    /* Sidebar - hide on mobile, use inline nav icons instead */
+    .sidebar {
+        display: none;
+    }
+
+    /* Mobile nav icons in inbox header */
+    .inbox-title-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+        margin-bottom: 12px;
+    }
+
+    .mobile-nav-icons {
+        display: flex;
+        gap: 8px;
+    }
+
+    .mobile-nav-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        background: #f0f4ff;
+        color: #2b60de;
+        font-size: 20px;
+        text-decoration: none;
+        transition: all 0.2s;
+    }
+
+    .mobile-nav-btn.active {
+        background: #2b60de;
+        color: #fff;
+    }
+
+    .mobile-nav-btn:hover {
+        transform: scale(1.05);
+    }
+
+    /* Inbox Pane - Full screen by default on mobile */
+    .inbox-pane {
         width: 100%;
         max-width: 100%;
+        height: 100%;
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 10;
         border-right: none;
-        border-bottom: 1px solid #e5e5e5;
-        max-height: 40vh;
-        overflow-y: auto;
+        background: #fff;
+        transition: transform 0.3s ease-in-out;
     }
 
-    .inbox-panel.hidden-mobile {
-        display: none;
+    .inbox-pane.hidden-mobile {
+        transform: translateX(-100%);
     }
 
-    /* Chat Window */
+    /* Chat Window - Full screen, hidden by default */
     .chat-window {
         width: 100%;
-        min-height: 60vh;
+        height: 100%;
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 5;
+        transform: translateX(100%);
+        transition: transform 0.3s ease-in-out;
     }
 
-    .chat-window.hidden-mobile {
-        display: none;
+    .chat-window.active-mobile {
+        transform: translateX(0);
+        z-index: 15;
     }
 
-    /* Back button (optional, if added) */
+    /* Back button - visible on mobile only */
     .mobile-back-btn {
         display: inline-flex;
         align-items: center;
-        gap: 8px;
-        padding: 8px 12px;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        padding: 0;
+        margin-right: 8px;
         background: none;
         border: none;
         color: #2b60de;
-        font-size: 16px;
+        font-size: 20px;
         cursor: pointer;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+
+    .mobile-back-btn:hover {
+        background: rgba(43, 96, 222, 0.1);
+    }
+
+    /* Chat Header - adjust for back button */
+    .chat-header {
+        padding: 10px 15px;
+        display: flex;
+        align-items: center;
+    }
+
+    .chat-header .user-details {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .chat-header .contact-name {
+        font-size: 16px;
     }
 
     /* Chat Header */
@@ -2820,4 +3018,854 @@ input:invalid:not(:placeholder-shown) {
 
 input:valid:not(:placeholder-shown) {
     border-color: #22c55e !important;
+}
+
+/* ============================================ */
+/* VIDEO / VOICE CALL UI */
+/* ============================================ */
+
+/* Call buttons in chat header */
+.header-actions .call-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: none;
+    background: var(--light-bg);
+    color: var(--primary-navy);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.header-actions .call-btn:hover {
+    background: var(--primary-navy);
+    color: white;
+    transform: scale(1.1);
+}
+
+/* Incoming Call Popup */
+.incoming-call-popup {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    padding: 16px 20px;
+    z-index: 10000;
+    display: none;
+    animation: slideInRight 0.3s ease;
+}
+
+.incoming-call-popup.show {
+    display: block;
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(100px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Call Cards */
+.call-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 250px;
+    max-width: 100%;
+}
+
+.call-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: #f1f5f9;
+    /* Regular call background */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.call-icon i {
+    font-size: 1.25rem;
+    color: #1e293b;
+}
+
+.call-card.missed .call-icon {
+    background: #fee2e2;
+    /* Missed call pink background */
+}
+
+.call-card.missed .call-icon i {
+    color: #ef4444;
+    /* Missed call red icon */
+}
+
+.sent .call-icon {
+    background: rgba(255, 255, 255, 0.2) !important;
+}
+
+.sent .call-icon i {
+    color: #ffffff !important;
+}
+
+.sent .call-card.missed .call-icon {
+    background: rgba(255, 255, 255, 0.3) !important;
+}
+
+.sent .call-card.missed .call-icon i {
+    color: #ffdce0 !important;
+    /* Lighter red/pink for better visibility on blue */
+}
+
+.call-info {
+    flex: 1;
+}
+
+.call-title {
+    font-weight: 700;
+    font-size: 1rem;
+    color: inherit;
+    line-height: 1.2;
+    margin-top: 1px;
+    /* Slight adjustment for centering */
+}
+
+.call-subtitle {
+    font-size: 0.85rem;
+    opacity: 0.7;
+    margin-top: 1px;
+    /* Tighter gap */
+}
+
+.message.call-message .bubble {
+    padding-top: 12px;
+    /* Extra top space for visual balance */
+}
+
+.message.call-message .bubble .message-body {
+    flex-direction: column;
+    align-items: stretch;
+}
+
+.message.call-message .bubble .message-metadata {
+    margin-top: 6px;
+    align-self: flex-end;
+}
+
+.incoming-call-content {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.caller-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: var(--primary-navy);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+}
+
+.caller-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.caller-name {
+    font-weight: 600;
+    font-size: 16px;
+    color: var(--text-dark);
+}
+
+.call-type-label {
+    font-size: 13px;
+    color: var(--text-muted);
+}
+
+.incoming-call-actions {
+    display: flex;
+    gap: 10px;
+    margin-left: 16px;
+}
+
+.call-action-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    transition: transform 0.2s ease;
+}
+
+.call-action-btn:hover {
+    transform: scale(1.1);
+}
+
+.call-action-btn.accept {
+    background: #22c55e;
+    color: white;
+}
+
+.call-action-btn.decline {
+    background: #ef4444;
+    color: white;
+}
+
+/* Call Screen Overlay */
+.call-screen-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: #f8f9fa;
+    z-index: 10001;
+    display: none;
+    flex-direction: column;
+}
+
+.call-screen-overlay.show {
+    display: flex;
+}
+
+.call-screen-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 40px 60px;
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+.call-header {
+    text-align: center;
+    padding: 20px 0 40px 0;
+}
+
+.call-user-name {
+    font-size: 32px;
+    font-weight: 700;
+    display: block;
+    margin-bottom: 8px;
+    color: #1a1a1a;
+}
+
+.call-status {
+    font-size: 18px;
+    color: #1e88e5;
+    font-weight: 500;
+}
+
+/* Video containers */
+.video-container {
+    flex: 1;
+    display: flex;
+    gap: 16px;
+    padding: 0;
+    justify-content: center;
+    align-items: stretch;
+}
+
+.remote-video-wrapper {
+    flex: 1;
+    max-width: 50%;
+    aspect-ratio: 4/3;
+    background: #9e9e9e;
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+    border: 8px solid white;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.remote-video-wrapper video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.video-placeholder {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 120px;
+    display: none;
+    /* Hidden by default */
+}
+
+/* Show placeholder only when video has no source */
+.remote-video-wrapper:not(:has(video[srcObject])) .video-placeholder,
+.remote-video-wrapper video:not([src]):not([srcObject])~.video-placeholder {
+    display: block;
+}
+
+
+.local-video-wrapper {
+    flex: 1;
+    max-width: 50%;
+    aspect-ratio: 4/3;
+    background: #e0e0e0;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 8px solid white;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    position: relative;
+}
+
+.local-video-wrapper video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Avatar placeholder when camera is off */
+.avatar-placeholder {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #6b7280;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 120px;
+    z-index: 1;
+}
+
+/* Name labels and mute indicators in video panels */
+.video-name-label {
+    position: absolute;
+    bottom: 16px;
+    left: 16px;
+    color: white;
+    font-size: 16px;
+    font-weight: 500;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 6px 12px;
+    border-radius: 8px;
+    z-index: 2;
+    /* Above avatar placeholder */
+}
+
+.mute-indicator {
+    color: #ef4444;
+    font-size: 14px;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.6;
+    }
+}
+
+/* Call controls */
+.call-controls {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    padding: 40px 0 20px 0;
+}
+
+.control-btn {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    border: none;
+    background: #1e88e5;
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 12px rgba(30, 136, 229, 0.3);
+}
+
+.control-btn:hover {
+    background: #1976d2;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(30, 136, 229, 0.4);
+}
+
+.control-btn.muted {
+    background: #e0e0e0;
+    color: #666;
+}
+
+.control-btn.camera-off {
+    background: #e0e0e0;
+    color: #666;
+}
+
+.control-btn.hangup {
+    background: #e53935;
+    width: 56px;
+    height: 56px;
+    font-size: 24px;
+    box-shadow: 0 4px 12px rgba(229, 57, 53, 0.3);
+}
+
+.control-btn.hangup:hover {
+    background: #c62828;
+    box-shadow: 0 6px 16px rgba(229, 57, 53, 0.4);
+}
+
+/* Responsive adjustments for call screen */
+@media (max-width: 768px) {
+    .video-container {
+        flex-direction: column;
+    }
+
+    .remote-video-wrapper {
+        width: 100%;
+        max-width: none;
+    }
+
+    .local-video-wrapper {
+        position: absolute;
+        bottom: 120px;
+        right: 20px;
+        width: 120px;
+    }
+
+    .incoming-call-popup {
+        left: 20px;
+        right: 20px;
+    }
+
+    .incoming-call-content {
+        flex-wrap: wrap;
+        justify-content: center;
+        text-align: center;
+    }
+
+    .incoming-call-actions {
+        margin-left: 0;
+        margin-top: 16px;
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* ============================================ */
+/* Call Message Cards in Chat */
+/* ============================================ */
+/* Unify Message Cards framework */
+.message.call-message {
+    margin: 15px 0;
+    display: flex;
+    /* Ensure proper alignment within chat messages */
+    align-items: center;
+    /* Vertically align content */
+    justify-content: flex-start;
+    /* Default alignment for received messages */
+}
+
+.message.sent.call-message {
+    justify-content: flex-end;
+    /* Align sent call messages to the right */
+}
+
+.call-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 220px;
+    max-width: 100%;
+    transition: transform 0.2s;
+    background: transparent !important;
+    border: none !important;
+    padding: 0;
+    color: inherit;
+}
+
+.call-card .call-title {
+    font-weight: 700;
+    font-size: 1rem;
+    color: inherit !important;
+    margin-bottom: 0px;
+}
+
+.call-card .call-subtitle {
+    font-size: 0.85rem;
+    color: inherit !important;
+    opacity: 0.85;
+}
+
+.call-card .call-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    background: rgba(0, 0, 0, 0.05);
+    color: inherit !important;
+    flex-shrink: 0;
+}
+
+.message.sent .call-card .call-icon {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.message.received .call-card .call-icon {
+    background: #f0f2f5;
+}
+
+/* Missed call styling */
+.call-card.missed {
+    cursor: pointer;
+}
+
+.call-card.missed:hover {
+    transform: scale(1.02);
+}
+
+.call-icon.missed {
+    background: rgba(220, 53, 69, 0.15) !important;
+    color: #dc3545 !important;
+}
+
+/* ============================================ */
+/* VOICE MESSAGE STYLES */
+/* ============================================ */
+
+/* Voice Recording Container */
+.voice-recording-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    background: #f8f9fa;
+    border-radius: 25px;
+    padding: 8px 16px;
+    animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Voice Timer */
+.voice-timer {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #dc3545;
+    min-width: 40px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.voice-timer::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    background: #dc3545;
+    border-radius: 50%;
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.4;
+    }
+}
+
+/* Voice Waveform */
+.voice-waveform {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    flex: 1;
+    height: 30px;
+    justify-content: center;
+}
+
+.voice-waveform span {
+    width: 3px;
+    background: var(--primary-blue);
+    border-radius: 3px;
+    animation: waveform 0.5s ease-in-out infinite alternate;
+}
+
+.voice-waveform span:nth-child(1) {
+    height: 40%;
+    animation-delay: 0s;
+}
+
+.voice-waveform span:nth-child(2) {
+    height: 70%;
+    animation-delay: 0.05s;
+}
+
+.voice-waveform span:nth-child(3) {
+    height: 50%;
+    animation-delay: 0.1s;
+}
+
+.voice-waveform span:nth-child(4) {
+    height: 90%;
+    animation-delay: 0.15s;
+}
+
+.voice-waveform span:nth-child(5) {
+    height: 60%;
+    animation-delay: 0.2s;
+}
+
+.voice-waveform span:nth-child(6) {
+    height: 80%;
+    animation-delay: 0.25s;
+}
+
+.voice-waveform span:nth-child(7) {
+    height: 45%;
+    animation-delay: 0.3s;
+}
+
+.voice-waveform span:nth-child(8) {
+    height: 100%;
+    animation-delay: 0.35s;
+}
+
+.voice-waveform span:nth-child(9) {
+    height: 55%;
+    animation-delay: 0.4s;
+}
+
+.voice-waveform span:nth-child(10) {
+    height: 75%;
+    animation-delay: 0.45s;
+}
+
+.voice-waveform span:nth-child(11) {
+    height: 35%;
+    animation-delay: 0.5s;
+}
+
+.voice-waveform span:nth-child(12) {
+    height: 85%;
+    animation-delay: 0.55s;
+}
+
+.voice-waveform span:nth-child(13) {
+    height: 50%;
+    animation-delay: 0.6s;
+}
+
+.voice-waveform span:nth-child(14) {
+    height: 65%;
+    animation-delay: 0.65s;
+}
+
+.voice-waveform span:nth-child(15) {
+    height: 40%;
+    animation-delay: 0.7s;
+}
+
+.voice-waveform span:nth-child(16) {
+    height: 70%;
+    animation-delay: 0.75s;
+}
+
+.voice-waveform span:nth-child(17) {
+    height: 55%;
+    animation-delay: 0.8s;
+}
+
+.voice-waveform span:nth-child(18) {
+    height: 45%;
+    animation-delay: 0.85s;
+}
+
+.voice-waveform span:nth-child(19) {
+    height: 80%;
+    animation-delay: 0.9s;
+}
+
+.voice-waveform span:nth-child(20) {
+    height: 60%;
+    animation-delay: 0.95s;
+}
+
+@keyframes waveform {
+    from {
+        transform: scaleY(0.3);
+    }
+
+    to {
+        transform: scaleY(1);
+    }
+}
+
+/* Voice Delete Button */
+.voice-delete-btn {
+    background: #dc3545;
+    border: none;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.voice-delete-btn:hover {
+    background: #c82333;
+    transform: scale(1.05);
+}
+
+/* Mic Button Styles */
+.mic-btn {
+    background: var(--primary-blue);
+}
+
+.mic-btn i {
+    font-size: 1.1rem;
+}
+
+/* Voice Message Bubble */
+.voice-message-player {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0;
+    width: 250px;
+    max-width: 100%;
+}
+
+.voice-play-btn {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: none;
+    background: #545454;
+    /* Dark gray as per reference */
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.sent .voice-play-btn {
+    background: rgba(255, 255, 255, 0.2);
+    /* Semi-transparent white for sent */
+}
+
+.voice-play-btn:hover {
+    transform: scale(1.05);
+    filter: brightness(1.1);
+}
+
+.message.received .voice-play-btn {
+    background: #555;
+}
+
+.voice-progress-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.voice-progress-bar {
+    width: 100%;
+    height: 3px;
+    /* Slender progress bar */
+    background: rgba(0, 0, 0, 0.08);
+    border-radius: 2px;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+.sent .voice-progress-bar {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.voice-progress-fill {
+    height: 100%;
+    background: #545454;
+    border-radius: 2px;
+    width: 0%;
+    transition: width 0.1s linear;
+}
+
+.sent .voice-progress-fill {
+    background: #ffffff;
+}
+
+.voice-time {
+    font-size: 0.85rem;
+    color: #545454;
+    font-weight: 400;
+}
+
+.sent .voice-time {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+/* Hide message input when recording */
+.input-area.recording #message-input,
+.input-area.recording .input-actions {
+    display: none !important;
 }

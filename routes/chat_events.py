@@ -21,6 +21,11 @@ online_users = {}
 def register_chat_events(socketio):
     """Register all chat-related Socket.IO events."""
     
+    # Catch-all handler to debug ALL incoming events
+    @socketio.on('*')
+    def catch_all(event, data):
+        print(f"[Socket.IO DEBUG] Event received: {event}", flush=True)
+    
     @socketio.on('connect')
     def handle_connect():
         """Called when a client connects to the WebSocket."""
@@ -76,19 +81,28 @@ def register_chat_events(socketio):
         user_id = data.get('user_id')
         other_user_id = data.get('contact_id')
         if not user_id or not other_user_id:
-            return  # Skip if either ID is missing
+            print(f"[Socket.IO] Skipping join_chat - missing user_id ({user_id}) or contact_id ({other_user_id})")
+            return
         room = get_room_name(user_id, other_user_id)
-        join_room(room)
-        print(f"[Socket.IO] User {user_id} joined room: {room}")
+        if room:
+            join_room(room)
+            print(f"[Socket.IO] User {user_id} joined room: {room}")
     
     @socketio.on('leave_chat')
     def handle_leave_chat(data):
         """Called when a user switches to a different chat."""
         user_id = data.get('user_id')
         other_user_id = data.get('contact_id')
+        
+        # Guard: don't try to leave if either ID is missing
+        if not user_id or not other_user_id:
+            print(f"[Socket.IO] Skipping leave_chat - missing user_id ({user_id}) or contact_id ({other_user_id})")
+            return
+            
         room = get_room_name(user_id, other_user_id)
-        leave_room(room)
-        print(f"[Socket.IO] User {user_id} left room: {room}")
+        if room:
+            leave_room(room)
+            print(f"[Socket.IO] User {user_id} left room: {room}")
     
     @socketio.on('send_message')
     def handle_send_message(data):
@@ -157,7 +171,8 @@ def register_chat_events(socketio):
             'image_url': image_url,
             'is_cyber_challenge': is_cyber_challenge,
             'challenge_id': challenge_id,
-            'scenario_id': scenario_id
+            'scenario_id': scenario_id,
+            'sent_at': new_message.get('sent_at')
         }
         
         # Emit to the chat room (both users in the conversation)
@@ -466,9 +481,298 @@ def register_chat_events(socketio):
         except Exception as e:
             print(f"[Socket.IO] Error marking read: {e}")
 
+    # ========== VIDEO/VOICE CALL SIGNALING ==========
+    
+    @socketio.on('call_user')
+    def handle_call_user(data):
+        """
+        Called when a user initiates a call.
+        Emit incoming_call to the receiver.
+        """
+        caller_id = data.get('caller_id')
+        callee_id = data.get('callee_id')
+        call_type = data.get('call_type', 'voice')  # 'voice' or 'video'
+        caller_name = data.get('caller_name', 'Unknown')
+        
+        if not caller_id or not callee_id:
+            print("[Socket.IO] call_user: missing caller_id or callee_id")
+            return
+        
+        print(f"[Socket.IO] Call initiated: {caller_id} -> {callee_id} ({call_type})")
+        
+        # Emit to callee's personal room
+        emit('incoming_call', {
+            'caller_id': caller_id,
+            'caller_name': caller_name,
+            'call_type': call_type
+        }, room=f"user_{callee_id}")
+    
+    @socketio.on('call_answer')
+    def handle_call_answer(data):
+        """
+        Called when callee accepts the call.
+        Notify caller to start WebRTC negotiation.
+        """
+        print(f"[Socket.IO] *** call_answer event received! Data: {data}", flush=True)
+        caller_id = data.get('caller_id')
+        callee_id = data.get('callee_id')
+        callee_name = data.get('callee_name', 'Unknown')
+        
+        if not caller_id or not callee_id:
+            print(f"[Socket.IO] call_answer: missing caller_id ({caller_id}) or callee_id ({callee_id})", flush=True)
+            return
+        
+        target_room = f"user_{caller_id}"
+        print(f"[Socket.IO] Call answered: {callee_id} accepted call from {caller_id}", flush=True)
+        print(f"[Socket.IO] Emitting call_accepted to room: {target_room}", flush=True)
+        
+        # Notify caller that call was accepted
+        emit('call_accepted', {
+            'callee_id': callee_id,
+            'callee_name': callee_name
+        }, room=target_room)
+    
+    @socketio.on('call_decline')
+    def handle_call_decline(data):
+        """
+        Called when callee declines the call.
+        Saves a missed call message for the caller.
+        """
+        import json
+        
+        caller_id = data.get('caller_id')
+        callee_id = data.get('callee_id')
+        call_type = data.get('call_type', 'voice')
+        
+        if not caller_id or not callee_id:
+            return
+        
+        print(f"[Socket.IO] Call declined: {callee_id} rejected {call_type} call from {caller_id}")
+        
+        emit('call_declined', {
+            'callee_id': callee_id
+        }, room=f"user_{caller_id}")
+        
+        # Save missed call message (from callee's perspective as a "missed" notification for caller)
+        call_content = json.dumps({
+            'type': 'call',
+            'call_type': call_type,
+            'status': 'missed',
+            'duration': 0
+        })
+        
+        # Message is from caller (who initiated) to callee (who missed/declined)
+        message_data = {
+            'sender_id': caller_id,
+            'receiver_id': callee_id,
+            'content': call_content
+        }
+        
+        new_message = insert('messages', message_data)
+        
+        if new_message:
+            print(f"[Socket.IO] Saved missed call message: {call_type}")
+            
+            # Emit to both users' personal rooms
+            response_data = {
+                'id': new_message['message_id'],
+                'sender_id': caller_id,
+                'receiver_id': callee_id,
+                'text': call_content,
+                'is_call_message': True,
+                'sent_at': new_message.get('sent_at')
+            }
+            
+            emit('new_message', response_data, room=f"user_{caller_id}")
+            emit('new_message', response_data, room=f"user_{callee_id}")
+    
+    @socketio.on('call_end')
+    def handle_call_end(data):
+        """
+        Called when either user ends the call.
+        Saves a call message to the database and notifies both users.
+        """
+        import json
+        
+        user_id = data.get('user_id')
+        other_user_id = data.get('other_user_id')
+        call_type = data.get('call_type', 'voice')
+        was_connected = data.get('was_connected', False)
+        duration = data.get('duration', 0)
+        is_initiator = data.get('is_initiator', True)  # Who initiated the call
+        
+        if not user_id or not other_user_id:
+            return
+        
+        # Determine who initiated the call (caller) and who received (callee)
+        if is_initiator:
+            caller_id = user_id
+            callee_id = other_user_id
+        else:
+            caller_id = other_user_id
+            callee_id = user_id
+        
+        print(f"[Socket.IO] Call ended - caller: {caller_id}, callee: {callee_id}, type: {call_type}, connected: {was_connected}, duration: {duration}s")
+        
+        # Notify the other user that call ended
+        emit('call_ended', {
+            'user_id': user_id
+        }, room=f"user_{other_user_id}")
+        
+        # Only save call message if it was connected (completed call)
+        if was_connected and duration > 0:
+            # Create call message content as JSON
+            call_content = json.dumps({
+                'type': 'call',
+                'call_type': call_type,
+                'status': 'completed',
+                'duration': duration
+            })
+            
+            # Sender is who INITIATED the call (caller), not who ended it
+            message_data = {
+                'sender_id': caller_id,
+                'receiver_id': callee_id,
+                'content': call_content
+            }
+            
+            new_message = insert('messages', message_data)
+            
+            if new_message:
+                print(f"[Socket.IO] Saved completed call message: {call_type}, {duration}s")
+                
+                # Emit to both users so their chats update
+                response_data = {
+                    'id': new_message['message_id'],
+                    'sender_id': caller_id,
+                    'receiver_id': callee_id,
+                    'text': call_content,
+                    'is_call_message': True,
+                    'sent_at': new_message.get('sent_at')
+                }
+                
+                # Send to both users' personal rooms
+                emit('new_message', response_data, room=f"user_{caller_id}")
+                emit('new_message', response_data, room=f"user_{callee_id}")
+    
+    @socketio.on('webrtc_offer')
+    def handle_webrtc_offer(data):
+        """
+        Forward WebRTC offer (SDP) to the callee.
+        """
+        caller_id = data.get('caller_id')
+        callee_id = data.get('callee_id')
+        offer = data.get('offer')
+        
+        if not caller_id or not callee_id or not offer:
+            return
+        
+        print(f"[Socket.IO] WebRTC offer from {caller_id} to {callee_id}")
+        
+        emit('webrtc_offer', {
+            'caller_id': caller_id,
+            'offer': offer
+        }, room=f"user_{callee_id}")
+    
+    @socketio.on('webrtc_answer')
+    def handle_webrtc_answer(data):
+        """
+        Forward WebRTC answer (SDP) to the caller.
+        """
+        caller_id = data.get('caller_id')
+        callee_id = data.get('callee_id')
+        answer = data.get('answer')
+        
+        if not caller_id or not callee_id or not answer:
+            return
+        
+        print(f"[Socket.IO] WebRTC answer from {callee_id} to {caller_id}")
+        
+        emit('webrtc_answer', {
+            'callee_id': callee_id,
+            'answer': answer
+        }, room=f"user_{caller_id}")
+    
+    @socketio.on('ice_candidate')
+    def handle_ice_candidate(data):
+        """
+        Called when a peer has a new ICE candidate.
+        Forward it to the other peer.
+        """
+        from_user_id = data.get('from_user_id')
+        to_user_id = data.get('to_user_id')
+        candidate = data.get('candidate')
+        
+        if not from_user_id or not to_user_id:
+            return
+        
+        emit('ice_candidate', {
+            'from_user_id': from_user_id,
+            'candidate': candidate
+        }, room=f"user_{to_user_id}")
+    
+    @socketio.on('mute_status')
+    def handle_mute_status(data):
+        """
+        Called when a user mutes/unmutes their microphone.
+        Relay the status to the other user.
+        """
+        from_user_id = data.get('from_user_id')
+        to_user_id = data.get('to_user_id')
+        is_muted = data.get('is_muted', False)
+        
+        if not from_user_id or not to_user_id:
+            return
+        
+        print(f"[Socket.IO] User {from_user_id} mute status: {is_muted}")
+        
+        emit('mute_status', {
+            'from_user_id': from_user_id,
+            'is_muted': is_muted
+        }, room=f"user_{to_user_id}")
+    
+    @socketio.on('camera_status')
+    def handle_camera_status(data):
+        """
+        Called when a user turns their camera on/off.
+        Relay the status to the other user.
+        """
+        from_user_id = data.get('from_user_id')
+        to_user_id = data.get('to_user_id')
+        is_camera_off = data.get('is_camera_off', False)
+        
+        if not from_user_id or not to_user_id:
+            return
+        
+        print(f"[Socket.IO] User {from_user_id} camera status: {'OFF' if is_camera_off else 'ON'}")
+        
+        emit('camera_status', {
+            'from_user_id': from_user_id,
+            'is_camera_off': is_camera_off
+        }, room=f"user_{to_user_id}")
+    
+    @socketio.on('mic_status')
+    def handle_mic_status(data):
+        """
+        Called when a user mutes/unmutes their microphone.
+        Relay the status to the other user.
+        """
+        from_user_id = data.get('from_user_id')
+        to_user_id = data.get('to_user_id')
+        is_muted = data.get('is_muted', False)
+        
+        if not from_user_id or not to_user_id:
+            return
+        
+        print(f"[Socket.IO] User {from_user_id} mic status: {'MUTED' if is_muted else 'UNMUTED'}")
+        
+        emit('mic_status', {
+            'from_user_id': from_user_id,
+            'is_muted': is_muted
+        }, room=f"user_{to_user_id}")
+
 
 def get_room_name(user1_id, user2_id):
     """Create a consistent room name for two users."""
     ids = sorted([int(user1_id), int(user2_id)])
-    return f"chat_{ids[0]}_{ids[1]}"
 

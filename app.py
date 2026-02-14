@@ -35,7 +35,11 @@ def create_app(config_name='default'):
     # Initialize SocketIO with the app
     # Using async_mode='threading' to avoid conflict with Supabase's httpx
     # (eventlet monkey-patching breaks httpx)
-    socketio.init_app(app, cors_allowed_origins="*", async_mode='threading')
+    socketio.init_app(app, 
+                      cors_allowed_origins="*", 
+                      async_mode='threading',
+                      ping_timeout=10,  # seconds to wait for pong
+                      ping_interval=5)  # seconds between pings
     
     # Register blueprints
     app.register_blueprint(auth_bp, url_prefix='/auth')
@@ -57,23 +61,28 @@ def create_app(config_name='default'):
     from routes.boomerang_events import register_boomerang_events
     register_boomerang_events(socketio)
     
-    # Track user activity
+    # Track user activity (throttled to avoid excessive DB calls)
     @app.before_request
     def update_last_seen():
         from flask import session
         import datetime
+        import time
         from utils.supabase_db import get_supabase
         
         user_id = session.get('user_id')
         if user_id:
-            try:
-                # Update last_seen (doing this every request might be heavy in production, but fine for prototype)
-                # Optimization: Could check if last_seen was > 5 mins ago in session
-                now = datetime.datetime.now().isoformat()
-                get_supabase().table('users').update({'last_seen': now}).eq('user_id', user_id).execute()
-            except Exception as e:
-                # Don't break the app if tracking fails
-                print(f"Error updating last_seen: {e}")
+            # Throttle: only update last_seen once every 5 minutes
+            last_update = session.get('_last_seen_update', 0)
+            current_time = time.time()
+            
+            if current_time - last_update > 300:  # 5 minutes = 300 seconds
+                try:
+                    now = datetime.datetime.now().isoformat()
+                    get_supabase().table('users').update({'last_seen': now}).eq('user_id', user_id).execute()
+                    session['_last_seen_update'] = current_time
+                except Exception as e:
+                    # Don't break the app if tracking fails
+                    print(f"Error updating last_seen: {e}")
 
     # Context Processor for Notifications
     @app.context_processor
