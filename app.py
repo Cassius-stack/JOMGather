@@ -242,7 +242,9 @@ def create_app(config_name='default'):
             # Check if current path starts with any of the guarded prefixes
             for prefix in protected_prefixes:
                 if request.path.startswith(prefix):
-                    return redirect(url_for('index')) # Redirect to landing (which is index route)
+                    # Redirect to login directly instead of index/landing to force a clean state
+                    # This prevents the "not found" or double-action issue
+                    return redirect(url_for('auth.login'))
     
     # Skeleton template preview (for development only)
     @app.route('/skeleton')
