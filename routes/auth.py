@@ -196,11 +196,15 @@ def login():
             internal_user = fetch_one('users', auth_id=user_uuid)
             
             if internal_user:
-                # 3. Create Session with Internal ID (keeps legacy code working!)
+                # 3. Create Session with Internal ID
+                session.clear() # Clear any old session data first
                 session['user_id'] = internal_user['user_id']
                 session['username'] = internal_user['username']
                 session['user_type'] = internal_user['user_type']
                 
+                # Make session permanent (lasts 31 days by default)
+                session.permanent = True
+
                 flash(f"Welcome back, {internal_user['username']}!", "success")
                 return redirect(url_for('index'))
             else:
@@ -219,10 +223,22 @@ def login():
 def logout():
     """Handle user logout."""
     try:
+        # Sign out from Supabase (clears server-side token if any)
         get_supabase().auth.sign_out()
     except:
         pass # Ignore if already logged out on server
         
+    # Clear Flask session completely
     session.clear()
+
+    # Force session to be marked as modified to ensure cookie is cleared
+    session.modified = True
+
+    # Flash message might not persist if session is cleared, so we rely on the redirect
+    # or re-set it after clearing but before response
+    # However, flash() uses session, so calling it AFTER clear() is correct
     flash("You have been logged out.", "info")
+
+    # Redirect to LOGIN directly, not index, to avoid any landing page logic
+    # that might check for session presence
     return redirect(url_for('auth.login'))
