@@ -31,7 +31,7 @@ def get_current_username():
 @login_required
 def jukebox_page():
     """Main jukebox page with spinning wheel."""
-    community_id = request.args.get('community', type=int) or 1  # Default to Musicly (ID 1)
+    community_id = request.args.get('community', type=int) or 2  # Default to Musicly (ID 2)
     return render_template('jukebox/juke.html', community_id=community_id)
 
 
