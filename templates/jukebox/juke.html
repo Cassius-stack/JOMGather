@@ -268,7 +268,11 @@
         // Update Content
         document.getElementById('songTitle').textContent = song.title;
         document.getElementById('recommenderName').textContent = song.userName;
-        document.getElementById('songLink').href = song.url;
+
+        // Create YouTube search URL
+        const searchQuery = encodeURIComponent(`${song.title} ${song.artist}`);
+        const youtubeUrl = `https://www.youtube.com/results?search_query=${searchQuery}`;
+        document.getElementById('songLink').href = youtubeUrl;
 
         // Set Icon
         const iconDiv = document.getElementById('sourceIcon');
