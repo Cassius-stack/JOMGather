@@ -160,7 +160,7 @@ def create_community():
         })
         
         # Create default General channel
-        insert('community_channels', {
+        new_channel = insert('community_channels', {
             'community_id': community_id,
             'name': 'General',
             'is_announcement': False,
@@ -175,7 +175,7 @@ def create_community():
             'admins': [user_id],
             'moderators': [],
             'channels': [{
-                'id': 1,
+                'id': new_channel['channel_id'],
                 'name': 'General',
                 'members': 1,
                 'private': False,
