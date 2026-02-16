@@ -73,8 +73,7 @@
                         <div style="flex: 1; text-align: center;">
                             <h6 class="text-muted small fw-bold mb-3">PARTNER STATUS</h6>
                             <div class="mb-3">
-                                {% set partner_id_fallback = item.invite.recipient_id if item.is_me_sender else item.invite.sender_id %}
-                                <img src="{{ item.partner_pic or 'https://i.pravatar.cc/100?img=' ~ ((partner_id_fallback * 5) % 70) }}"
+                                <img src="{{ item.partner_pic or 'https://i.pravatar.cc/100?img=' ~ ((item.partner_id * 5) % 70) }}"
                                     alt="Partner"
                                     style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 3px solid #e2e8f0;">
                                 <div class="mt-2 fw-bold text-dark">{{ item.partner_name }}</div>

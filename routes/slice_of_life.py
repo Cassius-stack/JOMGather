@@ -346,9 +346,9 @@ def waiting_room():
     # Note: 'published' slices move to completion.
     
     # 1. Fetch where I am SENDER
-    sent = fetch_all('sol_invites', sender_id=current_uid)
+    sent = fetch_all('sol_invites', sender_id=current_uid) or []
     # 2. Fetch where I am RECIPIENT
-    received = fetch_all('sol_invites', recipient_id=current_uid)
+    received = fetch_all('sol_invites', recipient_id=current_uid) or []
     
     all_invites = sent + received
     
@@ -357,11 +357,21 @@ def waiting_room():
     view_data = []
     
     for invite in all_invites:
+        # Safety check for missing display_id
+        if not invite.get('display_id'):
+            continue
+
         display = fetch_one('sol_displays', display_id=invite['display_id'])
         if display and display['status'] == 'pending':
             is_me_sender = (invite['sender_id'] == current_uid)
             partner_id = invite['recipient_id'] if is_me_sender else invite['sender_id']
             
+            # Ensure partner_id is int for template math
+            try:
+                partner_id = int(partner_id)
+            except:
+                partner_id = 0
+
             # Fetch partner info
             partner = fetch_one('users', user_id=partner_id)
             partner_name = partner['username'] if partner else f"User {partner_id}"
@@ -379,6 +389,7 @@ def waiting_room():
                 'display': display,
                 'partner_name': partner_name,
                 'partner_pic': partner_pic,
+                'partner_id': partner_id, # Passed explicitly for template safety
                 'is_me_sender': is_me_sender,
                 'prompt_text': prompt['prompt_text'] if prompt else "Daily Prompt",
                 'my_submission': my_sub
