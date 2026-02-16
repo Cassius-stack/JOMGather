@@ -136,17 +136,6 @@ def delete_account():
     try:
         supabase = get_supabase()
         
-        # Fix legacy "Deleted Account" usernames that don't have a user_id suffix
-        try:
-            legacy = supabase.table('users').select('user_id').eq('username', 'Deleted Account').execute()
-            if legacy.data:
-                for u in legacy.data:
-                    supabase.table('users').update({
-                        'username': f"Deleted Account_{u['user_id']}"
-                    }).eq('user_id', u['user_id']).execute()
-        except Exception as e:
-            print(f"  - legacy username fix: {e}")
-        
         # =====================================================
         # SOFT DELETE: Anonymize user instead of removing row.
         # This keeps messages intact (FK references stay valid)
@@ -201,9 +190,11 @@ def delete_account():
             print(f"  - communities delete error: {e}")
         
         # 1. ANONYMIZE USER RECORD (preserve user_id for FK integrity)
+        import time as _time
+        _ts = int(_time.time())
         supabase.table('users').update({
-            'username': f'Deleted Account_{user_id}',
-            'email': f'deleted_{user_id}@deleted.com',
+            'username': f'deleted_{user_id}_{_ts}',
+            'email': f'deleted_{user_id}_{_ts}@deleted.com',
             'password_hash': 'ACCOUNT_DELETED',
             'is_deleted': True,
             'age': None,
