@@ -84,6 +84,71 @@ def generate_memory_title(thoughts_list):
         print(f"Error generating title: {e}")
         return "A Moment Shared"
 
+def determine_navigation_intent(query, user_context):
+    """
+    Uses DeepSeek to determine where the user wants to go based on their query.
+    user_context should include friend names and IDs.
+    """
+    if not DEEPSEEK_API_KEY:
+        return {"action": "message", "response": "Savvy Assist is currently offline."}
+
+    prompt = f"""
+    You are 'Savvy', a friendly AI assistant for an intergenerational social app called JOMGather.
+    Your job is to determine where the user wants to go based on their natural language request.
+    
+    User Query: "{query}"
+    
+    Context:
+    - Current User Friends: {json.dumps(user_context.get('friends', []))}
+    - App Pages & slugs: 
+        Home: /
+        Activities: /activities/
+        Memory Library: /slice-of-life/catalog
+        Daily Memory Topic: /slice-of-life/
+        Social Hub: /social/
+        Communities: /social/community/
+        Jukebox: /jukebox/
+        Support Swap: /support-swap/
+        Rewards/Coins: /rewards/
+        My Profile: /profile/view/{user_context.get('user_id')}
+    
+    Response format: JSON ONLY.
+    {{
+        "action": "redirect" | "chat" | "message",
+        "target": "URL or UserID or null",
+        "response": "A friendly, ultra-short message like 'Sure! Taking you to Ben.'"
+    }}
+    
+    Rules:
+    1. If they ask for a friend by name (e.g., "Take me to Ben", "I want to talk to Sarah"), action is "chat" and target is their UserID from the context.
+    2. If they ask for a page (e.g., "show me my memories", "let's play games", "how many coins do I have"), action is "redirect" and target is the appropriate URL.
+    3. If you aren't sure or they are just chatting, action is "message" and target is null, response is a helpful question.
+    """
+
+    headers = {
+        "Authorization": f"Bearer {DEEPSEEK_API_KEY}",
+        "Content-Type": "application/json"
+    }
+
+    data = {
+        "model": "deepseek-chat",
+        "messages": [
+            {"role": "system", "content": "You are a specialized navigation agent for JOMGather. Respond ONLY in valid JSON."},
+            {"role": "user", "content": prompt}
+        ],
+        "temperature": 0.1,
+        "response_format": {"type": "json_object"}
+    }
+
+    try:
+        response = requests.post(DEEPSEEK_API_URL, headers=headers, json=data, timeout=10)
+        response.raise_for_status()
+        result = response.json()
+        return json.loads(result['choices'][0]['message']['content'])
+    except Exception as e:
+        print(f"Error determining intent: {e}")
+        return {"action": "message", "response": "I'm sorry, I'm having trouble finding that right now."}
+
 if __name__ == "__main__":
     # Test
     print(generate_daily_question())

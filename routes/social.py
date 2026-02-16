@@ -4,11 +4,97 @@ Now using Supabase for database
 """
 
 from flask import Blueprint, render_template, request, redirect, url_for, jsonify, session
+import os
+import tempfile
 from utils.supabase_db import get_supabase, fetch_all, fetch_one, insert, retry_query
 from utils.auth_middleware import login_required
 import traceback
 
 social_bp = Blueprint('social', __name__)
+
+
+@social_bp.route('/api/savvy-assist', methods=['POST'])
+@login_required
+def savvy_assist():
+    """AI Navigation Assistant using DeepSeek."""
+    data = request.get_json()
+    query = data.get('query')
+    if not query:
+        return jsonify({'error': 'No query provided'}), 400
+    
+    current_uid = get_current_user_id()
+    
+    # 1. Fetch friends for context
+    try:
+        supabase = get_supabase()
+        friendships = fetch_all('friendships', status='accepted')
+        friend_ids = []
+        for f in friendships:
+            if f['user_id_1'] == current_uid:
+                friend_ids.append(f['user_id_2'])
+            elif f['user_id_2'] == current_uid:
+                friend_ids.append(f['user_id_1'])
+                
+        friends_context = []
+        if friend_ids:
+            all_users = fetch_all('users')
+            for u in all_users:
+                if u['user_id'] in friend_ids:
+                    friends_context.append({'user_id': u['user_id'], 'username': u['username']})
+        
+        # 2. Call DeepSeek
+        from utils.deepseek_client import determine_navigation_intent
+        user_context = {
+            'user_id': current_uid,
+            'friends': friends_context
+        }
+        
+        result = determine_navigation_intent(query, user_context)
+        
+        # 3. Process result - handle "chat" action specially
+        if result.get('action') == 'chat' and result.get('target'):
+            # Convert target to a URL that the frontend can handle
+            result['target'] = url_for('social.social_hub', chat_with=result['target'])
+        
+        return jsonify(result)
+    except Exception as e:
+        print(f"Savvy Assist Error: {e}")
+        return jsonify({'action': 'message', 'response': "I'm sorry, I'm having a little trouble thinking right now. Could you try again?"})
+
+
+@social_bp.route('/api/savvy-transcribe', methods=['POST'])
+@login_required
+def savvy_transcribe():
+    """Transcribe audio for Savvy Assist using Gemini."""
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file provided'}), 400
+    
+    audio_file = request.files['file']
+    if audio_file.filename == '':
+        return jsonify({'error': 'No file selected'}), 400
+
+    try:
+        # Create a temporary file to save the uploaded audio
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.webm') as tmp:
+            audio_file.save(tmp.name)
+            tmp_path = tmp.name
+
+        # Call Gemini for transcription
+        from utils.gemini_client import transcribe_audio
+        text = transcribe_audio(tmp_path)
+
+        # Clean up temp file
+        if os.path.exists(tmp_path):
+            os.remove(tmp_path)
+
+        if text:
+            return jsonify({'text': text})
+        else:
+            return jsonify({'error': 'Could not transcribe audio'}), 500
+
+    except Exception as e:
+        print(f"Savvy Transcription Route Error: {e}")
+        return jsonify({'error': str(e)}), 500
 
 
 def get_current_user_id():

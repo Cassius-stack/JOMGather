@@ -1834,6 +1834,17 @@ async function loadContacts() {
             contactList.appendChild(li);
         });
 
+        // Auto-select a specific contact if requested via URL param (set in social_hub.html)
+        if (window.autoOpenChatId) {
+            const target = contacts.find(c => c.id === window.autoOpenChatId);
+            if (target) {
+                switchContact(target.id, target.name, target.status);
+                // Clear it so it doesn't trigger on every re-load
+                window.autoOpenChatId = null;
+                return;
+            }
+        }
+
         // Auto-select the first contact if none selected
         if (contacts.length > 0 && !currentContactId) {
             const firstContact = contacts[0];

@@ -196,9 +196,9 @@
 
 {% block scripts %}
 <script>
-    const CURRENT_USER_ID = {{ session.get('user_id') | default ('null', true) }};
-    const CURRENT_USERNAME = "{{ session.get('username') }}";
-    const CURRENT_USER_NAME = "{{ session.get('username') }}";
+    const CURRENT_USER_ID = {{ session.get('user_id') | tojson if session.get('user_id') else 'null' }};
+    const CURRENT_USERNAME = {{ session.get('username') | tojson if session.get('username') else '""' }};
+    const CURRENT_USER_NAME = {{ session.get('username') | tojson if session.get('username') else '""' }};
 
     // Helper functions for call buttons (use currentContactId from chat.js)
     function initiateVoiceCall() {
@@ -218,6 +218,16 @@
         const contactName = document.getElementById('chat-contact-name').textContent || 'Unknown';
         startCall(currentContactId, contactName, 'video');
     }
+
+    // Check for "chat_with" parameter on load
+    document.addEventListener('DOMContentLoaded', function () {
+        const urlParams = new URLSearchParams(window.location.search);
+        const chatWith = urlParams.get('chat_with');
+        if (chatWith) {
+            // This global variable will be picked up by chat.js
+            window.autoOpenChatId = parseInt(chatWith);
+        }
+    });
 </script>
 <script src="{{ url_for('static', filename='js/call.js') }}?v={{ range(10000, 99999) | random }}"></script>
 <script src="{{ url_for('static', filename='js/chat.js') }}?v={{ range(10000, 99999) | random }}"></script>

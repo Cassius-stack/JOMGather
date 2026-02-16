@@ -274,6 +274,57 @@
     </script>
 
     {% block scripts %}{% endblock %}
+
+    <!-- Savvy Guide AI Assistant -->
+    {% if session.get('user_id') %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/savvy_guide.css') }}">
+    <div class="savvy-guide-container">
+        <div class="savvy-hint">Need help? Ask Savvy! ✨</div>
+        <div class="savvy-bubble" id="savvyBubble" title="Savvy Assist">
+            <i class="bi bi-robot"></i>
+        </div>
+
+        <div class="savvy-panel" id="savvyPanel">
+            <div class="savvy-header">
+                <div class="savvy-header-icon">
+                    <i class="bi bi-robot"></i>
+                </div>
+                <div>
+                    <h5>Savvy Assist</h5>
+                    <p>Your friendly AI guide</p>
+                </div>
+                <button type="button" class="btn-close btn-close-white ms-auto" id="savvyClose"
+                    style="font-size: 0.8rem;"></button>
+            </div>
+            <div class="savvy-body">
+                <div class="savvy-chat-history" id="savvyChat">
+                    <div class="savvy-msg ai">Hi! I'm Savvy. How can I help you today? I can help you find friends or go
+                        to different pages!</div>
+                </div>
+            </div>
+            <div class="savvy-input-container">
+                <div class="savvy-input-group">
+                    <button class="savvy-mic-btn" id="savvyMic">
+                        <i class="bi bi-mic-fill"></i>
+                    </button>
+                    <input type="text" id="savvyInput" placeholder="Where do you want to go?">
+                    <button class="savvy-send-btn" id="savvySend">
+                        <i class="bi bi-send-fill"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="{{ url_for('static', filename='js/savvy_guide.js') }}"></script>
+    <script>
+        document.getElementById('savvyClose')?.addEventListener('click', () => {
+            const panel = document.getElementById('savvyPanel');
+            const bubble = document.getElementById('savvyBubble');
+            if (panel) panel.classList.remove('show');
+            if (bubble) bubble.classList.remove('active');
+        });
+    </script>
+    {% endif %}
 </body>
 
 </html>
