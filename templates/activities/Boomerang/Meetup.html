@@ -4,6 +4,13 @@
 
 {% block head %}
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<!-- MediaPipe Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/selfie_segmentation.js"
+    crossorigin="anonymous"></script>
 <style>
     :root {
         --glass-bg: rgba(25, 25, 35, 0.65);
@@ -201,6 +208,78 @@
     .control-btn.active {
         background: var(--text-primary);
         color: #000;
+    }
+
+    /* Effects Menu */
+    .effects-panel {
+        position: absolute;
+        bottom: 90px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: var(--glass-bg);
+        backdrop-filter: blur(16px);
+        border: 1px solid var(--glass-border);
+        border-radius: 16px;
+        padding: 15px;
+        display: none;
+        flex-direction: column;
+        gap: 10px;
+        width: 320px;
+        z-index: 20;
+    }
+
+    .effects-panel.show {
+        display: flex;
+    }
+
+    .effect-category {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        margin-bottom: 5px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        padding-bottom: 2px;
+    }
+
+    .effect-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 8px;
+        margin-bottom: 10px;
+    }
+
+    .effect-item {
+        width: 100%;
+        aspect-ratio: 1;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 2px solid transparent;
+        transition: all 0.2s;
+        overflow: hidden;
+    }
+
+    .effect-item:hover {
+        background: rgba(255, 255, 255, 0.25);
+    }
+
+    .effect-item.active {
+        border-color: var(--neon-accent);
+        background: rgba(0, 242, 254, 0.1);
+        box-shadow: 0 0 10px rgba(0, 242, 254, 0.2);
+    }
+
+    .effect-item img {
+        width: 80%;
+        height: 80%;
+        object-fit: contain;
+    }
+
+    .effect-item i {
+        font-size: 1.5rem;
     }
 
     .control-btn.muted {
@@ -646,6 +725,11 @@
             <button class="control-btn" id="camBtn" title="Toggle Camera">
                 <i class="bi bi-camera-video-fill"></i>
             </button>
+
+            <!-- Effects Button -->
+            <button class="control-btn" id="effectsBtn" title="AR Effects">
+                <i class="bi bi-magic"></i>
+            </button>
             <button class="control-btn" id="addFriendBtn" title="Add Friend">
                 <i class="bi bi-person-plus"></i>
             </button>
@@ -653,6 +737,39 @@
                 <i class="bi bi-telephone-x-fill"></i>
             </button>
         </div>
+
+        <!-- Effects Panel -->
+        <div class="effects-panel" id="effectsPanel">
+            <div>
+                <div class="effect-category">Filters</div>
+                <div class="effect-grid" id="accessoryGrid">
+                    <div class="effect-item active" data-effect="none" title="None"><i class="bi bi-slash-circle"></i>
+                    </div>
+                    <div class="effect-item" data-effect="mustache" title="Mustache"><img
+                            src="{{ url_for('static', filename='img/filters/mustache.svg') }}"></div>
+                    <div class="effect-item" data-effect="hat" title="Hat"><img
+                            src="{{ url_for('static', filename='img/filters/hat.svg') }}"></div>
+                    <div class="effect-item" data-effect="glasses" title="Glasses"><img
+                            src="{{ url_for('static', filename='img/filters/glasses.svg') }}"></div>
+                </div>
+            </div>
+            <div>
+                <div class="effect-category">Backgrounds</div>
+                <div class="effect-grid" id="bgGrid">
+                    <div class="effect-item active" data-bg="none" title="None"><i class="bi bi-slash-circle"></i></div>
+                    <div class="effect-item" data-bg="blur" title="Blur"><i class="bi bi-droplet-half"></i></div>
+                    <div class="effect-item" data-bg="office" title="Office"><img
+                            src="{{ url_for('static', filename='img/backgrounds/office.svg') }}"></div>
+                    <div class="effect-item" data-bg="beach" title="Beach"><img
+                            src="{{ url_for('static', filename='img/backgrounds/beach.svg') }}"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Hidden Canvas for Processing -->
+        <canvas id="arCanvas" width="640" height="480" style="display: none;"></canvas>
+        <!-- Source Video (Hidden, mainly for MediaPipe input) -->
+        <video id="sourceVideo" style="display: none;" playsinline autoplay muted></video>
     </div>
 
     <div class="sidebar-right glass-panel">
@@ -738,6 +855,194 @@
     let videoEnabled = true;
     let seconds = 0;
 
+    // AR Globals
+    let faceMesh = null;
+    let selfieSegmentation = null;
+    let camera = null;
+    let activeEffect = 'none';
+    let activeBg = 'none';
+    let arCanvas = document.getElementById('arCanvas');
+    let arCtx = arCanvas.getContext('2d');
+
+    // Assets
+    const assets = {
+        mustache: new Image(),
+        hat: new Image(),
+        glasses: new Image(),
+        office: new Image(),
+        beach: new Image()
+    };
+    assets.mustache.src = "{{ url_for('static', filename='img/filters/mustache.svg') }}";
+    assets.hat.src = "{{ url_for('static', filename='img/filters/hat.svg') }}";
+    assets.glasses.src = "{{ url_for('static', filename='img/filters/glasses.svg') }}";
+    assets.office.src = "{{ url_for('static', filename='img/backgrounds/office.svg') }}";
+    assets.beach.src = "{{ url_for('static', filename='img/backgrounds/beach.svg') }}";
+
+    // MediaPipe Init
+    async function initMediaPipe() {
+        // Face Mesh
+        faceMesh = new FaceMesh({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}` });
+        faceMesh.setOptions({ maxNumFaces: 1, refineLandmarks: true, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
+        faceMesh.onResults(onFaceResults);
+
+        // Selfie Segmentation
+        selfieSegmentation = new SelfieSegmentation({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/${file}` });
+        selfieSegmentation.setOptions({ modelSelection: 1 });
+        selfieSegmentation.onResults(onMaskResults);
+    }
+    initMediaPipe();
+
+    // Effect Handlers
+    document.getElementById('effectsBtn').addEventListener('click', () => {
+        const panel = document.getElementById('effectsPanel');
+        panel.classList.toggle('show');
+        document.getElementById('effectsBtn').classList.toggle('active');
+    });
+
+    // select effect
+    document.querySelectorAll('.effect-item').forEach(item => {
+        item.addEventListener('click', function () {
+            const effect = this.dataset.effect;
+            const bg = this.dataset.bg;
+
+            if (effect !== undefined) {
+                // Handle Effect
+                document.querySelectorAll('#accessoryGrid .effect-item').forEach(el => el.classList.remove('active'));
+                this.classList.add('active');
+                activeEffect = effect;
+            } else if (bg !== undefined) {
+                // Handle BG
+                document.querySelectorAll('#bgGrid .effect-item').forEach(el => el.classList.remove('active'));
+                this.classList.add('active');
+                activeBg = bg;
+            }
+        });
+    });
+
+    // Processing Loop
+    function onFaceResults(results) {
+        arCtx.save();
+        arCtx.clearRect(0, 0, arCanvas.width, arCanvas.height);
+        arCtx.drawImage(results.image, 0, 0, arCanvas.width, arCanvas.height);
+
+        if (results.multiFaceLandmarks) {
+            for (const landmarks of results.multiFaceLandmarks) {
+                drawEffect(landmarks);
+            }
+        }
+        arCtx.restore();
+    }
+
+    function onMaskResults(results) {
+        arCtx.save();
+        arCtx.clearRect(0, 0, arCanvas.width, arCanvas.height);
+
+        // Draw BG
+        if (activeBg === 'blur') {
+            arCtx.filter = 'blur(10px)';
+            arCtx.drawImage(results.image, 0, 0, arCanvas.width, arCanvas.height);
+            arCtx.filter = 'none';
+        } else if (activeBg === 'office') {
+            arCtx.drawImage(assets.office, 0, 0, arCanvas.width, arCanvas.height);
+        } else if (activeBg === 'beach') {
+            arCtx.drawImage(assets.beach, 0, 0, arCanvas.width, arCanvas.height);
+        } else {
+            arCtx.drawImage(results.image, 0, 0, arCanvas.width, arCanvas.height);
+        }
+
+        // Draw Person
+        arCtx.globalCompositeOperation = 'destination-atop';
+        arCtx.drawImage(results.segmentationMask, 0, 0, arCanvas.width, arCanvas.height);
+
+        arCtx.globalCompositeOperation = 'destination-over';
+        // If we want person on top of BG, we do standard compositing
+        // Actually simplest way:
+        // 1. Draw BG
+        // 2. Draw person masked
+
+        // Revised approach for simpler canvas api:
+        // Reset
+        arCtx.globalCompositeOperation = 'source-over';
+
+        // Wait, standard approach:
+        // 1. Clear
+        // 2. Draw Mask (segmentation)
+        // 3. GlobalComposite source-in (keep only mask area)
+        // 4. Draw Video (person only)
+        // 5. GlobalComposite destination-over (draw behind person)
+        // 6. Draw BG
+    }
+
+    // Simpler onMaskResults override
+    function onMaskResults(results) {
+        arCtx.save();
+        arCtx.clearRect(0, 0, arCanvas.width, arCanvas.height);
+
+        // 1. Draw Mask
+        arCtx.drawImage(results.segmentationMask, 0, 0, arCanvas.width, arCanvas.height);
+
+        // 2. Keep only person part
+        arCtx.globalCompositeOperation = 'source-in';
+        arCtx.drawImage(results.image, 0, 0, arCanvas.width, arCanvas.height);
+
+        // 3. Draw BG behind
+        arCtx.globalCompositeOperation = 'destination-over';
+        if (activeBg === 'blur') {
+            // Blur involves drawing video blurred
+            arCtx.filter = 'blur(20px)';
+            arCtx.drawImage(results.image, 0, 0, arCanvas.width, arCanvas.height);
+            arCtx.filter = 'none';
+        } else if (assets[activeBg]) {
+            arCtx.drawImage(assets[activeBg], 0, 0, arCanvas.width, arCanvas.height);
+        } else {
+            // None/Unknown -> Draw Video
+            arCtx.drawImage(results.image, 0, 0, arCanvas.width, arCanvas.height);
+        }
+
+        arCtx.restore();
+    }
+
+    // Default Passthrough
+    function drawPassthrough(video) {
+        arCtx.drawImage(video, 0, 0, arCanvas.width, arCanvas.height);
+    }
+
+    function drawEffect(landmarks) {
+        // Simple logic based on landmarks
+        // Nose tip: 1
+        // Forehead: 10
+        // Eyes: 33, 263
+        // Mouth: 13, 14
+
+        const nose = landmarks[1];
+        const forehead = landmarks[10];
+        const leftEye = landmarks[33];
+        const rightEye = landmarks[263];
+
+        const w = arCanvas.width;
+        const h = arCanvas.height;
+
+        if (activeEffect === 'mustache') {
+            // Under nose
+            const x = nose.x * w;
+            const y = (nose.y * h) + 15; // slightly down
+            const size = Math.abs(rightEye.x - leftEye.x) * w * 1.5;
+            arCtx.drawImage(assets.mustache, x - size / 2, y, size, size / 2);
+        } else if (activeEffect === 'hat') {
+            // Above forehead
+            const x = forehead.x * w;
+            const y = (forehead.y * h) - 50;
+            const size = Math.abs(rightEye.x - leftEye.x) * w * 4;
+            arCtx.drawImage(assets.hat, x - size / 2, y - size / 1.2, size, size);
+        } else if (activeEffect === 'glasses') {
+            // Eyes
+            const x = (nose.x * w);
+            const y = (leftEye.y * h) - 10;
+            const size = Math.abs(rightEye.x - leftEye.x) * w * 2.5;
+            arCtx.drawImage(assets.glasses, x - size / 2, y - size / 4, size, size / 2);
+        }
+    }
+
     setInterval(() => {
         seconds++;
         const hrs = Math.floor(seconds / 3600).toString().padStart(2, '0');
@@ -758,10 +1063,39 @@
         showStatus('Setting up camera...', '');
 
         try {
-            localStream = await navigator.mediaDevices.getUserMedia({
-                video: true,
+            // Get Camera Stream but don't show it directly
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: { width: 640, height: 480 },
                 audio: true
             });
+
+            // Set source for processing
+            const sourceVideo = document.getElementById('sourceVideo');
+            sourceVideo.srcObject = stream;
+
+            // Initialize Camera Utility
+            camera = new Camera(sourceVideo, {
+                onFrame: async () => {
+                    if (activeBg !== 'none' && activeBg !== undefined) {
+                        await selfieSegmentation.send({ image: sourceVideo });
+                    } else if (activeEffect !== 'none' && activeEffect !== undefined) {
+                        await faceMesh.send({ image: sourceVideo });
+                    } else {
+                        drawPassthrough(sourceVideo);
+                    }
+                },
+                width: 640,
+                height: 480
+            });
+            camera.start();
+
+            // Get Stream from Canvas
+            const canvasStream = arCanvas.captureStream(30); // 30 FPS
+
+            // Merge Audio from original stream
+            stream.getAudioTracks().forEach(track => canvasStream.addTrack(track));
+
+            localStream = canvasStream;
 
             const localVideo = document.getElementById('localVideo');
             localVideo.srcObject = localStream;

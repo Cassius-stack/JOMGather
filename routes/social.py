@@ -10,6 +10,7 @@ import traceback
 import os
 import uuid
 from werkzeug.utils import secure_filename
+from utils.deepseek_client import generate_rag_response, generate_starter_prompts
 
 UPLOAD_FOLDER = os.path.join('static', 'uploads', 'social')
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'mp4', 'mov', 'mp3', 'wav'}
@@ -948,11 +949,15 @@ def post_reply(question_id):
         if q_data:
             q_author_type = q_data.get('author_type', '')
             # Students can only reply to grandparent posts, grandparents to student posts
-            if (current_type == 'youth' and q_author_type == 'student') or \
-               (current_type == 'senior' and q_author_type == 'grandparent'):
-                from flask import flash
-                flash("You can only reply to posts from the other group.", "warning")
-                return redirect(url_for('social.ask_grandfriend'))
+            # EXCEPTION: Original Poster can always reply to their own post
+            is_op = str(q_data.get('user_id', '')) == str(user_id)
+            
+            if not is_op:
+                if (current_type == 'youth' and q_author_type == 'student') or \
+                   (current_type == 'senior' and q_author_type == 'grandparent'):
+                    from flask import flash
+                    flash("You can only reply to posts from the other group.", "warning")
+                    return redirect(url_for('social.ask_grandfriend'))
     except Exception as e:
         print(f"Error checking question author type: {e}")
 
@@ -1117,3 +1122,88 @@ def get_cyber_challenge_status(challenge_id):
     except Exception as e:
         print(f"Error getting cyber challenge status: {e}")
         return jsonify({'found': False, 'error': str(e)}), 500
+
+# -------------------------------------------------------------------------
+# AI CHATBOT ROUTES
+# -------------------------------------------------------------------------
+
+@social_bp.route('/api/chatbot/query', methods=['POST'])
+@login_required
+def chatbot_query():
+    data = request.json
+    query = data.get('query', '').strip()
+    
+    if not query:
+        return jsonify({'error': 'No query provided'}), 400
+
+    try:
+        # 1. Fetch recent Q&A for context (Naive RAG)
+        # In a real app, use vector embeddings. Here, we just fetch recent text.
+        supabase = get_supabase()
+        
+        # Fetch Questions
+        q_res = supabase.table('questions') \
+            .select('title, content, category, created_at') \
+            .order('created_at', desc=True) \
+            .limit(10) \
+            .execute()
+        q_rows = q_res.data if q_res else []
+        
+        # Fetch Replies (best answers)
+        r_res = supabase.table('replies') \
+            .select('content, created_at') \
+            .order('created_at', desc=True) \
+            .limit(10) \
+            .execute()
+        r_rows = r_res.data if r_res else []
+        
+        context_list = []
+        for q in q_rows:
+            context_list.append(f"Question ({q.get('category')}): {q.get('title')} - {q.get('content')}")
+            
+        for r in r_rows:
+            context_list.append(f"Answer: {r['content']}")
+            
+        
+        # 2. Generate Answer
+        print(f"DEBUG: Generating answer for query: {query}")
+        print(f"DEBUG: Context length: {len(context_list)}")
+        answer = generate_rag_response(query, context_list)
+        print(f"DEBUG: Answer generated: {answer[:50]}...")
+        
+        return jsonify({'answer': answer})
+        
+    except Exception as e:
+        print(f"Chatbot Error: {e}")
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+
+@social_bp.route('/api/chatbot/prompts', methods=['GET'])
+@login_required
+def chatbot_prompts():
+    try:
+        # Fetch recent topics/categories
+        supabase = get_supabase()
+        res = supabase.table('questions') \
+            .select('title, content, category, created_at') \
+            .order('created_at', desc=True) \
+            .limit(10) \
+            .execute()
+        rows = res.data if res else []
+        
+        # Extract topics and content for prompts
+        recent_data = []
+        for r in rows:
+             recent_data.append({
+                 'category': r.get('category'),
+                 'title': r.get('title'),
+                 'content': r.get('content')
+             })
+        
+        prompts = generate_starter_prompts(recent_data)
+        return jsonify({'prompts': prompts})
+        
+    except Exception as e:
+        print(f"Prompts Error: {e}")
+        return jsonify({'prompts': ["Tell me a story", "Advice needed", "Childhood memory"]})

@@ -98,6 +98,174 @@
 
     .reply-textarea {
         background: #f8f9fa !important;
+
+        /* AI Chatbot Styles */
+        .ai-chat-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #6c5dd3, #8f94fb);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.8rem;
+            box-shadow: 0 4px 15px rgba(108, 93, 211, 0.4);
+            cursor: pointer;
+            z-index: 1000;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .ai-chat-btn:hover {
+            transform: scale(1.1) rotate(10deg);
+        }
+
+        .ai-chat-window {
+            position: fixed;
+            bottom: 100px;
+            right: 30px;
+            width: 350px;
+            height: 500px;
+            background: #fff;
+            border-radius: 20px;
+            box-shadow: 0 5px 30px rgba(0, 0, 0, 0.15);
+            display: none;
+            flex-direction: column;
+            z-index: 1001;
+            overflow: hidden;
+            border: 1px solid #eee;
+            animation: slideUp 0.3s ease;
+        }
+
+        .ai-chat-window.show {
+            display: flex;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .chat-header {
+            background: linear-gradient(135deg, #6c5dd3, #8f94fb);
+            padding: 15px;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chat-header h3 {
+            margin: 0;
+            font-size: 1.1rem;
+        }
+
+        .btn-close-chat {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 1.2rem;
+        }
+
+        .chat-body {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            background: #f9f9f9;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .chat-message {
+            max-width: 80%;
+            padding: 10px 14px;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        .chat-message.ai {
+            background: white;
+            color: #333;
+            align-self: flex-start;
+            border-bottom-left-radius: 2px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+
+        .chat-message.user {
+            background: #6c5dd3;
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 2px;
+        }
+
+        .chat-prompts {
+            padding: 10px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            border-top: 1px solid #eee;
+            background: white;
+        }
+
+        .prompt-chip {
+            background: #f0f2f5;
+            border: 1px solid #ddd;
+            border-radius: 15px;
+            padding: 5px 12px;
+            font-size: 0.8rem;
+            color: #555;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .prompt-chip:hover {
+            background: #e1e4e8;
+            transform: translateY(-1px);
+        }
+
+        .chat-footer {
+            padding: 10px;
+            border-top: 1px solid #eee;
+            background: white;
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-input {
+            flex: 1;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            padding: 8px 15px;
+            outline: none;
+        }
+
+        .btn-send-chat {
+            background: #6c5dd3;
+            color: white;
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
         border: 1px solid #dee2e6 !important;
         color: #212529 !important;
         border-radius: 12px !important;
@@ -682,8 +850,10 @@
                         </div>
 
                         <!-- Reply Input - only show for opposite type -->
-                        {% set can_reply = (user_type == 'youth' and q.author_type == 'grandparent') or (user_type ==
-                        'senior' and q.author_type == 'student') %}
+                        {# EXCEPTION: Original Poster can always reply to their own post #}
+                        {% set can_reply = (user_type == 'youth' and q.author_type == 'grandparent') or
+                        (user_type == 'senior' and q.author_type == 'student') or
+                        (current_user_id == q.user_id) %}
                         {% if can_reply %}
                         <div class="reply-input-container">
                             <form action="{{ url_for('social.post_reply', question_id=q.id) }}" method="POST"
@@ -829,29 +999,40 @@
         }
     }
 
-    // Filter Logic
+    // Unified Filter Logic
     const filterState = {
-        view: 'all', // 'all' or 'my'
-        type: 'all' // 'all', 'grandparent' or 'student'
+        view: 'all',      // 'all' or 'my'
+        type: 'all',      // 'all', 'grandparent', 'student' (or null) - logic uses null for all
+        category: 'all',
+        search: ''
     };
 
     function filterQuestions() {
         let count = 0;
+        const query = (filterState.search || '').toLowerCase();
+
         questionCards.forEach(card => {
             const isMyQuestion = card.dataset.author === 'you';
             const rawType = card.dataset.authorType || '';
             const authorType = rawType.toLowerCase();
+            const category = card.dataset.category;
+            const title = card.querySelector('.question-title').textContent.toLowerCase();
+            const preview = card.querySelector('.question-preview').textContent.toLowerCase();
 
             let show = true;
 
-            // 1. Check My vs All
+            // 1. Check View (My vs All)
             if (filterState.view === 'my' && !isMyQuestion) show = false;
 
-            // 2. Check Author Type
-            // Only apply type filter if we are in "All Questions" mode? 
-            // Or apply it always? Usually sidebar filters apply always.
+            // 2. Check Role Type
             if (filterState.type === 'grandparent' && authorType !== 'grandparent') show = false;
             if (filterState.type === 'student' && authorType !== 'student') show = false;
+
+            // 3. Check Category
+            if (filterState.category && filterState.category !== 'all' && category !== filterState.category) show = false;
+
+            // 4. Check Search
+            if (query && !title.includes(query) && !preview.includes(query)) show = false;
 
             // Update visibility
             card.style.display = show ? 'block' : 'none';
@@ -862,7 +1043,7 @@
 
         // Update empty state if needed
         const emptyState = document.querySelector('.text-center.py-5');
-        // We might need to add empty state HTML if missing, but let's just leave it for now
+        // Logic for empty state could go here
     }
 
     // Tab Listeners
@@ -972,42 +1153,16 @@
             categoryBtns.forEach(b => b.classList.remove('active'));
             this.classList.add('active');
 
-            const category = this.dataset.category;
-            questionCards.forEach(card => {
-                if (category === 'all' || card.dataset.category === category) {
-                    // Check if it should be visible based on My/All Questions toggle
-                    if (btnMyQuestions.classList.contains('active') && card.dataset.author !== 'you') {
-                        card.style.display = 'none';
-                    } else {
-                        card.style.display = 'block';
-                    }
-                } else {
-                    card.style.display = 'none';
-                }
-            });
-            updateQuestionCount();
+            filterState.category = this.dataset.category;
+            filterQuestions();
         });
     });
 
     // Search functionality
     const searchInput = document.getElementById('searchInput');
     searchInput.addEventListener('input', function () {
-        const query = this.value.toLowerCase();
-        questionCards.forEach(card => {
-            const title = card.querySelector('.question-title').textContent.toLowerCase();
-            const preview = card.querySelector('.question-preview').textContent.toLowerCase();
-            if (title.includes(query) || preview.includes(query)) {
-                // Respect My/All Questions filter
-                if (btnMyQuestions.classList.contains('active') && card.dataset.author !== 'you') {
-                    card.style.display = 'none';
-                } else {
-                    card.style.display = 'block';
-                }
-            } else {
-                card.style.display = 'none';
-            }
-        });
-        updateQuestionCount();
+        filterState.search = this.value;
+        filterQuestions();
     });
 
     // Initialize count
@@ -1086,6 +1241,300 @@
                 btnEl.disabled = false;
                 btnEl.innerHTML = '<i class="bi bi-person-plus-fill"></i> Add';
             });
+    }
+</script>
+
+<!-- AI Chatbot Logic -->
+<style>
+    /* AI Chatbot Styles */
+    .ai-chat-btn {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(135deg, #6c5dd3, #8f94fb);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.8rem;
+        box-shadow: 0 4px 15px rgba(108, 93, 211, 0.4);
+        cursor: pointer;
+        z-index: 1000;
+        transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .ai-chat-btn:hover {
+        transform: scale(1.1) rotate(10deg);
+    }
+
+    .ai-chat-window {
+        position: fixed;
+        bottom: 100px;
+        right: 30px;
+        width: 350px;
+        height: 500px;
+        background: #fff;
+        border-radius: 20px;
+        box-shadow: 0 5px 30px rgba(0, 0, 0, 0.15);
+        display: none;
+        flex-direction: column;
+        z-index: 1001;
+        overflow: hidden;
+        border: 1px solid #eee;
+        animation: slideUp 0.3s ease;
+    }
+
+    .ai-chat-window.show {
+        display: flex;
+    }
+
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .chat-header {
+        background: linear-gradient(135deg, #6c5dd3, #8f94fb);
+        padding: 15px;
+        color: white;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .chat-header h3 {
+        margin: 0;
+        font-size: 1.1rem;
+    }
+
+    .btn-close-chat {
+        background: none;
+        border: none;
+        color: white;
+        cursor: pointer;
+        font-size: 1.2rem;
+    }
+
+    .chat-body {
+        flex: 1;
+        padding: 15px;
+        overflow-y: auto;
+        background: #f9f9f9;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .chat-message {
+        max-width: 80%;
+        padding: 10px 14px;
+        border-radius: 12px;
+        font-size: 0.9rem;
+        line-height: 1.4;
+    }
+
+    .chat-message.ai {
+        background: white;
+        color: #333;
+        align-self: flex-start;
+        border-bottom-left-radius: 2px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    }
+
+    .chat-message.user {
+        background: #6c5dd3;
+        color: white;
+        align-self: flex-end;
+        border-bottom-right-radius: 2px;
+    }
+
+    .chat-prompts {
+        padding: 10px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        border-top: 1px solid #eee;
+        background: white;
+    }
+
+    .prompt-chip {
+        background: #f0f2f5;
+        border: 1px solid #ddd;
+        border-radius: 15px;
+        padding: 5px 12px;
+        font-size: 0.8rem;
+        color: #555;
+        cursor: pointer;
+        transition: all 0.2s;
+        white-space: nowrap;
+    }
+
+    .prompt-chip:hover {
+        background: #e1e4e8;
+        transform: translateY(-1px);
+    }
+
+    .chat-footer {
+        padding: 10px;
+        border-top: 1px solid #eee;
+        background: white;
+        display: flex;
+        gap: 10px;
+    }
+
+    .chat-input {
+        flex: 1;
+        border: 1px solid #ddd;
+        border-radius: 20px;
+        padding: 8px 15px;
+        outline: none;
+    }
+
+    .btn-send-chat {
+        background: #6c5dd3;
+        color: white;
+        border: none;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+</style>
+
+<!-- AI Chatbot Button -->
+<div class="ai-chat-btn" onclick="toggleChat()">
+    <i class="bi bi-robot"></i>
+</div>
+
+<!-- AI Chat Window -->
+<div class="ai-chat-window" id="aiChatWindow">
+    <div class="chat-header">
+        <h3><i class="bi bi-stars"></i> Helper Bot</h3>
+        <button class="btn-close-chat" onclick="toggleChat()"><i class="bi bi-x"></i></button>
+    </div>
+    <div class="chat-body" id="aiChatBody">
+        <div class="chat-message ai">
+            Hello! I can help you find answers or suggest questions. What's on your mind?
+        </div>
+    </div>
+    <div class="chat-prompts" id="aiPrompts">
+        <!-- Prompts loaded here -->
+    </div>
+    <div class="chat-footer">
+        <input type="text" class="chat-input" id="aiChatInput" placeholder="Ask something..."
+            onkeypress="handleAiKeyPress(event)">
+        <button class="btn-send-chat" onclick="sendAiMessage()">
+            <i class="bi bi-send-fill"></i>
+        </button>
+    </div>
+</div>
+
+<script>
+    // --- AI Chatbot Logic ---
+    let promptsLoaded = false;
+
+    function toggleChat() {
+        const win = document.getElementById('aiChatWindow');
+        win.classList.toggle('show');
+        if (win.classList.contains('show') && !promptsLoaded) {
+            loadPrompts();
+            promptsLoaded = true;
+        }
+    }
+
+    function loadPrompts() {
+        fetch('/social/api/chatbot/prompts')
+            .then(res => res.json())
+            .then(data => {
+                const container = document.getElementById('aiPrompts');
+                container.innerHTML = '';
+                if (data.prompts && data.prompts.length > 0) {
+                    data.prompts.forEach(p => {
+                        const chip = document.createElement('div');
+                        chip.className = 'prompt-chip';
+                        chip.textContent = p;
+                        chip.onclick = () => {
+                            document.getElementById('aiChatInput').value = p;
+                            document.getElementById('aiChatInput').focus();
+                        };
+                        container.appendChild(chip);
+                    });
+                } else {
+                    container.style.display = 'none';
+                }
+            })
+            .catch(err => console.error('Error loading prompts:', err));
+    }
+
+    function handleAiKeyPress(e) {
+        if (e.key === 'Enter') sendAiMessage();
+    }
+
+    function sendAiMessage() {
+        const input = document.getElementById('aiChatInput');
+        const text = input.value.trim();
+        if (!text) return;
+
+        addAiMessage(text, 'user');
+        input.value = '';
+        input.disabled = true;
+
+        // Show typing indicator
+        const loadingId = addAiMessage('Thinking...', 'ai', true);
+
+        fetch('/social/api/chatbot/query', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ query: text })
+        })
+            .then(res => res.json())
+            .then(data => {
+                removeMessage(loadingId);
+                if (data.answer) {
+                    addAiMessage(data.answer, 'ai');
+                } else {
+                    addAiMessage("I couldn't find an answer, sorry!", 'ai');
+                }
+            })
+            .catch(err => {
+                console.error('Chatbot fetch error:', err);
+                removeMessage(loadingId);
+                addAiMessage("Error connecting to brain.", 'ai');
+            })
+            .finally(() => {
+                input.disabled = false;
+                input.focus();
+            });
+    }
+
+    function addAiMessage(text, type, isLoading = false) {
+        const body = document.getElementById('aiChatBody');
+        const msg = document.createElement('div');
+        msg.className = `chat-message ${type}`;
+        msg.textContent = text;
+        if (isLoading) msg.id = 'ai-loading-' + Date.now();
+        body.appendChild(msg);
+        body.scrollTop = body.scrollHeight;
+        return msg.id;
+    }
+
+    function removeMessage(id) {
+        if (!id) return;
+        const el = document.getElementById(id);
+        if (el) el.remove();
     }
 </script>
 {% endblock %}
