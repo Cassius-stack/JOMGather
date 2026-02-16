@@ -142,6 +142,35 @@ def delete_account():
         # but shows "Deleted Account" to other users.
         # =====================================================
         
+        # 0. HANDLE COMMUNITIES (must happen BEFORE user update)
+        try:
+            # Remove user from community memberships
+            supabase.table('community_members').delete().eq('user_id', user_id).execute()
+        except:
+            pass
+        try:
+            # Delete communities created by this user
+            # First delete members/messages in those communities
+            my_communities = supabase.table('communities').select('id').eq('created_by', user_id).execute()
+            if my_communities.data:
+                comm_ids = [c['id'] for c in my_communities.data]
+                for comm_id in comm_ids:
+                    try:
+                        supabase.table('community_message_reactions').delete().eq('community_id', comm_id).execute()
+                    except:
+                        pass
+                    try:
+                        supabase.table('community_messages').delete().eq('community_id', comm_id).execute()
+                    except:
+                        pass
+                    try:
+                        supabase.table('community_members').delete().eq('community_id', comm_id).execute()
+                    except:
+                        pass
+                supabase.table('communities').delete().eq('created_by', user_id).execute()
+        except:
+            pass
+        
         # 1. ANONYMIZE USER RECORD (preserve user_id for FK integrity)
         supabase.table('users').update({
             'username': 'Deleted Account',
