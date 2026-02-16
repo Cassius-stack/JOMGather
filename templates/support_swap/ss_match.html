@@ -60,10 +60,11 @@
                 <p class="text-muted small">{{ match.help_requests.description if match.help_requests else '' }}</p>
 
                 <div class="text-end mt-3 d-flex gap-2 justify-content-end">
-                    <form action="{{ url_for('support_swap.complete_support_session', match_id=match.id) }}"
-                        method="POST">
-                        <button type="submit" class="btn btn-success btn-sm">Mark Complete</button>
-                    </form>
+                    <!-- QR Code button instead of direct complete -->
+                    <button type="button" class="btn btn-success btn-sm"
+                        onclick="showQRCode({{ match.id }}, '{{ match.help_requests.title if match.help_requests else 'Help Request' }}')">
+                        <i class="bi bi-qr-code me-1"></i>Mark Complete
+                    </button>
                     <form action="{{ url_for('support_swap.cancel_match', match_id=match.id) }}" method="POST">
                         <button type="submit" class="btn btn-outline-danger btn-sm">Cancel Match</button>
                     </form>
@@ -121,6 +122,73 @@
         </div>
         {% endif %}
     </div>
+
+    <!-- QR Code Modal -->
+    <div class="modal fade" id="qrModal" tabindex="-1" aria-labelledby="qrModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title" id="qrModalLabel">
+                        <i class="bi bi-qr-code me-2"></i>Scan to Verify
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center py-4">
+                    <p class="text-muted mb-3">Ask your partner to scan this QR code to verify the session completion:
+                    </p>
+                    <h6 class="text-primary mb-3" id="qrTaskTitle"></h6>
+                    <div id="qrcode" class="d-flex justify-content-center mb-3"></div>
+                    <p class="text-muted small mt-2">
+                        <i class="bi bi-info-circle me-1"></i>
+                        The session will be marked complete once your partner scans and confirms.
+                    </p>
+                </div>
+                <div class="modal-footer justify-content-between">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+                    <form id="directCompleteForm" method="POST">
+                        <button type="submit" class="btn btn-success btn-sm">
+                            <i class="bi bi-check-circle me-1"></i>Complete Without QR
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </main>
 <footer></footer>
+
+<!-- QR Code JS library -->
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script>
+    function showQRCode(matchId, taskTitle) {
+        // Set task title in modal
+        document.getElementById('qrTaskTitle').textContent = taskTitle;
+
+        // Set the direct complete form action
+        document.getElementById('directCompleteForm').action = '/support_swap/complete/' + matchId;
+
+        // Build verification URL
+        const verifyUrl = window.location.origin + '/support_swap/verify/' + matchId;
+
+        // Clear old QR code
+        const qrContainer = document.getElementById('qrcode');
+        qrContainer.innerHTML = '';
+
+        // Generate new QR code
+        new QRCode(qrContainer, {
+            text: verifyUrl,
+            width: 200,
+            height: 200,
+            colorDark: "#1e3a5f",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.H
+        });
+
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('qrModal'));
+        modal.show();
+    }
+</script>
 {% endblock %}

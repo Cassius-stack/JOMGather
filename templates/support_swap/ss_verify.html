@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block title %}Verify Support Swap{% endblock %}
+
+{% block content %}
+<main>
+    <div class="container px-3 py-5">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="card shadow-sm border-top border-4 border-success">
+                    <div class="card-body text-center py-4">
+                        {% if match.status == 'completed' %}
+                        <!-- Already completed -->
+                        <div class="mb-3">
+                            <i class="bi bi-check-circle-fill text-success" style="font-size: 4rem;"></i>
+                        </div>
+                        <h3 class="text-success mb-3">Session Already Verified</h3>
+                        <p class="text-muted">This support swap session has already been marked as complete.</p>
+
+                        {% elif match.status == 'cancelled' %}
+                        <div class="mb-3">
+                            <i class="bi bi-x-circle-fill text-danger" style="font-size: 4rem;"></i>
+                        </div>
+                        <h3 class="text-danger mb-3">Session Cancelled</h3>
+                        <p class="text-muted">This support swap session was cancelled.</p>
+
+                        {% else %}
+                        <!-- Active match — can verify -->
+                        <div class="mb-3">
+                            <i class="bi bi-qr-code text-primary" style="font-size: 4rem;"></i>
+                        </div>
+                        <h3 class="text-primary mb-3">Verify Support Swap</h3>
+                        <p class="text-muted mb-4">Please confirm this support session was completed.</p>
+                        {% endif %}
+
+                        <!-- Match details -->
+                        <div class="bg-light rounded p-3 mb-4 text-start">
+                            <div class="mb-2">
+                                <strong><i class="bi bi-bookmark-fill text-primary me-1"></i> Task:</strong>
+                                {{ match.help_requests.title if match.help_requests else 'Help Request' }}
+                            </div>
+                            <div class="mb-2">
+                                <strong><i class="bi bi-person-fill text-success me-1"></i> Helper:</strong>
+                                {{ helper_name }}
+                            </div>
+                            <div class="mb-2">
+                                <strong><i class="bi bi-geo-alt-fill text-danger me-1"></i> Location:</strong>
+                                {{ match.help_requests.location if match.help_requests else 'TBD' }}
+                            </div>
+                            {% if match.help_requests and match.help_requests.duration_hours %}
+                            <div class="mb-2">
+                                <strong><i class="bi bi-clock-fill text-warning me-1"></i> Duration:</strong>
+                                {{ match.help_requests.duration_hours }} hour(s)
+                            </div>
+                            {% endif %}
+                            {% if match.help_requests and match.help_requests.description %}
+                            <div>
+                                <strong><i class="bi bi-chat-left-text-fill text-info me-1"></i> Description:</strong>
+                                {{ match.help_requests.description }}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        {% if match.status not in ['completed', 'cancelled'] %}
+                        <form action="{{ url_for('support_swap.confirm_match', match_id=match.id) }}" method="POST">
+                            <button type="submit" class="btn btn-success btn-lg w-100">
+                                <i class="bi bi-check-circle me-2"></i>Confirm Completion
+                            </button>
+                        </form>
+                        {% endif %}
+
+                        <a href="{{ url_for('support_swap.ss_match') }}" class="btn btn-outline-secondary mt-3">
+                            <i class="bi bi-arrow-left me-1"></i>Back to Matches
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+{% endblock %}
