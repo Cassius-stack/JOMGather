@@ -97,7 +97,7 @@ def search_results_page():
     users = []
     try:
         supabase = get_supabase()
-        response = supabase.table('users').select('user_id, username, user_type').ilike('username', f'%{query}%').neq('user_id', currentUser).execute()
+        response = supabase.table('users').select('user_id, username, user_type').ilike('username', f'%{query}%').neq('user_id', currentUser).neq('username', 'Deleted Account').execute()
         
         # Check friendship status for each
         for user in response.data:
@@ -145,7 +145,7 @@ def search_users():
         # Checking robust implementation.
         
         # 1. Fetch potential matches
-        response = supabase.table('users').select('user_id, username, user_type').ilike('username', f'%{query}%').neq('user_id', current_user_id).limit(10).execute()
+        response = supabase.table('users').select('user_id, username, user_type').ilike('username', f'%{query}%').neq('user_id', current_user_id).neq('username', 'Deleted Account').limit(10).execute()
         
         results = []
         if response.data:
