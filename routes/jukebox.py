@@ -1,6 +1,6 @@
 """
 Jukebox Routes - Generational Jukebox feature
-Allows users to spin a wheel of song recommendations and rate songs
+Allows users to spin a wheel of song recommendations and rate songs  
 """
 
 from flask import Blueprint, render_template, request, jsonify, session
@@ -31,7 +31,7 @@ def get_current_username():
 @login_required
 def jukebox_page():
     """Main jukebox page with spinning wheel."""
-    community_id = request.args.get('community', type=int)
+    community_id = request.args.get('community', type=int) or 2  # Default to Musicly (ID 2)
     return render_template('jukebox/juke.html', community_id=community_id)
 
 
@@ -59,7 +59,7 @@ def get_songs(community_id):
 def spin_wheel():
     """
     Spin the wheel and get a random song.
-    Records the spin in history.
+    FOR DEMO: Shows all songs regardless of user type.
     """
     try:
         data = request.get_json()
@@ -68,13 +68,38 @@ def spin_wheel():
         if not community_id:
             return jsonify({'success': False, 'error': 'Community ID required'}), 400
         
-        # Get songs from channel
-        songs = get_songs_from_channel(community_id)
+        # FOR DEMO: Get all songs (no filtering by user type)
+        # This allows demonstration even without proper senior/youth users
+        songs = get_songs_from_channel(community_id, user_type_filter=None)
+        
+        # ORIGINAL CODE (for production with real senior/youth users):
+        # Get current user's info
+        # user_id = get_current_user_id()
+        # user = fetch_one('users', 'user_id, user_type', user_id=user_id)
+        
+        # if not user:
+        #     return jsonify({'success': False, 'error': 'User not found'}), 404
+        
+        # current_user_type = user.get('user_type', '')
+        
+        # Determine which songs to show (opposite generation)
+        # if current_user_type == 'senior':
+        #     # Seniors see youth songs
+        #     filter_type = 'youth'
+        # elif current_user_type == 'youth':
+        #     # Youth see senior songs
+        #     filter_type = 'senior'
+        # else:
+        #     # Default: show all songs
+        #     filter_type = None
+        
+        # Get songs from channel filtered by opposite user type
+        # songs = get_songs_from_channel(community_id, user_type_filter=filter_type)
         
         if not songs:
             return jsonify({
                 'success': False, 
-                'error': 'No songs found in the recommendations channel'
+                'error': 'No songs found in the recommendations channel. Try adding some songs first!'
             }), 404
         
         # Pick a random song
@@ -82,10 +107,12 @@ def spin_wheel():
         
         return jsonify({
             'success': True,
-            'song': selected_song
+            'song': selected_song,
+            'allSongs': songs  # Return all songs for wheel display
         })
         
     except Exception as e:
+        print(f"Error in spin_wheel: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 

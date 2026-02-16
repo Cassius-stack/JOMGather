@@ -1611,12 +1611,19 @@
                             <p>${messages.length} messages</p>
                         </div>
                     </div>
-                    ${hasModPermissions() ? `
-                    <button onclick="state.showChannelSettings = true; render();" 
-                            style="background: none; border: none; cursor: pointer; padding: 8px;">
-                        <i class="bi bi-three-dots-vertical" style="font-size: 18px; color: #666;"></i>
-                    </button>
-                    ` : ''}
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        ${community.name === 'Musicly' ? `
+                        <a href="/jukebox" class="btn-create" style="padding: 10px 20px; text-decoration: none; font-size: 14px; display: flex; align-items: center; gap: 8px;">
+                            <i class="bi bi-music-note-beamed"></i> Jukebox
+                        </a>
+                        ` : ''}
+                        ${hasModPermissions() ? `
+                        <button onclick="state.showChannelSettings = true; render();" 
+                                style="background: none; border: none; cursor: pointer; padding: 8px;">
+                            <i class="bi bi-three-dots-vertical" style="font-size: 18px; color: #666;"></i>
+                        </button>
+                        ` : ''}
+                    </div>
                 </div>
 
                 <div class="community-messages" id="messages-container">

@@ -10,72 +10,50 @@ from utils.supabase_db import get_supabase, fetch_one, fetch_all
 
 def extract_song_info(message_text):
     """
-    Extract song information from a chat message.
-    Parses YouTube, Spotify links or plain text song titles.
+    Extract song information from a structured chat message.
+    Expected format:
+    Song Name: <song>
+    Artist: <artist>
+    Year Released: <year>
+    Why they like this song: <reason>
     
-    Returns dict with: title, url, source (youtube/spotify/text)
+    Returns dict with: title, artist, year, reason
     """
-    # YouTube URL patterns
-    youtube_patterns = [
-        r'(?:https?://)?(?:www\.)?youtube\.com/watch\?v=([a-zA-Z0-9_-]+)',
-        r'(?:https?://)?youtu\.be/([a-zA-Z0-9_-]+)',
-        r'(?:https?://)?(?:www\.)?youtube\.com/shorts/([a-zA-Z0-9_-]+)'
-    ]
+    lines = message_text.strip().split('\n')
+    song_data = {}
     
-    # Spotify URL patterns
-    spotify_patterns = [
-        r'(?:https?://)?open\.spotify\.com/track/([a-zA-Z0-9]+)',
-        r'(?:https?://)?spotify\.link/([a-zA-Z0-9]+)'
-    ]
+    for line in lines:
+        line = line.strip()
+        if line.startswith('Song Name:'):
+            song_data['title'] = line.replace('Song Name:', '').strip()
+        elif line.startswith('Artist:'):
+            song_data['artist'] = line.replace('Artist:', '').strip()
+        elif line.startswith('Year Released:'):
+            year_str = line.replace('Year Released:', '').strip()
+            try:
+                song_data['year'] = int(year_str)
+            except:
+                song_data['year'] = year_str
+        elif line.startswith('Why they like this song:'):
+            song_data['reason'] = line.replace('Why they like this song:', '').strip()
     
-    # Check for YouTube links
-    for pattern in youtube_patterns:
-        match = re.search(pattern, message_text)
-        if match:
-            video_id = match.group(1)
-            url = f'https://www.youtube.com/watch?v={video_id}'
-            # Extract title from message (text before or after URL)
-            title = re.sub(pattern, '', message_text).strip()
-            if not title:
-                title = f'YouTube Song #{video_id[:6]}'
-            return {
-                'title': title[:100],  # Limit title length
-                'url': url,
-                'source': 'youtube'
-            }
-    
-    # Check for Spotify links
-    for pattern in spotify_patterns:
-        match = re.search(pattern, message_text)
-        if match:
-            track_id = match.group(1)
-            url = f'https://open.spotify.com/track/{track_id}'
-            title = re.sub(pattern, '', message_text).strip()
-            if not title:
-                title = f'Spotify Track #{track_id[:6]}'
-            return {
-                'title': title[:100],
-                'url': url,
-                'source': 'spotify'
-            }
-    
-    # If no URL found, treat the whole message as a song title
-    # Only if it looks like a song recommendation (not too long)
-    if len(message_text) < 100 and message_text.strip():
-        return {
-            'title': message_text.strip(),
-            'url': None,
-            'source': 'text'
-        }
+    # Validate that we have the required fields
+    if 'title' in song_data and 'artist' in song_data:
+        return song_data
     
     return None
 
 
-def get_songs_from_channel(community_id, channel_name='song recommendations'):
+def get_songs_from_channel(community_id, channel_name='song-recommendations', user_type_filter=None):
     """
     Get all song recommendations from a specific channel.
     
-    Returns list of song dicts with: id, title, url, source, userId, userName, timestamp
+    Args:
+        community_id: ID of the community
+        channel_name: Name of the channel (default: 'song-recommendations')
+        user_type_filter: Filter songs by submitter type ('youth' or 'senior'), None for all
+    
+    Returns list of song dicts with: id, title, artist, year, reason, userId, userName, userType, timestamp
     """
     supabase = get_supabase()
     
@@ -98,17 +76,27 @@ def get_songs_from_channel(community_id, channel_name='song recommendations'):
     for msg in messages.data:
         song_info = extract_song_info(msg['content'])
         if song_info:
-            # Get user info
-            user = fetch_one('users', 'user_id, username', user_id=msg['user_id'])
-            songs.append({
-                'id': msg['message_id'],
-                'title': song_info['title'],
-                'url': song_info['url'],
-                'source': song_info['source'],
-                'userId': msg['user_id'],
-                'userName': user['username'] if user else 'Unknown',
-                'timestamp': msg['created_at']
-            })
+            # Get user info including user type
+            user = fetch_one('users', 'user_id, username, user_type', user_id=msg['user_id'])
+            
+            if user:
+                user_type = user.get('user_type', '')
+                
+                # Apply filter if specified
+                if user_type_filter and user_type != user_type_filter:
+                    continue
+                
+                songs.append({
+                    'id': msg['message_id'],
+                    'title': song_info['title'],
+                    'artist': song_info.get('artist', 'Unknown'),
+                    'year': song_info.get('year', ''),
+                    'reason': song_info.get('reason', ''),
+                    'userId': msg['user_id'],
+                    'userName': user['username'],
+                    'userType': user_type,
+                    'timestamp': msg['created_at']
+                })
     
     return songs
 
