@@ -215,6 +215,7 @@ def send_invites():
         return redirect(url_for('slice_of_life.prompt'))
 
     try:
+        print(f"[SliceOfLife] Starting send_invites. Recipients: {recipients}")
         display_ids = []
         
         # Fetch prompt text for the rich card message
@@ -223,112 +224,132 @@ def send_invites():
 
         # Loop through ALL recipients
         for recipient_id_str in recipients:
-            recipient_id = int(recipient_id_str)
-            
-            # 0. Safety Check: No Self-Invite
-            if recipient_id == sender_id:
-                continue
-
-            # 0. DEBOUNCING: Check for existing unread invite from this sender to this recipient for this prompt
-            existing_invites = fetch_all('sol_invites', sender_id=sender_id, recipient_id=recipient_id, prompt_id=prompt_id, status='pending')
-            if existing_invites:
-                continue
-
-            # 1. Create DISPLAY Record (One per pair)
-            display = insert('sol_displays', {
-                'prompt_id': prompt_id,
-                'creator_id': sender_id,
-                'partner_id': recipient_id,
-                'status': 'pending',
-                'is_public': False,
-                'is_private': True
-            })
-            
-            display_id = display['display_id']
-            display_ids.append(display_id)
-
-            # 2. Save SENDER's Submission (Duplicate entry per display to link correctly)
-            insert('sol_submissions', {
-                'display_id': display_id,
-                'user_id': sender_id,
-                'image_url': submission_data['image_url'],
-                'thought': submission_data['story']
-            })
-
-            # 3. Create INVITE
-            invite = insert('sol_invites', {
-                'sender_id': sender_id,
-                'recipient_id': recipient_id,
-                'prompt_id': prompt_id,
-                'display_id': display_id,
-                'status': 'pending'
-            })
-            
-            # 4. Create NOTIFICATION for Recipient
-            insert('notifications', {
-                'user_id': recipient_id,
-                'type': 'sol_invite',
-                'message': f"You have been invited to a Slice of Life conversation!",
-                'link': url_for('slice_of_life.receiver_respond', invite_id=invite['invite_id'])
-            })
-            
-            # 5. Send Chat Message (Rich Card)
-            # Use RELATIVE URL for href to ensure it works on tunnel/cloud
-            invite_href = url_for('slice_of_life.receiver_respond', invite_id=invite['invite_id'], _external=False)
-            
-            msg_content = (
-                f'<div style="background: white; border: 1px solid #cbd5e1; border-radius: 16px; padding: 16px; width: 100%; max-width: 280px; font-family: sans-serif; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">'
-                f'<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">'
-                f'<span style="font-size: 1.2rem;">🎨</span>'
-                f'<strong style="color: #1e3a5f; font-size: 1rem;">Slice of Life Invite</strong>'
-                f'</div>'
-                f'<p style="color: #64748b; font-size: 0.9rem; margin: 0 0 12px 0;">Let\'s share a moment about: <em>"{prompt_text}"</em></p>'
-                f'<a href="{invite_href}" style="display: block; width: 100%; background: #2563eb; color: white; text-align: center; padding: 10px 0; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 0.9rem;">View & Respond</a>'
-                f'</div>'
-            )
-            insert('messages', {
-                'sender_id': sender_id,
-                'receiver_id': recipient_id,
-                'content': msg_content,
-                'read': False
-            })
-
-            # 5a. Emit Socket.IO Event for Real-Time Sync
             try:
-                from flask import current_app
-                # Get the room name (consistent with chat_events.py)
-                ids = sorted([int(sender_id), int(recipient_id)])
-                room = f"chat_{ids[0]}_{ids[1]}"
+                recipient_id = int(recipient_id_str)
+                print(f"[SliceOfLife] Processing recipient: {recipient_id}")
+
+                # 0. Safety Check: No Self-Invite
+                if recipient_id == sender_id:
+                    continue
+
+                # 0. DEBOUNCING: Check for existing unread invite from this sender to this recipient for this prompt
+                existing_invites = fetch_all('sol_invites', sender_id=sender_id, recipient_id=recipient_id, prompt_id=prompt_id, status='pending')
+                if existing_invites:
+                    print(f"[SliceOfLife] Skipping duplicate invite for {recipient_id}")
+                    continue
+
+                # 1. Create DISPLAY Record (One per pair)
+                print(f"[SliceOfLife] Inserting display for {recipient_id}")
+                display = insert('sol_displays', {
+                    'prompt_id': prompt_id,
+                    'creator_id': sender_id,
+                    'partner_id': recipient_id,
+                    'status': 'pending',
+                    'is_public': False,
+                    'is_private': True
+                })
+
+                if not display:
+                    print(f"[SliceOfLife] Failed to create display for recipient {recipient_id}")
+                    continue
+
+                display_id = display['display_id']
+                display_ids.append(display_id)
+
+                # 2. Save SENDER's Submission (Duplicate entry per display to link correctly)
+                insert('sol_submissions', {
+                    'display_id': display_id,
+                    'user_id': sender_id,
+                    'image_url': submission_data['image_url'],
+                    'thought': submission_data['story']
+                })
+
+                # 3. Create INVITE
+                print(f"[SliceOfLife] Inserting invite for display {display_id}")
+                invite = insert('sol_invites', {
+                    'sender_id': sender_id,
+                    'recipient_id': recipient_id,
+                    'prompt_id': prompt_id,
+                    'display_id': display_id,
+                    'status': 'pending'
+                })
+
+                if not invite:
+                    print(f"[SliceOfLife] Failed to create invite for display {display_id}")
+                    continue
+
+                # 4. Create NOTIFICATION for Recipient
+                insert('notifications', {
+                    'user_id': recipient_id,
+                    'type': 'sol_invite',
+                    'message': f"You have been invited to a Slice of Life conversation!",
+                    'link': url_for('slice_of_life.receiver_respond', invite_id=invite['invite_id'])
+                })
                 
-                socketio = current_app.extensions.get('socketio')
-                if socketio:
-                    response_data = {
-                        'id': f"sol_{int(datetime.now().timestamp())}_{recipient_id}", # Temp ID
-                        'sender_id': sender_id,
-                        'receiver_id': recipient_id,
-                        'text': msg_content,
-                        'image_url': None,
-                        'is_cyber_challenge': False,
-                        'challenge_id': None,
-                        'scenario_id': None
-                    }
-                    # Emit to both the shared room and receiver's room
-                    socketio.emit('new_message', response_data, room=room)
-                    socketio.emit('new_message', response_data, room=f"user_{recipient_id}")
-            except Exception as se:
-                print(f"Socket emit failed: {se}")
+                # 5. Send Chat Message (Rich Card)
+                # Use RELATIVE URL for href to ensure it works on tunnel/cloud
+                invite_href = url_for('slice_of_life.receiver_respond', invite_id=invite['invite_id'], _external=False)
+
+                msg_content = (
+                    f'<div style="background: white; border: 1px solid #cbd5e1; border-radius: 16px; padding: 16px; width: 100%; max-width: 280px; font-family: sans-serif; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">'
+                    f'<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">'
+                    f'<span style="font-size: 1.2rem;">🎨</span>'
+                    f'<strong style="color: #1e3a5f; font-size: 1rem;">Slice of Life Invite</strong>'
+                    f'</div>'
+                    f'<p style="color: #64748b; font-size: 0.9rem; margin: 0 0 12px 0;">Let\'s share a moment about: <em>"{prompt_text}"</em></p>'
+                    f'<a href="{invite_href}" style="display: block; width: 100%; background: #2563eb; color: white; text-align: center; padding: 10px 0; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 0.9rem;">View & Respond</a>'
+                    f'</div>'
+                )
+                insert('messages', {
+                    'sender_id': sender_id,
+                    'receiver_id': recipient_id,
+                    'content': msg_content,
+                    'read': False
+                })
+
+                # 5a. Emit Socket.IO Event for Real-Time Sync
+                try:
+                    from flask import current_app
+                    # Get the room name (consistent with chat_events.py)
+                    ids = sorted([int(sender_id), int(recipient_id)])
+                    room = f"chat_{ids[0]}_{ids[1]}"
+
+                    socketio = current_app.extensions.get('socketio')
+                    if socketio:
+                        response_data = {
+                            'id': f"sol_{int(datetime.now().timestamp())}_{recipient_id}", # Temp ID
+                            'sender_id': sender_id,
+                            'receiver_id': recipient_id,
+                            'text': msg_content,
+                            'image_url': None,
+                            'is_cyber_challenge': False,
+                            'challenge_id': None,
+                            'scenario_id': None
+                        }
+                        # Emit to both the shared room and receiver's room
+                        socketio.emit('new_message', response_data, room=room)
+                        socketio.emit('new_message', response_data, room=f"user_{recipient_id}")
+                except Exception as se:
+                    print(f"Socket emit failed: {se}")
+
+            except Exception as inner_e:
+                print(f"[SliceOfLife] Error processing recipient {recipient_id_str}: {inner_e}")
+                import traceback
+                traceback.print_exc()
+                continue
 
         # 6. Clear Session & Update State
         session.pop('sol_submission', None)
         # We store the LAST display ID or just flag that we are waiting
-        session['sol_active_display_id'] = display_ids[0] 
+        if display_ids:
+            session['sol_active_display_id'] = display_ids[0]
         session['sol_state'] = 'waiting'
         
         flash(f'Invites sent to {len(display_ids)} friends!', 'success')
         return redirect(url_for('slice_of_life.waiting_room'))
 
     except Exception as e:
-        print(f"Error sending invites: {e}")
+        print(f"[SliceOfLife] Major Error sending invites: {e}")
         import traceback
         traceback.print_exc()
         flash('An error occurred. Please try again.', 'danger')
@@ -339,58 +360,79 @@ def send_invites():
 @login_required
 def waiting_room():
     """Step 4: Sender or Partner waits for response. Supports multiple pending slices."""
-    current_uid = get_current_user_id()
-    
-    # Fetch ALL invites where I am involved (Sender or Recipient)
-    # We want invites that are 'pending' or 'accepted' (waiting for publish)
-    # Note: 'published' slices move to completion.
-    
-    # 1. Fetch where I am SENDER
-    sent = fetch_all('sol_invites', sender_id=current_uid) or []
-    # 2. Fetch where I am RECIPIENT
-    received = fetch_all('sol_invites', recipient_id=current_uid) or []
-    
-    all_invites = sent + received
-    
-    # Filter to only show those that aren't 'published' yet
-    # We check the display status
-    view_data = []
-    
-    for invite in all_invites:
-        display = fetch_one('sol_displays', display_id=invite['display_id'])
-        if display and display['status'] == 'pending':
-            is_me_sender = (invite['sender_id'] == current_uid)
-            partner_id = invite['recipient_id'] if is_me_sender else invite['sender_id']
-            
-            # Fetch partner info
-            partner = fetch_one('users', user_id=partner_id)
-            partner_name = partner['username'] if partner else f"User {partner_id}"
-            partner_pic = _get_profile_pic(partner_id)
-            
-            # Fetch query prompt text
-            prompt = fetch_one('sol_prompts', prompt_id=invite['prompt_id'])
-            
-            # Fetch My Submission for this display
-            my_subs = fetch_all('sol_submissions', display_id=invite['display_id'], user_id=current_uid) or []
-            my_sub = my_subs[0] if my_subs else None
-            
-            view_data.append({
-                'invite': invite,
-                'display': display,
-                'partner_name': partner_name,
-                'partner_pic': partner_pic,
-                'is_me_sender': is_me_sender,
-                'prompt_text': prompt['prompt_text'] if prompt else "Daily Prompt",
-                'my_submission': my_sub
-            })
+    try:
+        current_uid = get_current_user_id()
 
-    # Sort by created_at desc (newest first)
-    view_data.sort(key=lambda x: x['invite']['invite_id'], reverse=True)
-    
-    # If no pending items, but we landed here, maybe they just finished.
-    # We'll let the template handle the empty state with a "Start New" button.
-    
-    return render_template('slice_of_life/waiting_room.html', items=view_data)
+        # Fetch ALL invites where I am involved (Sender or Recipient)
+        # We want invites that are 'pending' or 'accepted' (waiting for publish)
+        # Note: 'published' slices move to completion.
+
+        # 1. Fetch where I am SENDER
+        sent = fetch_all('sol_invites', sender_id=current_uid) or []
+        # 2. Fetch where I am RECIPIENT
+        received = fetch_all('sol_invites', recipient_id=current_uid) or []
+
+        all_invites = sent + received
+
+        # Filter to only show those that aren't 'published' yet
+        # We check the display status
+        view_data = []
+
+        for invite in all_invites:
+            # Handle possible NULL display_id or malformed invite
+            if not invite or not invite.get('display_id'):
+                print(f"[SliceOfLife] Skipping invite with missing display_id: {invite}")
+                continue
+
+            try:
+                display = fetch_one('sol_displays', display_id=invite['display_id'])
+
+                # Check if display exists and is pending
+                # NOTE: If we want to show 'accepted' invites that are waiting for review,
+                # they might still have status='pending' if we haven't updated it yet.
+                if display and display['status'] == 'pending':
+                    is_me_sender = (invite['sender_id'] == current_uid)
+                    partner_id = invite['recipient_id'] if is_me_sender else invite['sender_id']
+
+                    # Fetch partner info
+                    partner = fetch_one('users', user_id=partner_id)
+                    partner_name = partner['username'] if partner else f"User {partner_id}"
+                    partner_pic = _get_profile_pic(partner_id)
+
+                    # Fetch query prompt text
+                    prompt = fetch_one('sol_prompts', prompt_id=invite['prompt_id'])
+
+                    # Fetch My Submission for this display
+                    my_subs = fetch_all('sol_submissions', display_id=invite['display_id'], user_id=current_uid) or []
+                    my_sub = my_subs[0] if my_subs else None
+
+                    view_data.append({
+                        'invite': invite,
+                        'display': display,
+                        'partner_name': partner_name,
+                        'partner_pic': partner_pic,
+                        'is_me_sender': is_me_sender,
+                        'prompt_text': prompt['prompt_text'] if prompt else "Daily Prompt",
+                        'my_submission': my_sub
+                    })
+            except Exception as inner_e:
+                print(f"[SliceOfLife] Error processing invite {invite.get('invite_id')}: {inner_e}")
+                continue
+
+        # Sort by created_at desc (newest first)
+        view_data.sort(key=lambda x: x['invite']['invite_id'], reverse=True)
+
+        # If no pending items, but we landed here, maybe they just finished.
+        # We'll let the template handle the empty state with a "Start New" button.
+
+        return render_template('slice_of_life/waiting_room.html', items=view_data)
+
+    except Exception as e:
+        print(f"[SliceOfLife] Error in waiting_room: {e}")
+        import traceback
+        traceback.print_exc()
+        flash("An error occurred loading the waiting room.", "danger")
+        return redirect(url_for('slice_of_life.prompt'))
 
 
 @slice_of_life_bp.route('/review/<int:display_id>', methods=['GET', 'POST'])
@@ -405,10 +447,19 @@ def review(display_id):
         flash('Display not found.', 'danger')
         return redirect(url_for('slice_of_life.catalog'))
         
-    # Security: If status is still pending, they belong in the waiting room
-    # (unless we want them to see their own part, but typically waiting room is for that)
+    # Security: If status is still pending, check if invite is accepted
+    # If invite is accepted, we allow review even if display is pending (because we can't set 'active' status)
     if display['status'] == 'pending':
-        return redirect(url_for('slice_of_life.waiting_room'))
+        # Check if invite is accepted
+        # We need to find the invite for this display
+        # Ideally we fetch by display_id
+        invites = fetch_all('sol_invites', display_id=display_id) or []
+        # If ANY invite is accepted, it's reviewable? Or specifically for this user?
+        # Typically 1-on-1, so 1 invite.
+        is_accepted = any(inv['status'] == 'accepted' for inv in invites)
+
+        if not is_accepted:
+            return redirect(url_for('slice_of_life.waiting_room'))
         
     prompt = fetch_one('sol_prompts', prompt_id=display['prompt_id'])
     
@@ -864,9 +915,11 @@ def receiver_respond(invite_id):
             'responded_at': datetime.now().isoformat()
         }, invite_id=invite_id)
         
-        # Update Display Status to 'active' (or 'review') so it's accessible
-        # This assumes invite acceptance completes the interaction for now (1-on-1)
-        update('sol_displays', {'status': 'active'}, display_id=display_id)
+        # Update Display Status
+        # NOTE: Schema only allows 'pending' or 'completed'. 'active' is not valid.
+        # We keep it as 'pending' until both users have reviewed/commented or it is published.
+        # The 'accepted' status on the invite is enough to unlock the next stage in the UI.
+        # update('sol_displays', {'status': 'active'}, display_id=display_id)
 
         # Notify Sender
         insert('notifications', {
