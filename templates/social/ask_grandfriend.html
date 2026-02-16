@@ -912,6 +912,12 @@
                     badge.className = 'history-friend-badge badge-pending';
                     badge.innerHTML = '<i class="bi bi-hourglass-split"></i> Pending';
                     btnEl.replaceWith(badge);
+                } else if (data.error && data.error.includes('already')) {
+                    // Already sent — show as pending
+                    const badge = document.createElement('span');
+                    badge.className = 'history-friend-badge badge-pending';
+                    badge.innerHTML = '<i class="bi bi-check-lg"></i> Added';
+                    btnEl.replaceWith(badge);
                 } else {
                     btnEl.disabled = false;
                     btnEl.innerHTML = '<i class="bi bi-person-plus-fill"></i> Add';

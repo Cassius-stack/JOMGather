@@ -142,8 +142,7 @@ def boomerang_home():
                            is_online = True # Placeholder, real logic needs consistent TZ
                         except: pass
 
-                    if fid in meetup_partner_ids:
-                        friends.append({
+                    friends.append({
                             'user_id': fid,
                             'username': f_user['username'],
                             'profile_picture': f_user.get('profile_picture'),
