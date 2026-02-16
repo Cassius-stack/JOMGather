@@ -176,6 +176,51 @@
         width: 100%;
         max-width: 800px;
     }
+
+    /* Song List Styles */
+    .song-list-container {
+        max-width: 800px;
+        width: 100%;
+        margin: 0 auto;
+    }
+
+    .song-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        gap: 1rem;
+    }
+
+    .song-item {
+        background: var(--card-bg);
+        border-radius: 12px;
+        padding: 1.2rem;
+        border: 2px solid rgba(255, 255, 255, 0.1);
+        transition: all 0.3s ease;
+    }
+
+    .song-item:hover {
+        transform: translateY(-4px);
+        border-color: var(--neon-blue);
+        box-shadow: 0 4px 12px rgba(0, 243, 255, 0.3);
+    }
+
+    .song-item-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--neon-blue);
+        margin-bottom: 0.5rem;
+    }
+
+    .song-item-artist {
+        color: #aaa;
+        margin-bottom: 0.5rem;
+    }
+
+    .song-item-recommender {
+        font-size: 0.85rem;
+        color: #888;
+        font-style: italic;
+    }
 </style>
 {% endblock %}
 
@@ -221,6 +266,14 @@
             <i class="bi bi-check-circle"></i> Rating submitted!
         </div>
     </div>
+
+    <!-- Song List Section -->
+    <div class="song-list-container mt-5">
+        <h3 class="text-center mb-4">📀 Available Songs</h3>
+        <div id="songList" class="song-list">
+            <p class="text-center text-muted">Loading songs...</p>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -232,6 +285,38 @@
 
     let currentRotation = 0;
     let currentSongId = null;
+
+    // Load and display song list
+    async function loadSongList() {
+        try {
+            const response = await fetch('/jukebox/api/spin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ community_id: communityId })
+            });
+
+            const data = await response.json();
+            const songListContainer = document.getElementById('songList');
+
+            if (data.success && data.allSongs && data.allSongs.length > 0) {
+                songListContainer.innerHTML = data.allSongs.map(song => `
+                    <div class="song-item">
+                        <div class="song-item-title">🎵 ${song.title}</div>
+                        <div class="song-item-artist">by ${song.artist}</div>
+                        <div class="song-item-recommender">Recommended by ${song.userName}</div>
+                    </div>
+                `).join('');
+            } else {
+                songListContainer.innerHTML = '<p class="text-center text-muted">No songs available yet. Add songs to song-recommendations channel!</p>';
+            }
+        } catch (error) {
+            console.error('Error loading song list:', error);
+            document.getElementById('songList').innerHTML = '<p class="text-center text-danger">Error loading songs</p>';
+        }
+    }
+
+    // Load songs on page load
+    loadSongList();
 
 
     spinBtn.addEventListener('click', async () => {

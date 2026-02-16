@@ -424,10 +424,23 @@ def send_message(community_id, channel_id):
             if not role:
                 return jsonify({'error': 'Only admins can post in announcement channels'}), 403
         
+        # SONG VALIDATION: Check if this is song-recommendations channel
+        message_content = data.get('text', '')
+        if channel and 'song' in channel.get('name', '').lower() and 'recommend' in channel.get('name', '').lower():
+            # Validate song format
+            required_fields = ['Song Name:', 'Artist:', 'Year Released:', 'Why they like this song:']
+            missing_fields = [field for field in required_fields if field not in message_content]
+            
+            if missing_fields:
+                return jsonify({
+                    'error': f'Invalid song format! Please include all required fields: {", ".join(required_fields)}',
+                    'help': 'Format: Song Name: <title>\\nArtist: <artist>\\nYear Released: <year>\\nWhy they like this song: <reason>'
+                }), 400
+        
         new_message = insert('community_messages', {
             'channel_id': channel_id,
             'user_id': user_id,
-            'content': data.get('text', ''),
+            'content': message_content,
             'reply_to_id': data.get('replyTo')
         })
         
