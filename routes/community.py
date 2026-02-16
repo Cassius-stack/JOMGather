@@ -96,40 +96,15 @@ def get_communities():
             # Format channels with message data
             formatted_channels = []
             for ch in channels.data:
-                # Get messages for this channel
-                messages = supabase.table('community_messages').select('*').eq('channel_id', ch['channel_id']).order('created_at').execute()
-                
-                formatted_messages = []
-                for msg in messages.data:
-                    # Get user info
-                    user = fetch_one('users', 'user_id, username', user_id=msg['user_id'])
-                    
-                    # Get reactions
-                    reactions_data = supabase.table('community_message_reactions').select('*').eq('message_id', msg['message_id']).execute()
-                    reactions = {}
-                    for r in reactions_data.data:
-                        if r['emoji'] not in reactions:
-                            reactions[r['emoji']] = []
-                        reactions[r['emoji']].append(r['user_id'])
-                    
-                    formatted_messages.append({
-                        'id': msg['message_id'],
-                        'userId': msg['user_id'],
-                        'userName': user['username'] if user else 'Unknown',
-                        'text': msg['content'],
-                        'timestamp': msg['created_at'],
-                        'reactions': reactions,
-                        'replyTo': msg.get('reply_to_id'),
-                        'edited': msg.get('is_edited', False)
-                    })
-                
+                # Don't load messages here - they'll be loaded when channel is clicked
+                # This prevents the API from being too slow
                 formatted_channels.append({
                     'id': ch['channel_id'],
                     'name': ch['name'],
                     'members': member_count.count or 0,
                     'private': False,
                     'isAnnouncement': ch.get('is_announcement', False),
-                    'messages': formatted_messages
+                    'messages': []  # Empty array - messages loaded separately
                 })
             
             result.append({
