@@ -17,8 +17,16 @@ def get_current_user_id():
 
 def _get_profile_pic(user_id):
     """Helper to get profile picture safely."""
-    p = fetch_one('profiles', user_id=user_id)
-    return p['profile_picture'] if p and p.get('profile_picture') else None
+    try:
+        p = fetch_one('profiles', user_id=user_id)
+        if p and p.get('profile_picture'):
+            return p['profile_picture']
+    except Exception as e:
+        # DB schema mismatch or missing table
+        print(f"[SliceOfLife] Profile fetch fallback for user {user_id}: {e}")
+    
+    # Consistent fallback with rest of app
+    return f"https://i.pravatar.cc/150?u={user_id}"
 
 # ============================================
 # MAIN FLOW ROUTES
@@ -60,6 +68,7 @@ def prompt():
     """Display the current daily prompt."""
     today = datetime.now().date().isoformat()
     current_uid = get_current_user_id()
+    force_new = request.args.get('force_new') == 'true'
     
     # 1. Check if we already have a prompt for today
     existing_prompt = fetch_all('sol_prompts', active_date=today)
@@ -78,11 +87,14 @@ def prompt():
         # Re-fetch to get ID
         prompt_data = fetch_all('sol_prompts', active_date=today)[0]
     
-    # Enforce 1-per-day here too as a safety net
-    existing_today = fetch_all('sol_displays', prompt_id=prompt_data['prompt_id']) or []
-    for disp in existing_today:
-        if disp['creator_id'] == current_uid or disp['partner_id'] == current_uid:
-            return redirect(url_for('slice_of_life.waiting_room'))
+    # Relaxed Check: Only auto-redirect to waiting room if NOT forcing new,
+    # AND they have a PENDING invite that hasn't been handled.
+    if not force_new:
+        existing_today = fetch_all('sol_displays', prompt_id=prompt_data['prompt_id']) or []
+        for disp in existing_today:
+            if disp['creator_id'] == current_uid or disp['partner_id'] == current_uid:
+                if disp['status'] == 'pending':
+                    return redirect(url_for('slice_of_life.waiting_room'))
             
     session['sol_prompt_id'] = prompt_data['prompt_id']
     user_state = session.get('sol_state', 'new')
@@ -405,10 +417,8 @@ def review(display_id):
         flash('Display not found.', 'danger')
         return redirect(url_for('slice_of_life.catalog'))
         
-    # Security: If status is still pending, they belong in the waiting room
-    # (unless we want them to see their own part, but typically waiting room is for that)
-    if display['status'] == 'pending':
-        return redirect(url_for('slice_of_life.waiting_room'))
+    # Removed the 'pending' status check that was causing a redirect loop.
+    # Users SHOULD be able to access the review page while pending to add their comments.
         
     prompt = fetch_one('sol_prompts', prompt_id=display['prompt_id'])
     

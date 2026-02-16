@@ -230,12 +230,9 @@ def delete_account():
             except:
                 pass
         
-        # 3. DELETE SOCIAL CONNECTIONS
-        try:
-            supabase.table('friendships').delete().eq('user_id_1', user_id).execute()
-            supabase.table('friendships').delete().eq('user_id_2', user_id).execute()
-        except:
-            pass
+        # 3. KEEP FRIENDSHIPS — so friends can still see chat history.
+        #    The anonymized username will show as "Deleted Account" in the UI.
+        #    Only delete pending friend requests.
         try:
             supabase.table('friend_requests').delete().eq('sender_id', user_id).execute()
             supabase.table('friend_requests').delete().eq('receiver_id', user_id).execute()

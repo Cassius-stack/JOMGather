@@ -188,6 +188,12 @@ def send_friend_request():
         
         if not target_id:
             return jsonify({'error': 'Missing target_id'}), 400
+        
+        # Ensure target_id is an integer
+        try:
+            target_id = int(target_id)
+        except (ValueError, TypeError):
+            return jsonify({'error': 'Invalid target_id'}), 400
             
         supabase = get_supabase()
         # Check existing
@@ -603,6 +609,7 @@ def join_group(group_id):
 def ask_grandfriend():
     """AskAGrandfriend forum."""
     questions = []
+    all_raw_replies = []
     try:
         supabase = get_supabase()
         # Fetch Questions
@@ -648,8 +655,52 @@ def ask_grandfriend():
             u = fetch_one('users', user_id=current_user_id)
             if u: current_username = u.get('username')
         except: pass
+    
+    # Build history: collect unique users who have posted questions or replies
+    history_users = []
+    try:
+        supabase = get_supabase()
+        user_ids_set = set()
         
-    return render_template('social/ask_grandfriend.html', questions=questions, current_user_id=current_user_id, current_username=current_username)
+        # Collect user_ids from questions and replies
+        for q in questions:
+            uid = q.get('user_id')
+            if uid and uid != current_user_id:
+                user_ids_set.add(uid)
+        for r in all_raw_replies:
+            uid = r.get('user_id')
+            if uid and uid != current_user_id:
+                user_ids_set.add(uid)
+        
+        if user_ids_set:
+            # Fetch user profiles
+            user_ids_list = list(user_ids_set)
+            users_res = supabase.table('users').select('user_id, username, profile_picture').in_('user_id', user_ids_list).execute()
+            users_data = {u['user_id']: u for u in (users_res.data or [])}
+            
+            # Fetch friendships involving current user
+            friend_statuses = {}
+            if current_user_id:
+                fr_res = supabase.table('friendships').select('*').or_(
+                    f"user_id_1.eq.{current_user_id},user_id_2.eq.{current_user_id}"
+                ).execute()
+                for f in (fr_res.data or []):
+                    other_id = f['user_id_2'] if f['user_id_1'] == current_user_id else f['user_id_1']
+                    friend_statuses[other_id] = f['status']  # 'pending' or 'accepted'
+            
+            for uid in user_ids_list:
+                udata = users_data.get(uid, {})
+                friendship = friend_statuses.get(uid)
+                history_users.append({
+                    'user_id': uid,
+                    'username': udata.get('username', 'Unknown'),
+                    'profile_picture': udata.get('profile_picture'),
+                    'friendship_status': friendship  # None, 'pending', or 'accepted'
+                })
+    except Exception as e:
+        print(f"Error building history: {e}")
+        
+    return render_template('social/ask_grandfriend.html', questions=questions, current_user_id=current_user_id, current_username=current_username, history_users=history_users)
 
 @social_bp.route('/ask-grandfriend/post', methods=['GET', 'POST'])
 def post_question():

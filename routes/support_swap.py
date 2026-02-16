@@ -3,7 +3,7 @@ Support Swap routes - Support Swap feature (Zongrong's feature)
 Support Library, Support Assignment, Support Match
 """
 
-from flask import Blueprint, render_template, request, redirect, url_for, session, flash
+from flask import Blueprint, render_template, request, redirect, url_for, session, flash, jsonify
 from utils.supabase_db import get_supabase
 
 support_swap_bp = Blueprint('support_swap', __name__)
@@ -319,5 +319,54 @@ def cancel_match(match_id):
         flash('Match cancelled successfully.', 'info')
     except Exception as e:
         flash(f'Error cancelling match: {str(e)}', 'error')
+    
+    return redirect(url_for('support_swap.ss_match'))
+
+@support_swap_bp.route('/verify/<int:match_id>')
+def verify_match(match_id):
+    """Verification page — shown when partner scans the QR code."""
+    supabase = get_supabase()
+    
+    try:
+        match_data = supabase.table('support_matches').select(
+            '*, help_requests(title, description, location, duration_hours, users(username))'
+        ).eq('id', match_id).execute()
+        
+        if not match_data.data:
+            flash('Match not found.', 'error')
+            return redirect(url_for('support_swap.ss_match'))
+        
+        match = match_data.data[0]
+        
+        # Get helper username
+        helper = supabase.table('users').select('username').eq('user_id', match['helper_id']).execute()
+        helper_name = helper.data[0]['username'] if helper.data else 'Unknown'
+        
+        return render_template('support_swap/ss_verify.html', 
+                             match=match, 
+                             helper_name=helper_name)
+    except Exception as e:
+        flash(f'Error loading verification: {str(e)}', 'error')
+        return redirect(url_for('support_swap.ss_match'))
+
+@support_swap_bp.route('/confirm/<int:match_id>', methods=['POST'])
+def confirm_match(match_id):
+    """Confirm completion from the verification page."""
+    user_id = session.get('user_id')
+    if not user_id:
+        flash("Please log in to confirm.", "warning")
+        return redirect(url_for('auth.login'))
+    
+    supabase = get_supabase()
+    
+    try:
+        from datetime import datetime
+        supabase.table('support_matches').update({
+            'status': 'completed',
+            'completed_at': datetime.now().isoformat()
+        }).eq('id', match_id).execute()
+        flash('Session verified and marked as complete! Thank you!', 'success')
+    except Exception as e:
+        flash(f'Error confirming session: {str(e)}', 'error')
     
     return redirect(url_for('support_swap.ss_match'))
