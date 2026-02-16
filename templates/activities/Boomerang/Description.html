@@ -439,6 +439,37 @@
         background: #bdc3c7;
     }
 
+    .friend-avatar-img {
+        width: 55px;
+        height: 55px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid #E8F4FC;
+        box-shadow: 0 0 0 4px rgba(59, 91, 219, 0.1);
+    }
+
+    .btn-view-profile {
+        background: linear-gradient(135deg, #E8F4FC 0%, #d6eaf8 100%);
+        color: #3B5BDB;
+        border: none;
+        padding: 15px 20px;
+        border-radius: 15px;
+        font-weight: 700;
+        cursor: pointer;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s;
+        font-size: 0.95rem;
+    }
+
+    .btn-view-profile:hover {
+        background: linear-gradient(135deg, #d6eaf8 0%, #c5dff0 100%);
+        transform: translateY(-2px);
+        color: #3B5BDB;
+    }
+
     .btn-call {
         background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
         color: white;
@@ -697,18 +728,32 @@
                 {% for friend in friends %}
                 <div class="friend-card">
                     <div class="friend-info">
-                        <div class="friend-avatar">{{ friend.wb_avatar }}</div>
+                        <a href="{{ url_for('profile.view_profile', user_id=friend.user_id) }}">
+                            {% if friend.profile_picture %}
+                            <img src="{{ friend.profile_picture }}" alt="{{ friend.username }}"
+                                class="friend-avatar-img">
+                            {% else %}
+                            <div class="friend-avatar">{{ friend.wb_avatar }}</div>
+                            {% endif %}
+                        </a>
                         <div class="friend-details">
-                            <h4>{{ friend.username }}</h4>
+                            <h4><a href="{{ url_for('profile.view_profile', user_id=friend.user_id) }}"
+                                    style="color: inherit; text-decoration: none;">{{ friend.username }}</a></h4>
                             <span>
                                 <span class="status-dot {{ 'online' if friend.is_online else 'offline' }}"></span>
                                 {{ 'Online now' if friend.is_online else 'Offline' }}
                             </span>
                         </div>
                     </div>
-                    <a href="{{ url_for('social.social_hub', chat_user=friend.user_id) }}" class="btn-call">
-                        <i class="bi bi-chat-dots-fill"></i> Chat
-                    </a>
+                    <div class="friend-actions" style="display: flex; gap: 8px;">
+                        <a href="{{ url_for('profile.view_profile', user_id=friend.user_id) }}"
+                            class="btn-view-profile">
+                            <i class="bi bi-person-circle"></i> Profile
+                        </a>
+                        <a href="{{ url_for('social.social_hub', chat_user=friend.user_id) }}" class="btn-call">
+                            <i class="bi bi-chat-dots-fill"></i> Chat
+                        </a>
+                    </div>
                 </div>
                 {% endfor %}
                 {% else %}
