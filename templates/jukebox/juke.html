@@ -267,13 +267,6 @@
         </div>
     </div>
 
-    <!-- Song List Section -->
-    <div class="song-list-container mt-5">
-        <h3 class="text-center mb-4">📀 Available Songs</h3>
-        <div id="songList" class="song-list">
-            <p class="text-center text-muted">Loading songs...</p>
-        </div>
-    </div>
 </div>
 
 <script>
@@ -285,39 +278,6 @@
 
     let currentRotation = 0;
     let currentSongId = null;
-
-    // Load and display song list
-    async function loadSongList() {
-        try {
-            const response = await fetch('/jukebox/api/spin', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ community_id: communityId })
-            });
-
-            const data = await response.json();
-            const songListContainer = document.getElementById('songList');
-
-            if (data.success && data.allSongs && data.allSongs.length > 0) {
-                songListContainer.innerHTML = data.allSongs.map(song => `
-                    <div class="song-item">
-                        <div class="song-item-title">🎵 ${song.title}</div>
-                        <div class="song-item-artist">by ${song.artist}</div>
-                        <div class="song-item-recommender">Recommended by ${song.userName}</div>
-                    </div>
-                `).join('');
-            } else {
-                songListContainer.innerHTML = '<p class="text-center text-muted">No songs available yet. Add songs to song-recommendations channel!</p>';
-            }
-        } catch (error) {
-            console.error('Error loading song list:', error);
-            document.getElementById('songList').innerHTML = '<p class="text-center text-danger">Error loading songs</p>';
-        }
-    }
-
-    // Load songs on page load
-    loadSongList();
-
 
     spinBtn.addEventListener('click', async () => {
         // Reset UI

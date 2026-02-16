@@ -276,7 +276,7 @@ def join_community(community_id):
 @community_bp.route('/api/communities/available', methods=['GET'])
 @login_required
 def get_available_communities():
-    """Get all communities available to join (that user is not already a member of)."""
+    """Get all communities with membership status."""
     try:
         user_id = get_current_user_id()
         supabase = get_supabase()
@@ -288,22 +288,22 @@ def get_available_communities():
         # Get all communities
         all_communities = supabase.table('communities').select('*').execute()
         
-        # Filter out communities user is already a member of
-        available = []
+        # Return all communities with membership status
+        result = []
         for comm in all_communities.data:
-            if comm['community_id'] not in member_ids:
-                # Get member count
-                member_count = supabase.table('community_members').select('user_id', count='exact').eq('community_id', comm['community_id']).execute()
-                available.append({
-                    'id': comm['community_id'],
-                    'name': comm['name'],
-                    'description': comm.get('description', ''),
-                    'members': member_count.count or 0
-                })
+            # Get member count
+            member_count = supabase.table('community_members').select('user_id', count='exact').eq('community_id', comm['community_id']).execute()
+            result.append({
+                'id': comm['community_id'],
+                'name': comm['name'],
+                'description': comm.get('description', ''),
+                'members': member_count.count or 0,
+                'joined': comm['community_id'] in member_ids  # Add joined status
+            })
         
-        return jsonify(available)
+        return jsonify(result)
     except Exception as e:
-        print(f"Error fetching available communities: {e}")
+        print(f"Error fetching communities: {e}")
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
