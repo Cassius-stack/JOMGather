@@ -864,6 +864,10 @@ def receiver_respond(invite_id):
             'responded_at': datetime.now().isoformat()
         }, invite_id=invite_id)
         
+        # Update Display Status to 'active' (or 'review') so it's accessible
+        # This assumes invite acceptance completes the interaction for now (1-on-1)
+        update('sol_displays', {'status': 'active'}, display_id=display_id)
+
         # Notify Sender
         insert('notifications', {
             'user_id': invite['sender_id'],
