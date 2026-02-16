@@ -518,13 +518,33 @@ def get_messages(contact_id):
         
         messages = response.data
         
+        # Get reactions for these messages
+        message_ids = [m['message_id'] for m in messages]
+        reactions_map = {}
+        
+        if message_ids:
+            try:
+                reactions_res = supabase.table('message_reactions').select('*').in_('message_id', message_ids).execute()
+                for r in reactions_res.data:
+                    mid = r['message_id']
+                    emoji = r['emoji']
+                    uid = r['user_id']
+                    if mid not in reactions_map:
+                        reactions_map[mid] = {}
+                    if emoji not in reactions_map[mid]:
+                        reactions_map[mid][emoji] = []
+                    reactions_map[mid][emoji].append(uid)
+            except Exception as re:
+                print(f"Error fetching message reactions: {re}")
+        
         return jsonify([{
             'id': m['message_id'],
             'type': 'sent' if m['sender_id'] == current_user_id else 'received',
             'text': m['content'],
             'sent_at': m['sent_at'],
             'read': m.get('read', False),
-            'image_url': m.get('image_url')
+            'image_url': m.get('image_url'),
+            'reactions': reactions_map.get(m['message_id'], {})
         } for m in messages])
     except Exception as e:
         print(f"Error in get_messages: {e}")

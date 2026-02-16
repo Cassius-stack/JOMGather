@@ -772,6 +772,55 @@ def register_chat_events(socketio):
             'from_user_id': from_user_id,
             'is_muted': is_muted
         }, room=f"user_{to_user_id}")
+    
+    # ========== MESSAGE REACTIONS ==========
+    @socketio.on('react_message')
+    def handle_react_message(data):
+        """
+        Called when a user reacts to a message.
+        Relay the reaction to the other user in real-time and persist to database.
+        """
+        from_user_id = data.get('from_user_id')
+        to_user_id = data.get('to_user_id')
+        message_id = data.get('message_id')
+        emoji = data.get('emoji')
+        action = data.get('action')  # 'add' or 'remove'
+        
+        if not all([from_user_id, to_user_id, message_id, emoji, action]):
+            return
+        
+        print(f"[Socket.IO] Reaction {action}: user {from_user_id} {emoji} on message {message_id}")
+        
+        # Persist to database
+        try:
+            from utils.supabase_db import get_supabase
+            supabase = get_supabase()
+            if action == 'add':
+                # Insert reaction (UNIQUE constraint on message_id, user_id, emoji prevents duplicates)
+                supabase.table('message_reactions').insert({
+                    'message_id': message_id,
+                    'user_id': from_user_id,
+                    'emoji': emoji
+                }).execute()
+            elif action == 'remove':
+                # Remove reaction
+                supabase.table('message_reactions').delete().eq(
+                    'message_id', message_id
+                ).eq(
+                    'user_id', from_user_id
+                ).eq(
+                    'emoji', emoji
+                ).execute()
+        except Exception as e:
+            print(f"[Socket.IO] Error persisting reaction: {e}")
+
+        # Relay to the other user
+        emit('reaction_update', {
+            'from_user_id': from_user_id,
+            'message_id': message_id,
+            'emoji': emoji,
+            'action': action
+        }, room=f"user_{to_user_id}")
 
 
 def get_room_name(user1_id, user2_id):

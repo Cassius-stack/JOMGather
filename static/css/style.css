@@ -2045,6 +2045,81 @@ body {
     background-color: #f0f0f0;
 }
 
+/* Chat Message Reactions */
+.emoji-picker-chat {
+    position: absolute;
+    bottom: 100%;
+    right: 0;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 20px;
+    padding: 5px 10px;
+    display: flex;
+    gap: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    margin-bottom: 5px;
+    animation: fadeInScale 0.2s ease-out;
+}
+
+.emoji-picker-chat button {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 2px;
+    transition: transform 0.2s;
+}
+
+.emoji-picker-chat button:hover {
+    transform: scale(1.3);
+}
+
+.msg-reactions-chat {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 4px;
+    margin-bottom: 4px;
+}
+
+.reaction-badge-chat {
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 2px 8px;
+    font-size: 12px;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.reaction-badge-chat:hover {
+    background: #e2e8f0;
+    transform: translateY(-1px);
+}
+
+.reaction-badge-chat.my-reaction {
+    background: #e0f2fe;
+    border-color: #7dd3fc;
+    color: #0369a1;
+}
+
+@keyframes fadeInScale {
+    from {
+        opacity: 0;
+        transform: scale(0.8) translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
 /* Image Preview Styles */
 .image-preview-container {
     position: absolute;
