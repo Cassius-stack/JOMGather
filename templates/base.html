@@ -86,11 +86,11 @@
                             href="{{ url_for('index') }}">Home</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {{ 'active' if 'activities' in request.endpoint or 'slice_of_life' in request.endpoint else '' }}"
+                        <a class="nav-link {{ 'active' if 'activities' in request.endpoint or 'slice_of_life' in request.endpoint or 'jukebox' in request.endpoint else '' }}"
                             href="{{ url_for('activities.activity_list') }}">Activity</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {{ 'active' if 'social' in request.endpoint or 'messaging' in request.endpoint else '' }}"
+                        <a class="nav-link {{ 'active' if 'social' in request.endpoint or 'messaging' in request.endpoint or 'community' in request.endpoint else '' }}"
                             href="{{ url_for('social.social_hub') }}">Social</a>
                     </li>
                     <li class="nav-item">
