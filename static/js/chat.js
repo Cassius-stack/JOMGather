@@ -466,6 +466,68 @@ socket.on('cyber_challenge_complete', (data) => {
 });
 
 /**
+ * Receive reaction updates from the other user in real-time
+ */
+socket.on('reaction_update', (data) => {
+    console.log('[Socket.IO] Reaction update:', data);
+    const messageDiv = document.querySelector(`[data-message-id="${data.message_id}"]`);
+    if (!messageDiv) return;
+
+    let reactionsDiv = messageDiv.querySelector('.msg-reactions-chat');
+
+    if (data.action === 'add') {
+        // Create reactions container if needed
+        if (!reactionsDiv) {
+            reactionsDiv = document.createElement('div');
+            reactionsDiv.className = 'msg-reactions-chat';
+            messageDiv.querySelector('.bubble').after(reactionsDiv);
+        }
+
+        let badge = reactionsDiv.querySelector(`[data-emoji="${data.emoji}"]`);
+        if (badge) {
+            // Update existing badge
+            let reactors = JSON.parse(badge.dataset.reactors || '[]');
+            const senderId = String(data.from_user_id);
+            if (!reactors.includes(senderId)) {
+                reactors.push(senderId);
+                badge.dataset.reactors = JSON.stringify(reactors);
+                badge.dataset.count = reactors.length;
+                badge.textContent = `${data.emoji} ${reactors.length}`;
+            }
+        } else {
+            // Create new badge
+            badge = document.createElement('span');
+            badge.className = 'reaction-badge-chat';
+            badge.dataset.emoji = data.emoji;
+            badge.dataset.count = 1;
+            badge.dataset.reactors = JSON.stringify([String(data.from_user_id)]);
+            badge.textContent = `${data.emoji} 1`;
+            badge.onclick = () => addReactionToMessage(data.message_id, data.emoji, badge);
+            reactionsDiv.appendChild(badge);
+        }
+    } else if (data.action === 'remove') {
+        if (!reactionsDiv) return;
+        let badge = reactionsDiv.querySelector(`[data-emoji="${data.emoji}"]`);
+        if (!badge) return;
+
+        let reactors = JSON.parse(badge.dataset.reactors || '[]');
+        const senderId = String(data.from_user_id);
+        reactors = reactors.filter(id => id !== senderId);
+
+        if (reactors.length === 0) {
+            badge.remove();
+            if (reactionsDiv.children.length === 0) {
+                reactionsDiv.remove();
+            }
+        } else {
+            badge.dataset.reactors = JSON.stringify(reactors);
+            badge.dataset.count = reactors.length;
+            badge.textContent = `${data.emoji} ${reactors.length}`;
+        }
+    }
+});
+
+/**
  * Update inbox preview after a message is deleted
  */
 function updateInboxAfterDelete(senderId, receiverId) {
@@ -648,7 +710,7 @@ function getMessageHtml(msg) {
                         </div>
                     </div>
                 </div>
-                <div class="msg-reactions-chat"></div>
+                <div class="msg-reactions-chat">${getReactionsHtml(msg.id, msg.reactions)}</div>
             </div>
             ${actionsHtml}
         </div>
@@ -1056,6 +1118,33 @@ function deleteMessage(messageId, messageDiv) {
     }, 300);
 }
 
+/**
+ * Generate HTML for reaction badges from a reactions object
+ */
+function getReactionsHtml(messageId, reactions) {
+    if (!reactions || Object.keys(reactions).length === 0) return '';
+
+    let html = '';
+    const myUserId = String(CURRENT_USER_ID);
+
+    for (const [emoji, reactors] of Object.entries(reactions)) {
+        const reactorIds = reactors.map(id => String(id));
+        const hasMyReaction = reactorIds.includes(myUserId);
+        const count = reactorIds.length;
+
+        html += `
+            <span class="reaction-badge-chat ${hasMyReaction ? 'my-reaction' : ''}" 
+                  data-emoji="${emoji}" 
+                  data-count="${count}" 
+                  data-reactors='${JSON.stringify(reactorIds)}'
+                  onclick="addReactionToMessage('${messageId}', '${emoji}', this)">
+                ${emoji} ${count}
+            </span>
+        `;
+    }
+    return html;
+}
+
 // ============================================
 // REACTION FUNCTIONS
 // ============================================
@@ -1095,38 +1184,91 @@ function toggleReactionPicker(button) {
 }
 
 /**
- * Add a reaction emoji to a message (visual only for now)
+ * Add or remove a reaction emoji on a message (toggle + real-time relay)
  */
 function addReactionToMessage(messageId, emoji, button) {
     const picker = button.closest('.emoji-picker-chat');
     const messageDiv = document.querySelector(`[data-message-id="${messageId}"]`);
 
-    if (messageDiv) {
-        // Check if reactions container exists
-        let reactionsDiv = messageDiv.querySelector('.msg-reactions-chat');
-        if (!reactionsDiv) {
-            reactionsDiv = document.createElement('div');
-            reactionsDiv.className = 'msg-reactions-chat';
-            messageDiv.querySelector('.bubble').after(reactionsDiv);
-        }
+    if (!messageDiv) {
+        if (picker) picker.remove();
+        return;
+    }
 
-        // Check if this emoji already exists
-        let badge = reactionsDiv.querySelector(`[data-emoji="${emoji}"]`);
-        if (badge) {
-            // Increment count
-            const count = parseInt(badge.dataset.count || 1) + 1;
-            badge.dataset.count = count;
-            badge.textContent = `${emoji} ${count}`;
+    // Check if reactions container exists
+    let reactionsDiv = messageDiv.querySelector('.msg-reactions-chat');
+    if (!reactionsDiv) {
+        reactionsDiv = document.createElement('div');
+        reactionsDiv.className = 'msg-reactions-chat';
+        messageDiv.querySelector('.bubble').after(reactionsDiv);
+    }
+
+    // Check if this emoji already exists
+    let badge = reactionsDiv.querySelector(`[data-emoji="${emoji}"]`);
+    const myUserId = String(CURRENT_USER_ID);
+
+    if (badge) {
+        // Parse who has reacted
+        let reactors = JSON.parse(badge.dataset.reactors || '[]');
+        const alreadyReacted = reactors.includes(myUserId);
+
+        if (alreadyReacted) {
+            // UNREACT: remove my user from the reactors
+            reactors = reactors.filter(id => id !== myUserId);
+            if (reactors.length === 0) {
+                badge.remove();
+                // Clean up empty container
+                if (reactionsDiv.children.length === 0) {
+                    reactionsDiv.remove();
+                }
+            } else {
+                badge.dataset.reactors = JSON.stringify(reactors);
+                badge.dataset.count = reactors.length;
+                badge.textContent = `${emoji} ${reactors.length}`;
+                badge.classList.remove('my-reaction');
+            }
+            // Emit unreact to server
+            socket.emit('react_message', {
+                from_user_id: CURRENT_USER_ID,
+                to_user_id: currentContactId,
+                message_id: messageId,
+                emoji: emoji,
+                action: 'remove'
+            });
         } else {
-            // Add new reaction badge
-            badge = document.createElement('span');
-            badge.className = 'reaction-badge-chat';
-            badge.dataset.emoji = emoji;
-            badge.dataset.count = 1;
-            badge.textContent = `${emoji} 1`;
-            badge.onclick = () => addReactionToMessage(messageId, emoji, badge);
-            reactionsDiv.appendChild(badge);
+            // ADD my reaction to existing badge
+            reactors.push(myUserId);
+            badge.dataset.reactors = JSON.stringify(reactors);
+            badge.dataset.count = reactors.length;
+            badge.textContent = `${emoji} ${reactors.length}`;
+            badge.classList.add('my-reaction');
+            // Emit react to server
+            socket.emit('react_message', {
+                from_user_id: CURRENT_USER_ID,
+                to_user_id: currentContactId,
+                message_id: messageId,
+                emoji: emoji,
+                action: 'add'
+            });
         }
+    } else {
+        // Add new reaction badge
+        badge = document.createElement('span');
+        badge.className = 'reaction-badge-chat my-reaction';
+        badge.dataset.emoji = emoji;
+        badge.dataset.count = 1;
+        badge.dataset.reactors = JSON.stringify([myUserId]);
+        badge.textContent = `${emoji} 1`;
+        badge.onclick = () => addReactionToMessage(messageId, emoji, badge);
+        reactionsDiv.appendChild(badge);
+        // Emit react to server
+        socket.emit('react_message', {
+            from_user_id: CURRENT_USER_ID,
+            to_user_id: currentContactId,
+            message_id: messageId,
+            emoji: emoji,
+            action: 'add'
+        });
     }
 
     // Remove picker
