@@ -191,7 +191,7 @@ def delete_account():
         
         # 1. ANONYMIZE USER RECORD (preserve user_id for FK integrity)
         supabase.table('users').update({
-            'username': 'Deleted Account',
+            'username': f'Deleted Account_{user_id}',
             'email': f'deleted_{user_id}@deleted.com',
             'password_hash': 'ACCOUNT_DELETED',
             'is_deleted': True,
