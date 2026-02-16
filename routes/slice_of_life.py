@@ -49,7 +49,7 @@ def index():
 
     # 1. Check if user already has an active or completed display for TODAY'S prompt
     # Users can only do one SOL per day.
-    existing_today = fetch_all('sol_displays', prompt_id=prompt_id)
+    existing_today = fetch_all('sol_displays', prompt_id=prompt_id) or []
     # Check if I am creator or partner in any of these
     for disp in existing_today:
         if disp['creator_id'] == current_uid or disp['partner_id'] == current_uid:
@@ -90,7 +90,7 @@ def prompt():
     # Relaxed Check: Only auto-redirect to waiting room if NOT forcing new,
     # AND they have a PENDING invite that hasn't been handled.
     if not force_new:
-        existing_today = fetch_all('sol_displays', prompt_id=prompt_data['prompt_id'])
+        existing_today = fetch_all('sol_displays', prompt_id=prompt_data['prompt_id']) or []
         for disp in existing_today:
             if disp['creator_id'] == current_uid or disp['partner_id'] == current_uid:
                 if disp['status'] == 'pending':
@@ -158,7 +158,7 @@ def choose_recipients():
     offset = (page - 1) * limit
 
     # 1. Fetch friend IDs
-    friendships = fetch_all('friendships', status='accepted')
+    friendships = fetch_all('friendships', status='accepted') or []
     friend_ids = []
     for f in friendships:
         if f['user_id_1'] == current_uid:
@@ -171,10 +171,10 @@ def choose_recipients():
 
     # 2. Fetch friend details (manually filtering for now since fetch_all is simple)
     # In a real app: supabase.table('users').select('*').in_('user_id', friend_ids)...
-    all_users = fetch_all('users')
+    all_users = fetch_all('users') or []
 
     # Optimization: Fetch all profiles once to map avatars
-    all_profiles = fetch_all('profiles')
+    all_profiles = fetch_all('profiles') or []
     profile_map = {p['user_id']: p.get('profile_picture') for p in all_profiles}
 
     friends = []
@@ -358,9 +358,9 @@ def waiting_room():
     # Note: 'published' slices move to completion.
     
     # 1. Fetch where I am SENDER
-    sent = fetch_all('sol_invites', sender_id=current_uid)
+    sent = fetch_all('sol_invites', sender_id=current_uid) or []
     # 2. Fetch where I am RECIPIENT
-    received = fetch_all('sol_invites', recipient_id=current_uid)
+    received = fetch_all('sol_invites', recipient_id=current_uid) or []
     
     all_invites = sent + received
     
@@ -383,7 +383,7 @@ def waiting_room():
             prompt = fetch_one('sol_prompts', prompt_id=invite['prompt_id'])
             
             # Fetch My Submission for this display
-            my_subs = fetch_all('sol_submissions', display_id=invite['display_id'], user_id=current_uid)
+            my_subs = fetch_all('sol_submissions', display_id=invite['display_id'], user_id=current_uid) or []
             my_sub = my_subs[0] if my_subs else None
             
             view_data.append({
@@ -410,7 +410,7 @@ def waiting_room():
 def review(display_id):
     """Step 5: Review mode (and View mode for Catalog)."""
     # Fetch all submissions for this display
-    submissions = fetch_all('sol_submissions', display_id=display_id)
+    submissions = fetch_all('sol_submissions', display_id=display_id) or []
     display = fetch_one('sol_displays', display_id=display_id)
     
     if not display:
@@ -423,7 +423,7 @@ def review(display_id):
     prompt = fetch_one('sol_prompts', prompt_id=display['prompt_id'])
     
     # Fetch interactions
-    comments = fetch_all('sol_comments', display_id=display_id)
+    comments = fetch_all('sol_comments', display_id=display_id) or []
     # Enrich comments with username (mock join)
     # In real app: select *, users(username) from sol_comments...
     # Here: fetch user for each comment (inefficient but works for prototype)
@@ -432,7 +432,7 @@ def review(display_id):
         c['username'] = u['username'] if u else 'Unknown'
         c['profile_picture'] = _get_profile_pic(c['user_id'])
         
-    likes = fetch_all('sol_likes', display_id=display_id)
+    likes = fetch_all('sol_likes', display_id=display_id) or []
     like_count = len(likes)
     has_liked = any(l['user_id'] == get_current_user_id() for l in likes)
     
@@ -498,7 +498,7 @@ def publish(display_id):
     publish_private = request.form.get('publish_private') == 'on'
     
     # 0. Generate AI Title (Poetic summary of thoughts)
-    submissions = fetch_all('sol_submissions', display_id=display_id)
+    submissions = fetch_all('sol_submissions', display_id=display_id) or []
     thoughts = [s['thought'] for s in submissions if s['thought']]
     ai_title = generate_memory_title(thoughts)
 
@@ -594,7 +594,7 @@ def publish_display(display_id):
     # Actually, logic says "Wait for both to respond". That is already done if we are in Review Mode.
     # User said "do NOT allow publishing until both parties have commented."
     # Comments are in 'sol_comments'. We need to check if unique user_ids in comments >= 2.
-    comments = fetch_all('sol_comments', display_id=display_id)
+    comments = fetch_all('sol_comments', display_id=display_id) or []
     commenters = set(c['user_id'] for c in comments)
     
     # Must have at least 2 unique commenters (Creator + Partner usually)
@@ -739,7 +739,7 @@ def catalog():
     if filter_type == 'public':
         # Public displays (all completed & is_public=True)
         # Ideally ordered by likes (requires adding likes to fetch query or sorting in python)
-        displays = fetch_all('sol_displays', status='completed', is_public=True)
+        displays = fetch_all('sol_displays', status='completed', is_public=True) or []
         # Mock sorting by random for variety if likes query is complex
         
     elif filter_type == 'private':
@@ -747,8 +747,8 @@ def catalog():
         # Supabase fetch_all is limited to exact matches usually.
         # We need "OR" logic: creator_id=me OR partner_id=me
         # Since our simple helper might not support OR, we can do two fetches
-        as_creator = fetch_all('sol_displays', creator_id=current_uid, status='completed')
-        as_partner = fetch_all('sol_displays', partner_id=current_uid, status='completed')
+        as_creator = fetch_all('sol_displays', creator_id=current_uid, status='completed') or []
+        as_partner = fetch_all('sol_displays', partner_id=current_uid, status='completed') or []
         
         # Merge and deduplicate (though IDs should be unique)
         displays_map = {d['display_id']: d for d in as_creator + as_partner}
@@ -756,7 +756,7 @@ def catalog():
         
     elif filter_type == 'friends':
         # Friend's displays: displays where creator OR partner is my friend AND is_public=True
-        friendships = fetch_all('friendships', status='accepted')
+        friendships = fetch_all('friendships', status='accepted') or []
         friend_ids = set()
         for f in friendships:
             if f['user_id_1'] == current_uid:
@@ -765,7 +765,7 @@ def catalog():
                 friend_ids.add(f['user_id_1'])
 
         # Fetch all public displays and filter by friends
-        all_public = fetch_all('sol_displays', status='completed', is_public=True)
+        all_public = fetch_all('sol_displays', status='completed', is_public=True) or []
         displays = [d for d in all_public if d['creator_id'] in friend_ids or d['partner_id'] in friend_ids]
     
     # Enrich displays with submissions (images), prompt text, and sorting
@@ -776,16 +776,16 @@ def catalog():
         d['prompt_text'] = p['prompt_text'] if p else "Shared Story"
         
         # Submissions (for combined images)
-        subs = fetch_all('sol_submissions', display_id=d['display_id'])
+        subs = fetch_all('sol_submissions', display_id=d['display_id']) or []
         d['submissions'] = subs
         
         # Like count and has_liked
-        l_res = fetch_all('sol_likes', display_id=d['display_id'])
+        l_res = fetch_all('sol_likes', display_id=d['display_id']) or []
         d['likes'] = len(l_res)
         d['has_liked'] = any(l['user_id'] == current_uid for l in l_res)
         
         # Top 3 Comments
-        all_comments = fetch_all('sol_comments', display_id=d['display_id'])
+        all_comments = fetch_all('sol_comments', display_id=d['display_id']) or []
         preview = all_comments[:3]
         # Enrich comments with user info
         for c in preview:
@@ -838,7 +838,7 @@ def receiver_respond(invite_id):
         
     # 2. Fetch Display and Sender Submission
     display_id = invite['display_id']
-    submissions = fetch_all('sol_submissions', display_id=display_id)
+    submissions = fetch_all('sol_submissions', display_id=display_id) or []
     sender_submission = next((s for s in submissions if s['user_id'] == invite['sender_id']), None)
     
     # 3. Fetch Prompt and Sender Details
@@ -874,6 +874,10 @@ def receiver_respond(invite_id):
             'responded_at': datetime.now().isoformat()
         }, invite_id=invite_id)
         
+        # Update Display Status to 'active' (or 'review') so it's accessible
+        # This assumes invite acceptance completes the interaction for now (1-on-1)
+        update('sol_displays', {'status': 'active'}, display_id=display_id)
+
         # Notify Sender
         insert('notifications', {
             'user_id': invite['sender_id'],

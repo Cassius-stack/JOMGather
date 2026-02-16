@@ -621,6 +621,16 @@ function getMessageHtml(msg) {
         if (displayText.endsWith('\u200b')) {
             displayText = displayText.slice(0, -1);
         }
+
+        // Special handling for Slice of Life invites sent by me
+        // We disable the "Respond" button for the sender to prevent confusion/errors
+        if (isSent && displayText.includes('Slice of Life Invite')) {
+            displayText = displayText.replace(
+                /<a href="[^"]*".*?>View & Respond<\/a>/,
+                '<span style="display: block; width: 100%; background: #cbd5e1; color: #64748b; text-align: center; padding: 10px 0; border-radius: 8px; font-weight: 600; font-size: 0.9rem; cursor: not-allowed;">Invite Sent</span>'
+            );
+        }
+
         contentHtml = `<span class="message-text">${displayText}</span>`;
     }
 

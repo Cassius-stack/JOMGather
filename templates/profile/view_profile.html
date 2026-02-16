@@ -5,6 +5,21 @@
 {% block content %}
 <main>
     <div class="container py-4">
+        {% if is_deleted %}
+        <!-- Deleted Account Notice -->
+        <div class="text-center py-5">
+            <div
+                style="width: 120px; height: 120px; background: #fee2e2; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
+                <i class="bi bi-person-x" style="font-size: 3rem; color: #dc2626;"></i>
+            </div>
+            <h2 style="color: #1e3a5f; margin-bottom: 0.5rem;">Deleted Account</h2>
+            <p style="color: #64748b; max-width: 400px; margin: 0 auto 2rem;">This account has been deleted and is no
+                longer available.</p>
+            <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i>Back to Home
+            </a>
+        </div>
+        {% else %}
         <!-- Page Header -->
         <div class="text-center mb-4">
             <div class="d-flex justify-content-center mb-3">
@@ -132,6 +147,7 @@
                 <i class="bi bi-arrow-left me-1"></i>Back to Home
             </a>
         </div>
+        {% endif %}
     </div>
 </main>
 {% endblock %}

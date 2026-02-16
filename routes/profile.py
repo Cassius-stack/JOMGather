@@ -22,8 +22,9 @@ def view_profile(user_id=None):
     user = fetch_one('users', user_id=user_id)
     if not user:
         return "User not found", 404
-        
-    return render_template('profile/view_profile.html', user=user)
+    
+    is_deleted = user.get('is_deleted', False)
+    return render_template('profile/view_profile.html', user=user, is_deleted=is_deleted)
 
 @profile_bp.route('/edit', methods=['GET', 'POST'])
 def edit_personal():
@@ -124,7 +125,7 @@ def settings():
 
 @profile_bp.route('/delete-account', methods=['POST'])
 def delete_account():
-    """Delete user account and all their data."""
+    """Delete user account — soft delete: anonymize user, preserve messages."""
     from utils.supabase_db import get_supabase
     
     user_id = session.get('user_id')
@@ -135,90 +136,175 @@ def delete_account():
     try:
         supabase = get_supabase()
         
-        # 1. CLEANUP SOCIAL & COMMUNICATION (sender/receiver, user_id_1/user_id_2)
-        # Messages
-        try:
-            supabase.table('messages').delete().eq('sender_id', user_id).execute()
-            supabase.table('messages').delete().eq('receiver_id', user_id).execute()
-        except: pass
+        # =====================================================
+        # SOFT DELETE: Anonymize user instead of removing row.
+        # This keeps messages intact (FK references stay valid)
+        # but shows "Deleted Account" to other users.
+        # =====================================================
         
-        # Friendships (Crucial: uses user_id_1 and user_id_2)
+        # 0. HANDLE COMMUNITIES (must happen BEFORE user update)
         try:
-            supabase.table('friendships').delete().eq('user_id_1', user_id).execute()
-            supabase.table('friendships').delete().eq('user_id_2', user_id).execute()
+            # Remove user's roles in all communities
+            supabase.table('community_roles').delete().eq('user_id', user_id).execute()
         except Exception as e:
-            print(f"Error deleting friendships: {e}")
-            
-        # Friend Requests (handled in friendships table for now, but keeping if separate exists)
+            print(f"  - community_roles cleanup: {e}")
+        try:
+            # Remove user from community memberships
+            supabase.table('community_members').delete().eq('user_id', user_id).execute()
+        except Exception as e:
+            print(f"  - community_members cleanup: {e}")
+        try:
+            # Delete communities created by this user
+            # First delete all dependent data in those communities
+            my_communities = supabase.table('communities').select('community_id').eq('created_by', user_id).execute()
+            if my_communities.data:
+                for comm in my_communities.data:
+                    comm_id = comm['community_id']
+                    # Get all channels in this community
+                    channels = supabase.table('community_channels').select('channel_id').eq('community_id', comm_id).execute()
+                    if channels.data:
+                        for ch in channels.data:
+                            # Delete messages in each channel
+                            try:
+                                supabase.table('community_messages').delete().eq('channel_id', ch['channel_id']).execute()
+                            except Exception as e:
+                                print(f"  - community_messages cleanup (channel {ch['channel_id']}): {e}")
+                    # Delete channels
+                    try:
+                        supabase.table('community_channels').delete().eq('community_id', comm_id).execute()
+                    except Exception as e:
+                        print(f"  - community_channels cleanup: {e}")
+                    # Delete roles for this community
+                    try:
+                        supabase.table('community_roles').delete().eq('community_id', comm_id).execute()
+                    except Exception as e:
+                        print(f"  - community_roles cleanup (community {comm_id}): {e}")
+                    # Delete members of this community
+                    try:
+                        supabase.table('community_members').delete().eq('community_id', comm_id).execute()
+                    except Exception as e:
+                        print(f"  - community_members cleanup (community {comm_id}): {e}")
+                # Finally delete the communities themselves
+                supabase.table('communities').delete().eq('created_by', user_id).execute()
+        except Exception as e:
+            print(f"  - communities delete error: {e}")
+        
+        # 1. ANONYMIZE USER RECORD (preserve user_id for FK integrity)
+        import time as _time
+        _ts = int(_time.time())
+        supabase.table('users').update({
+            'username': f'deleted_{user_id}_{_ts}',
+            'email': f'deleted_{user_id}_{_ts}@deleted.com',
+            'password_hash': 'ACCOUNT_DELETED',
+            'is_deleted': True,
+            'age': None,
+            'region': None,
+            'hobbies': [],
+            'skills': [],
+        }).eq('user_id', user_id).execute()
+        
+        # Clear optional columns that may not exist in all deployments
+        try:
+            supabase.table('users').update({
+                'sol_streak': 0,
+                'last_sol_date': None
+            }).eq('user_id', user_id).execute()
+        except:
+            pass
+        
+        # 2. DELETE PROFILE DATA (tables with ON DELETE CASCADE from users,
+        #    but since we're not deleting the user row, we must delete manually)
+        tables_to_clear = [
+            ('profiles', 'user_id'),
+            ('user_interests', 'user_id'),
+            ('user_languages', 'user_id'),
+            ('user_skills', 'user_id'),
+            ('user_badges', 'user_id'),
+            ('coins', 'user_id'),
+            ('user_redeemed_rewards', 'user_id'),
+            ('notifications', 'user_id'),
+        ]
+        for table, col in tables_to_clear:
+            try:
+                supabase.table(table).delete().eq(col, user_id).execute()
+            except:
+                pass
+        
+        # 3. KEEP FRIENDSHIPS — so friends can still see chat history.
+        #    The anonymized username will show as "Deleted Account" in the UI.
+        #    Only delete pending friend requests.
         try:
             supabase.table('friend_requests').delete().eq('sender_id', user_id).execute()
             supabase.table('friend_requests').delete().eq('receiver_id', user_id).execute()
-        except: pass
+        except:
+            pass
 
-        # 2. CLEANUP SUPPORT SWAP (helper_id, user_id)
-        # Support Matches
+        # 4. DELETE SUPPORT SWAP DATA
         try:
             supabase.table('support_matches').delete().eq('helper_id', user_id).execute()
-        except: pass
-        
-        # Help Requests (MUST delete matches first if they are child)
-        try:
-            # We already deleted matches where user is helper. 
-            # Now we need to delete matches for THIS user's requests.
             my_reqs = supabase.table('help_requests').select('id').eq('user_id', user_id).execute()
             if my_reqs.data:
                 req_ids = [r['id'] for r in my_reqs.data]
                 supabase.table('support_matches').delete().in_('request_id', req_ids).execute()
-            
             supabase.table('help_requests').delete().eq('user_id', user_id).execute()
-        except Exception as e:
-            print(f"Error deleting help_requests/matches: {e}")
+        except:
+            pass
 
-        # 3. CLEANUP SLICE OF LIFE (creator_id, partner_id, recipient/sender)
+        # 5. DELETE SLICE OF LIFE DATA
         try:
             supabase.table('sol_submissions').delete().eq('user_id', user_id).execute()
             supabase.table('sol_invites').delete().eq('sender_id', user_id).execute()
             supabase.table('sol_invites').delete().eq('recipient_id', user_id).execute()
-            # Handle displays where user is creator or partner
             supabase.table('sol_displays').delete().eq('creator_id', user_id).execute()
             supabase.table('sol_displays').delete().eq('partner_id', user_id).execute()
-        except: pass
+            supabase.table('sol_comments').delete().eq('user_id', user_id).execute()
+            supabase.table('sol_likes').delete().eq('user_id', user_id).execute()
+        except:
+            pass
 
-        # 4. CLEANUP ASK A GRANDFRIEND (posts, questions, replies)
-        try:
-            supabase.table('posts').delete().eq('user_id', user_id).execute()
-            supabase.table('questions').delete().eq('user_id', user_id).execute()
-            supabase.table('replies').delete().eq('user_id', user_id).execute()
-        except: pass
-
-        # 5. CLEANUP COMMUNITY
-        try:
-            supabase.table('community_messages').delete().eq('user_id', user_id).execute()
-            supabase.table('community_message_reactions').delete().eq('user_id', user_id).execute()
-            # If user created channels or communities, these might need handling if no cascade
-            # supabase.table('community_channels').delete().eq('created_by', user_id).execute()
-            # supabase.table('communities').delete().eq('created_by', user_id).execute()
-        except: pass
-
-        # 6. OTHER ACTIVITIES
+        # 6. DELETE OTHER ACTIVITY DATA
         try:
             supabase.table('meetup_history').delete().eq('user1_id', user_id).execute()
             supabase.table('meetup_history').delete().eq('user2_id', user_id).execute()
             supabase.table('cyber_challenges').delete().eq('user1_id', user_id).execute()
             supabase.table('cyber_challenges').delete().eq('user2_id', user_id).execute()
-        except: pass
+        except:
+            pass
 
-        # 7. FINALLY DELETE USER (Cascade should handle profiles, coins, skills, membership, sol_streak, etc.)
-        supabase.table('users').delete().eq('user_id', user_id).execute()
-        
+        # 7. HANDLE ASKAGRANDFRIEND DATA
+        # Delete user's own questions (and all replies on them),
+        # but anonymize their replies on other people's questions.
+        try:
+            # First, delete all replies on the user's OWN questions
+            my_questions = supabase.table('questions').select('id').eq('user_id', user_id).execute()
+            if my_questions.data:
+                q_ids = [q['id'] for q in my_questions.data]
+                for q_id in q_ids:
+                    supabase.table('replies').delete().eq('question_id', q_id).execute()
+            
+            # Delete the user's own questions
+            supabase.table('questions').delete().eq('user_id', user_id).execute()
+            
+            # Anonymize replies on OTHER people's questions
+            supabase.table('replies').update({
+                'author_name': 'Deleted Account'
+            }).eq('user_id', user_id).execute()
+        except:
+            pass
+
+        # 8. KEEP MESSAGES — do NOT delete from messages, community_messages,
+        #    or community_message_reactions. The anonymized username
+        #    ("Deleted Account") will show automatically when other users
+        #    fetch the username from the users table.
+
         # Clear the session
         session.clear()
         
-        flash("Your account and all associated data have been deleted successfully.", "info")
+        flash("Your account has been deleted successfully.", "info")
         return redirect(url_for('auth.login'))
         
     except Exception as e:
         print(f"Delete Account Error: {e}")
-        # Log specific error details if it's a supabase dict error
         flash(f"Error deleting account: {e}", "danger")
         return redirect(url_for('profile.settings'))
+

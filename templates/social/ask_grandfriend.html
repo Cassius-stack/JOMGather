@@ -238,6 +238,96 @@
             transform: translateY(0);
         }
     }
+
+    /* History Sidebar */
+    .history-users-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        max-height: 300px;
+        overflow-y: auto;
+    }
+
+    .history-user-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 6px 8px;
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.04);
+        transition: background 0.2s;
+    }
+
+    .history-user-item:hover {
+        background: rgba(108, 93, 211, 0.12);
+    }
+
+    .history-user-link {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        text-decoration: none;
+        color: inherit;
+        flex: 1;
+        min-width: 0;
+    }
+
+    .history-user-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid rgba(108, 93, 211, 0.3);
+        flex-shrink: 0;
+    }
+
+    .history-user-name {
+        font-size: 0.85rem;
+        font-weight: 600;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .history-friend-badge {
+        font-size: 0.7rem;
+        padding: 3px 8px;
+        border-radius: 12px;
+        font-weight: 600;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+
+    .badge-friend {
+        background: rgba(40, 167, 69, 0.15);
+        color: #28a745;
+        border: 1px solid rgba(40, 167, 69, 0.3);
+    }
+
+    .badge-pending {
+        background: rgba(255, 193, 7, 0.15);
+        color: #ffc107;
+        border: 1px solid rgba(255, 193, 7, 0.3);
+    }
+
+    .history-add-btn {
+        font-size: 0.7rem;
+        padding: 3px 10px;
+        border-radius: 12px;
+        font-weight: 600;
+        background: rgba(108, 93, 211, 0.15);
+        color: #6c5dd3;
+        border: 1px solid rgba(108, 93, 211, 0.3);
+        cursor: pointer;
+        transition: all 0.2s;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+
+    .history-add-btn:hover {
+        background: #6c5dd3;
+        color: #fff;
+    }
 </style>
 {% endblock %}
 
@@ -297,6 +387,38 @@
                     <button class="category-btn" data-category="cultural">Cultural</button>
                     <button class="category-btn" data-category="modern">Modern Living</button>
                     <button class="category-btn" data-category="mentoring">Mentoring</button>
+                </div>
+            </div>
+
+            <!-- History - Past Users -->
+            <div class="sidebar-card">
+                <div class="sidebar-title">
+                    <i class="bi bi-clock-history"></i> History
+                </div>
+                <div class="history-users-list">
+                    {% if history_users %}
+                    {% for hu in history_users %}
+                    <div class="history-user-item">
+                        <a href="{{ url_for('profile.view_profile', user_id=hu.user_id) }}" class="history-user-link">
+                            <img src="{{ hu.profile_picture or 'https://i.pravatar.cc/40?u=' ~ hu.user_id }}"
+                                alt="{{ hu.username }}" class="history-user-avatar">
+                            <span class="history-user-name">{{ hu.username }}</span>
+                        </a>
+                        {% if hu.friendship_status == 'accepted' %}
+                        <span class="history-friend-badge badge-friend"><i class="bi bi-people-fill"></i> Friend</span>
+                        {% elif hu.friendship_status == 'pending' %}
+                        <span class="history-friend-badge badge-pending"><i class="bi bi-hourglass-split"></i>
+                            Pending</span>
+                        {% else %}
+                        <button class="history-add-btn" onclick="addFriendFromHistory({{ hu.user_id }}, this)">
+                            <i class="bi bi-person-plus-fill"></i> Add
+                        </button>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <div class="text-muted small text-center py-2">No users yet</div>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -772,6 +894,40 @@
         if (el) {
             el.style.display = (el.style.display === 'none') ? 'block' : 'none';
         }
+    }
+
+    // Add friend from history sidebar
+    function addFriendFromHistory(targetId, btnEl) {
+        btnEl.disabled = true;
+        btnEl.innerHTML = '<i class="bi bi-hourglass-split"></i> ...';
+        fetch('/social/api/friend-request', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ target_id: targetId })
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    const badge = document.createElement('span');
+                    badge.className = 'history-friend-badge badge-pending';
+                    badge.innerHTML = '<i class="bi bi-hourglass-split"></i> Pending';
+                    btnEl.replaceWith(badge);
+                } else if (data.error && data.error.includes('already')) {
+                    // Already sent — show as pending
+                    const badge = document.createElement('span');
+                    badge.className = 'history-friend-badge badge-pending';
+                    badge.innerHTML = '<i class="bi bi-check-lg"></i> Added';
+                    btnEl.replaceWith(badge);
+                } else {
+                    btnEl.disabled = false;
+                    btnEl.innerHTML = '<i class="bi bi-person-plus-fill"></i> Add';
+                    alert(data.error || 'Could not send request');
+                }
+            })
+            .catch(() => {
+                btnEl.disabled = false;
+                btnEl.innerHTML = '<i class="bi bi-person-plus-fill"></i> Add';
+            });
     }
 </script>
 {% endblock %}
