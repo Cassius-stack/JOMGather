@@ -15,8 +15,8 @@
             </a>
         </div>
 
-        <!-- Header with Start New Button -->
-        <div class="d-flex justify-content-between align-items-end mb-5">
+        <!-- Header -->
+        <div class="mb-5">
             <div>
                 <h1 style="font-size: 2.5rem; font-weight: 700; color: #1e3a5f; margin-bottom: 0.5rem;">
                     <i class="bi bi-clock-history me-2"></i>Waiting Room
@@ -24,10 +24,6 @@
                 <p style="font-size: 1.25rem; color: #475569; margin-bottom: 0;">Track your Slice of Life invites and
                     enter review mode</p>
             </div>
-            <a href="{{ url_for('slice_of_life.prompt', force_new='true') }}"
-                class="btn btn-primary rounded-pill px-4 py-2 fw-bold shadow-sm">
-                <i class="bi bi-plus-lg me-2"></i>Start New Conversation
-            </a>
         </div>
 
         <!-- Stacking Slices -->
@@ -73,7 +69,8 @@
                         <div style="flex: 1; text-align: center;">
                             <h6 class="text-muted small fw-bold mb-3">PARTNER STATUS</h6>
                             <div class="mb-3">
-                                {% set partner_id_fallback = item.invite.recipient_id if item.is_me_sender else item.invite.sender_id %}
+                                {% set partner_id_fallback = item.invite.recipient_id if item.is_me_sender else
+                                item.invite.sender_id %}
                                 <img src="{{ item.partner_pic or 'https://i.pravatar.cc/100?img=' ~ ((partner_id_fallback * 5) % 70) }}"
                                     alt="Partner"
                                     style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 3px solid #e2e8f0;">

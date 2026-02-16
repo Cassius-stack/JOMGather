@@ -1,26 +1,35 @@
 <!-- Search Users Modal -->
 <div class="modal fade" id="searchUsersModal" tabindex="-1">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content" style="border-radius: 20px; border: none; overflow: hidden;">
-            <div class="modal-header py-3 px-4" style="background: #1e3a5f; color: white; border: none;">
-                <h4 class="modal-title fw-bold"><i class="bi bi-search me-2"></i>Find Friends</h4>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content"
+            style="border-radius: 32px; border: none; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);">
+            <div class="modal-header py-4 px-5" style="background: #1e3a5f; color: white; border: none;">
+                <h3 class="modal-title fw-bold" style="letter-spacing: -0.5px;"><i class="bi bi-search me-3"></i>Find
+                    Friends</h3>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                    style="font-size: 1.2rem;"></button>
             </div>
-            <div class="modal-body p-5">
-                <div class="input-group mb-4">
-                    <span class="input-group-text p-3"
-                        style="background: #f1f5f9; border: none; border-radius: 12px 0 0 12px;">
-                        <i class="bi bi-search text-muted fs-4"></i>
-                    </span>
-                    <input type="text" id="userSearchInput" class="form-control fs-5 p-3"
-                        placeholder="Search by username..."
-                        style="background: #f1f5f9; border: none; border-radius: 0 12px 12px 0;">
+            <div class="modal-body p-5" style="background: #f8fafc;">
+                <div class="search-container mb-5">
+                    <div class="input-group shadow-sm"
+                        style="border-radius: 20px; overflow: hidden; background: white; border: 2px solid #e2e8f0; transition: all 0.3s ease;">
+                        <span class="input-group-text bg-white p-4 border-0">
+                            <i class="bi bi-search text-primary fs-3"></i>
+                        </span>
+                        <input type="text" id="userSearchInput" class="form-control border-0 fs-3 p-4"
+                            placeholder="Type a name to discover friends..."
+                            style="box-shadow: none; font-weight: 500;">
+                    </div>
+                    <p class="text-center text-muted mt-3 fs-5">Reconnect with people you know or find new companions in
+                        the community.</p>
                 </div>
 
-                <div id="searchResults" class="list-group list-group-flush">
+                <div id="searchResults" class="list-group list-group-flush rounded-4 overflow-hidden shadow-sm"
+                    style="min-height: 200px; background: white;">
                     <!-- Results will be injected here -->
-                    <div class="text-center text-muted py-3">
-                        <small class="fs-6">Type to search for people...</small>
+                    <div class="text-center text-muted py-5">
+                        <i class="bi bi-people mb-3 d-block" style="font-size: 3rem; opacity: 0.3;"></i>
+                        <p class="fs-4">Start typing to see results...</p>
                     </div>
                 </div>
             </div>
