@@ -3312,15 +3312,10 @@ input:valid:not(:placeholder-shown) {
     transform: translate(-50%, -50%);
     color: white;
     font-size: 120px;
-    display: none;
-    /* Hidden by default */
+    display: flex;
+    /* Shown by default, hidden by JS when remote video plays */
 }
 
-/* Show placeholder only when video has no source */
-.remote-video-wrapper:not(:has(video[srcObject])) .video-placeholder,
-.remote-video-wrapper video:not([src]):not([srcObject])~.video-placeholder {
-    display: block;
-}
 
 
 .local-video-wrapper {
