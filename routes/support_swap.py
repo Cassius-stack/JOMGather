@@ -76,10 +76,16 @@ def ss_dashboard():
     # Fetch help requests for Skills Market (from OTHER users)
     requests = []
     try:
+        # Get IDs of requests that already have a match (someone offered help)
+        matched_response = supabase.table('support_matches').select('request_id').execute()
+        matched_ids = [m['request_id'] for m in matched_response.data] if matched_response.data else []
+        
         response = supabase.table('help_requests').select(
             '*, users(username)'
         ).neq('user_id', user_id).eq('status', 'open').order('created_at', desc=True).execute()
-        requests = response.data
+        
+        # Filter out requests that already have a match
+        requests = [r for r in response.data if r['id'] not in matched_ids]
     except Exception as e:
         print(f"Error fetching requests: {e}")
     
@@ -239,6 +245,8 @@ def offer_help(request_id):
                 'helper_id': user_id,
                 'status': 'pending'
             }).execute()
+            # Remove from dashboard by marking the request as matched
+            supabase.table('help_requests').update({'status': 'matched'}).eq('id', request_id).execute()
             flash('Your offer to help has been sent!', 'success')
     except Exception as e:
         flash(f'Error offering help: {str(e)}', 'error')
@@ -324,7 +332,8 @@ def cancel_match(match_id):
 
 @support_swap_bp.route('/verify/<int:match_id>')
 def verify_match(match_id):
-    """Verification page — shown when partner scans the QR code."""
+    """Verification page — shown when partner scans the QR code.
+    Auto-completes the match immediately upon scanning."""
     supabase = get_supabase()
     
     try:
@@ -342,12 +351,37 @@ def verify_match(match_id):
         helper = supabase.table('users').select('username').eq('user_id', match['helper_id']).execute()
         helper_name = helper.data[0]['username'] if helper.data else 'Unknown'
         
+        # Auto-complete: if the match is still active, mark it as completed now
+        auto_completed = False
+        if match['status'] in ['pending', 'accepted']:
+            from datetime import datetime
+            supabase.table('support_matches').update({
+                'status': 'completed',
+                'completed_at': datetime.now().isoformat()
+            }).eq('id', match_id).execute()
+            match['status'] = 'completed'
+            auto_completed = True
+        
         return render_template('support_swap/ss_verify.html', 
                              match=match, 
-                             helper_name=helper_name)
+                             helper_name=helper_name,
+                             auto_completed=auto_completed)
     except Exception as e:
         flash(f'Error loading verification: {str(e)}', 'error')
         return redirect(url_for('support_swap.ss_match'))
+
+@support_swap_bp.route('/status/<int:match_id>')
+def match_status(match_id):
+    """API endpoint to check match status (used for polling from QR modal)."""
+    supabase = get_supabase()
+    
+    try:
+        match_data = supabase.table('support_matches').select('status').eq('id', match_id).execute()
+        if match_data.data:
+            return jsonify({'status': match_data.data[0]['status']})
+        return jsonify({'status': 'not_found'}), 404
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
 
 @support_swap_bp.route('/confirm/<int:match_id>', methods=['POST'])
 def confirm_match(match_id):
@@ -370,3 +404,4 @@ def confirm_match(match_id):
         flash(f'Error confirming session: {str(e)}', 'error')
     
     return redirect(url_for('support_swap.ss_match'))
+

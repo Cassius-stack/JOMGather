@@ -9,6 +9,28 @@ import tempfile
 from utils.supabase_db import get_supabase, fetch_all, fetch_one, insert, retry_query
 from utils.auth_middleware import login_required
 import traceback
+import os
+import uuid
+from werkzeug.utils import secure_filename
+from utils.deepseek_client import generate_rag_response, generate_starter_prompts
+
+UPLOAD_FOLDER = os.path.join('static', 'uploads', 'social')
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'mp4', 'mov', 'mp3', 'wav'}
+
+def validate_media_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def get_media_type(filename):
+    if '.' not in filename: return None
+    ext = filename.rsplit('.', 1)[1].lower()
+    if ext in ['png', 'jpg', 'jpeg', 'gif', 'webp']:
+        return 'image'
+    elif ext in ['mp4', 'mov', 'webm']:
+        return 'video'
+    elif ext in ['mp3', 'wav', 'ogg']:
+        return 'audio'
+    return None
 
 social_bp = Blueprint('social', __name__)
 
@@ -786,7 +808,8 @@ def ask_grandfriend():
     except Exception as e:
         print(f"Error building history: {e}")
         
-    return render_template('social/ask_grandfriend.html', questions=questions, current_user_id=current_user_id, current_username=current_username, history_users=history_users)
+    user_type = session.get('user_type', 'youth')
+    return render_template('social/ask_grandfriend.html', questions=questions, current_user_id=current_user_id, current_username=current_username, history_users=history_users, user_type=user_type)
 
 @social_bp.route('/ask-grandfriend/post', methods=['GET', 'POST'])
 def post_question():
@@ -797,6 +820,13 @@ def post_question():
             from flask import flash
             flash("Please log in to ask a question.", "warning")
             return redirect(url_for('auth.login'))
+        
+        # Role check: only students (youth) can post questions
+        current_type = session.get('user_type', 'youth')
+        if current_type == 'senior':
+            from flask import flash
+            flash("Grandparents can reply to questions but cannot post new ones.", "warning")
+            return redirect(url_for('social.ask_grandfriend'))
             
         title = request.form.get('title', '').strip()
         content = request.form.get('content', '').strip()
@@ -825,11 +855,37 @@ def post_question():
             author_name = "User"
             author_type = "student"
 
+        # Handle File Upload
+        media_url = None
+        media_type = None
+        media_file = request.files.get('media')
+        
+        if media_file and media_file.filename:
+            if validate_media_file(media_file.filename):
+                filename = secure_filename(media_file.filename)
+                unique_name = f"{uuid.uuid4()}_{filename}"
+                
+                # ensure directory exists
+                if not os.path.exists(UPLOAD_FOLDER):
+                    os.makedirs(UPLOAD_FOLDER)
+                    
+                local_path = os.path.join(UPLOAD_FOLDER, unique_name)
+                media_file.save(local_path)
+                
+                # relative URL for static
+                # Note: need to fix path slashes for URL
+                media_url = url_for('static', filename=f'uploads/social/{unique_name}')
+                media_type = get_media_type(filename)
+            else:
+                from flask import flash
+                flash("Invalid file type. Allowed: Image, Video, Audio.", "warning")
+                return redirect(url_for('social.ask_grandfriend'))
+
         if title:
             success = False
             try:
                 # Try inserting with user_id (New Schema)
-                insert('questions', {
+                data = {
                     'title': title,
                     'content': content,
                     'category': category,
@@ -837,20 +893,32 @@ def post_question():
                     'author_type': author_type,
                     'is_anonymous': is_anonymous,
                     'user_id': user_id
-                })
+                }
+                if media_url:
+                    data['media_url'] = media_url
+                    data['media_type'] = media_type
+                    
+                insert('questions', data)
                 success = True
             except Exception as e:
                 print(f"Error posting with user_id: {e}")
                 # Fallback to Old Schema (no user_id column)
                 try:
-                    insert('questions', {
+                     # try original fallback without media first if column missing?
+                     # actually lets assume user ran schema update
+                    data = {
                         'title': title,
                         'content': content,
                         'category': category,
                         'author_name': 'Anonymous' if is_anonymous else author_name,
                         'author_type': author_type,
                         'is_anonymous': is_anonymous
-                    })
+                    }
+                    if media_url:
+                        data['media_url'] = media_url
+                        data['media_type'] = media_type
+                        
+                    insert('questions', data)
                     success = True
                 except Exception as e2:
                     print(f"Error posting fallback: {e2}")
@@ -960,6 +1028,25 @@ def post_reply(question_id):
     if not content:
         return redirect(url_for('social.ask_grandfriend'))
 
+    # Role check: can only reply to opposite type's questions
+    current_type = session.get('user_type', 'youth')
+    try:
+        q_data = fetch_one('questions', id=question_id)
+        if q_data:
+            q_author_type = q_data.get('author_type', '')
+            # Students can only reply to grandparent posts, grandparents to student posts
+            # EXCEPTION: Original Poster can always reply to their own post
+            is_op = str(q_data.get('user_id', '')) == str(user_id)
+            
+            if not is_op:
+                if (current_type == 'youth' and q_author_type == 'student') or \
+                   (current_type == 'senior' and q_author_type == 'grandparent'):
+                    from flask import flash
+                    flash("You can only reply to posts from the other group.", "warning")
+                    return redirect(url_for('social.ask_grandfriend'))
+    except Exception as e:
+        print(f"Error checking question author type: {e}")
+
     # Determine Author
     try:
         user_data = fetch_one('users', user_id=user_id)
@@ -973,6 +1060,29 @@ def post_reply(question_id):
         author_name = "User"
         author_type = "student"
 
+    # Handle File Upload
+    media_url = None
+    media_type = None
+    media_file = request.files.get('media')
+    
+    if media_file and media_file.filename:
+        if validate_media_file(media_file.filename):
+            filename = secure_filename(media_file.filename)
+            unique_name = f"{uuid.uuid4()}_{filename}"
+            
+            if not os.path.exists(UPLOAD_FOLDER):
+                os.makedirs(UPLOAD_FOLDER)
+                
+            local_path = os.path.join(UPLOAD_FOLDER, unique_name)
+            media_file.save(local_path)
+            
+            media_url = url_for('static', filename=f'uploads/social/{unique_name}')
+            media_type = get_media_type(filename)
+        else:
+            from flask import flash
+            flash("Invalid file type.", "warning")
+            return redirect(url_for('social.ask_grandfriend'))
+
     try:
         data = {
             'question_id': question_id,
@@ -981,6 +1091,10 @@ def post_reply(question_id):
             'author_name': author_name,
             'author_type': author_type
         }
+        if media_url:
+            data['media_url'] = media_url
+            data['media_type'] = media_type
+
         if parent_reply_id:
             data['parent_reply_id'] = parent_reply_id
             
@@ -1094,3 +1208,88 @@ def get_cyber_challenge_status(challenge_id):
     except Exception as e:
         print(f"Error getting cyber challenge status: {e}")
         return jsonify({'found': False, 'error': str(e)}), 500
+
+# -------------------------------------------------------------------------
+# AI CHATBOT ROUTES
+# -------------------------------------------------------------------------
+
+@social_bp.route('/api/chatbot/query', methods=['POST'])
+@login_required
+def chatbot_query():
+    data = request.json
+    query = data.get('query', '').strip()
+    
+    if not query:
+        return jsonify({'error': 'No query provided'}), 400
+
+    try:
+        # 1. Fetch recent Q&A for context (Naive RAG)
+        # In a real app, use vector embeddings. Here, we just fetch recent text.
+        supabase = get_supabase()
+        
+        # Fetch Questions
+        q_res = supabase.table('questions') \
+            .select('title, content, category, created_at') \
+            .order('created_at', desc=True) \
+            .limit(10) \
+            .execute()
+        q_rows = q_res.data if q_res else []
+        
+        # Fetch Replies (best answers)
+        r_res = supabase.table('replies') \
+            .select('content, created_at') \
+            .order('created_at', desc=True) \
+            .limit(10) \
+            .execute()
+        r_rows = r_res.data if r_res else []
+        
+        context_list = []
+        for q in q_rows:
+            context_list.append(f"Question ({q.get('category')}): {q.get('title')} - {q.get('content')}")
+            
+        for r in r_rows:
+            context_list.append(f"Answer: {r['content']}")
+            
+        
+        # 2. Generate Answer
+        print(f"DEBUG: Generating answer for query: {query}")
+        print(f"DEBUG: Context length: {len(context_list)}")
+        answer = generate_rag_response(query, context_list)
+        print(f"DEBUG: Answer generated: {answer[:50]}...")
+        
+        return jsonify({'answer': answer})
+        
+    except Exception as e:
+        print(f"Chatbot Error: {e}")
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+
+@social_bp.route('/api/chatbot/prompts', methods=['GET'])
+@login_required
+def chatbot_prompts():
+    try:
+        # Fetch recent topics/categories
+        supabase = get_supabase()
+        res = supabase.table('questions') \
+            .select('title, content, category, created_at') \
+            .order('created_at', desc=True) \
+            .limit(10) \
+            .execute()
+        rows = res.data if res else []
+        
+        # Extract topics and content for prompts
+        recent_data = []
+        for r in rows:
+             recent_data.append({
+                 'category': r.get('category'),
+                 'title': r.get('title'),
+                 'content': r.get('content')
+             })
+        
+        prompts = generate_starter_prompts(recent_data)
+        return jsonify({'prompts': prompts})
+        
+    except Exception as e:
+        print(f"Prompts Error: {e}")
+        return jsonify({'prompts': ["Tell me a story", "Advice needed", "Childhood memory"]})

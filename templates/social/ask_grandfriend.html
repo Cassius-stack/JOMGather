@@ -98,6 +98,174 @@
 
     .reply-textarea {
         background: #f8f9fa !important;
+
+        /* AI Chatbot Styles */
+        .ai-chat-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #6c5dd3, #8f94fb);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.8rem;
+            box-shadow: 0 4px 15px rgba(108, 93, 211, 0.4);
+            cursor: pointer;
+            z-index: 1000;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .ai-chat-btn:hover {
+            transform: scale(1.1) rotate(10deg);
+        }
+
+        .ai-chat-window {
+            position: fixed;
+            bottom: 100px;
+            right: 30px;
+            width: 350px;
+            height: 500px;
+            background: #fff;
+            border-radius: 20px;
+            box-shadow: 0 5px 30px rgba(0, 0, 0, 0.15);
+            display: none;
+            flex-direction: column;
+            z-index: 1001;
+            overflow: hidden;
+            border: 1px solid #eee;
+            animation: slideUp 0.3s ease;
+        }
+
+        .ai-chat-window.show {
+            display: flex;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .chat-header {
+            background: linear-gradient(135deg, #6c5dd3, #8f94fb);
+            padding: 15px;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chat-header h3 {
+            margin: 0;
+            font-size: 1.1rem;
+        }
+
+        .btn-close-chat {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 1.2rem;
+        }
+
+        .chat-body {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            background: #f9f9f9;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .chat-message {
+            max-width: 80%;
+            padding: 10px 14px;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        .chat-message.ai {
+            background: white;
+            color: #333;
+            align-self: flex-start;
+            border-bottom-left-radius: 2px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+
+        .chat-message.user {
+            background: #6c5dd3;
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 2px;
+        }
+
+        .chat-prompts {
+            padding: 10px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            border-top: 1px solid #eee;
+            background: white;
+        }
+
+        .prompt-chip {
+            background: #f0f2f5;
+            border: 1px solid #ddd;
+            border-radius: 15px;
+            padding: 5px 12px;
+            font-size: 0.8rem;
+            color: #555;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .prompt-chip:hover {
+            background: #e1e4e8;
+            transform: translateY(-1px);
+        }
+
+        .chat-footer {
+            padding: 10px;
+            border-top: 1px solid #eee;
+            background: white;
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-input {
+            flex: 1;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            padding: 8px 15px;
+            outline: none;
+        }
+
+        .btn-send-chat {
+            background: #6c5dd3;
+            color: white;
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
         border: 1px solid #dee2e6 !important;
         color: #212529 !important;
         border-radius: 12px !important;
@@ -429,9 +597,15 @@
             <div class="main-header">
                 <h2><span id="headerTitle">All Questions</span> (<span id="questionCount">{{ questions|length if
                         questions else 0 }}</span>)</h2>
+                {% if user_type != 'senior' %}
                 <button type="button" class="btn-ask" data-bs-toggle="modal" data-bs-target="#askQuestionModal">
                     <i class="bi bi-plus-circle"></i> Ask A Question
                 </button>
+                {% else %}
+                <span style="color: #999; font-size: 0.85rem; font-style: italic;">
+                    <i class="bi bi-info-circle"></i> Grandparents reply to student questions
+                </span>
+                {% endif %}
             </div>
 
             <!-- Question Cards -->
@@ -472,6 +646,24 @@
                         {{ q.content if q.content else q.title[:100] }}{% if q.content and q.content|length > 100
                         %}...{% endif %}
                     </div>
+
+                    <!-- Question Media -->
+                    {% if q.media_url %}
+                    <div class="mt-3 mb-2">
+                        {% if q.media_type == 'image' %}
+                        <img src="{{ q.media_url }}" class="img-fluid rounded" alt="Media"
+                            style="max-height: 300px; width: auto; display: block;">
+                        {% elif q.media_type == 'video' %}
+                        <video controls class="w-100 rounded" style="max-height: 300px;">
+                            <source src="{{ q.media_url }}" type="video/mp4">
+                        </video>
+                        {% elif q.media_type == 'audio' %}
+                        <audio controls class="w-100 mt-2">
+                            <source src="{{ q.media_url }}" type="audio/mpeg">
+                        </audio>
+                        {% endif %}
+                    </div>
+                    {% endif %}
                     <div class="question-footer">
                         <a href="javascript:void(0)" class="see-replies-link"
                             onclick="toggleReplies(event, 'replies-{{ q.id }}')">
@@ -530,6 +722,24 @@
                                 <div class="reply-content">
                                     {{ reply.content }}
                                 </div>
+
+                                <!-- Reply Media -->
+                                {% if reply.media_url %}
+                                <div class="mt-2 mb-2">
+                                    {% if reply.media_type == 'image' %}
+                                    <img src="{{ reply.media_url }}" class="img-fluid rounded" alt="Reply Media"
+                                        style="max-height: 200px;">
+                                    {% elif reply.media_type == 'video' %}
+                                    <video controls class="w-100 rounded" style="max-height: 250px;">
+                                        <source src="{{ reply.media_url }}">
+                                    </video>
+                                    {% elif reply.media_type == 'audio' %}
+                                    <audio controls class="w-100 mt-1">
+                                        <source src="{{ reply.media_url }}">
+                                    </audio>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
                                 <div class="reply-footer d-flex justify-content-between align-items-center">
                                     <div class="d-flex align-items-center">
                                         <span class="reply-author text-muted small">{{ reply.author_name }}</span>
@@ -580,8 +790,17 @@
 
                                 <!-- Sub Reply Form -->
                                 <div id="sub-reply-form-{{ reply.reply_id }}" style="display: none; margin-top: 10px;">
-                                    <form action="{{ url_for('social.post_reply', question_id=q.id) }}" method="POST">
+                                    <form action="{{ url_for('social.post_reply', question_id=q.id) }}" method="POST"
+                                        enctype="multipart/form-data">
                                         <input type="hidden" name="parent_reply_id" value="{{ reply.reply_id }}">
+
+                                        <div class="mb-2">
+                                            <label class="small text-muted mb-1"><i class="bi bi-paperclip"></i> Attach
+                                                Media</label>
+                                            <input type="file" name="media" class="form-control form-control-sm"
+                                                accept="image/*,video/*,audio/*">
+                                        </div>
+
                                         <div class="input-group">
                                             <textarea name="content" class="form-control reply-textarea"
                                                 placeholder="Write a reply..." rows="1"
@@ -630,9 +849,21 @@
                             {% endif %}
                         </div>
 
-                        <!-- Reply Input -->
+                        <!-- Reply Input - only show for opposite type -->
+                        {# EXCEPTION: Original Poster can always reply to their own post #}
+                        {% set can_reply = (user_type == 'youth' and q.author_type == 'grandparent') or
+                        (user_type == 'senior' and q.author_type == 'student') or
+                        (current_user_id == q.user_id) %}
+                        {% if can_reply %}
                         <div class="reply-input-container">
-                            <form action="{{ url_for('social.post_reply', question_id=q.id) }}" method="POST">
+                            <form action="{{ url_for('social.post_reply', question_id=q.id) }}" method="POST"
+                                enctype="multipart/form-data">
+                                <div class="mb-2">
+                                    <label class="small text-muted mb-1"><i class="bi bi-paperclip"></i> Attach
+                                        (Image/Video/Audio)</label>
+                                    <input type="file" name="media" class="form-control form-control-sm"
+                                        accept="image/*,video/*,audio/*">
+                                </div>
                                 <div class="input-group">
                                     <textarea name="content" class="form-control reply-textarea"
                                         placeholder="Post your reply here..." required rows="2"
@@ -643,6 +874,24 @@
                                 </div>
                             </form>
                         </div>
+                        {% else %}
+                        <div class="reply-input-container">
+                            <div class="input-group">
+                                <textarea class="form-control reply-textarea" placeholder="Post your reply here..."
+                                    rows="2" style="border-radius: 15px; resize: none;"
+                                    onfocus="showReplyError(this)"></textarea>
+                                <button class="btn btn-send-reply" type="button" onclick="showReplyError(this)">
+                                    <i class="bi bi-send-fill"></i>
+                                </button>
+                            </div>
+                            <div class="reply-error-msg"
+                                style="display: none; background: #fff3f3; color: #d32f2f; border: 1px solid #ffcdd2; border-radius: 10px; padding: 8px 14px; margin-top: 8px; font-size: 0.82rem; font-weight: 600; text-align: center;">
+                                <i class="bi bi-exclamation-triangle-fill"></i>
+                                {% if user_type == 'youth' %}Students can only reply to grandparent posts{% else
+                                %}Grandparents can only reply to student posts{% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
                 {% endfor %}
@@ -675,7 +924,8 @@
                         information</span>
                 </div>
 
-                <form id="askQuestionForm" action="{{ url_for('social.post_question') }}" method="POST">
+                <form id="askQuestionForm" action="{{ url_for('social.post_question') }}" method="POST"
+                    enctype="multipart/form-data">
                     <!-- Question Input -->
                     <div class="mb-4">
                         <label class="form-label" style="font-weight: 700; color: #333;">Your Question</label>
@@ -712,6 +962,14 @@
                     <!-- Hidden fields -->
                     <input type="hidden" name="content" value="">
 
+                    <!-- Media Upload -->
+                    <div class="mb-4">
+                        <label class="form-label" style="font-weight: 700; color: #333;">Attach Media (Optional)</label>
+                        <input type="file" name="media" class="form-control" accept="image/*,video/*,audio/*"
+                            style="border-radius: 12px; border: 1px solid #e0e0e0; padding: 0.75rem;">
+                        <div class="form-text">Support Image, Video, or Audio files</div>
+                    </div>
+
                     <!-- Submit Button -->
                     <div class="text-center">
                         <button type="submit" class="btn-ask" style="padding: 0.75rem 3rem; font-size: 1.1rem;">
@@ -741,29 +999,40 @@
         }
     }
 
-    // Filter Logic
+    // Unified Filter Logic
     const filterState = {
-        view: 'all', // 'all' or 'my'
-        type: 'all' // 'all', 'grandparent' or 'student'
+        view: 'all',      // 'all' or 'my'
+        type: 'all',      // 'all', 'grandparent', 'student' (or null) - logic uses null for all
+        category: 'all',
+        search: ''
     };
 
     function filterQuestions() {
         let count = 0;
+        const query = (filterState.search || '').toLowerCase();
+
         questionCards.forEach(card => {
             const isMyQuestion = card.dataset.author === 'you';
             const rawType = card.dataset.authorType || '';
             const authorType = rawType.toLowerCase();
+            const category = card.dataset.category;
+            const title = card.querySelector('.question-title').textContent.toLowerCase();
+            const preview = card.querySelector('.question-preview').textContent.toLowerCase();
 
             let show = true;
 
-            // 1. Check My vs All
+            // 1. Check View (My vs All)
             if (filterState.view === 'my' && !isMyQuestion) show = false;
 
-            // 2. Check Author Type
-            // Only apply type filter if we are in "All Questions" mode? 
-            // Or apply it always? Usually sidebar filters apply always.
+            // 2. Check Role Type
             if (filterState.type === 'grandparent' && authorType !== 'grandparent') show = false;
             if (filterState.type === 'student' && authorType !== 'student') show = false;
+
+            // 3. Check Category
+            if (filterState.category && filterState.category !== 'all' && category !== filterState.category) show = false;
+
+            // 4. Check Search
+            if (query && !title.includes(query) && !preview.includes(query)) show = false;
 
             // Update visibility
             card.style.display = show ? 'block' : 'none';
@@ -774,7 +1043,7 @@
 
         // Update empty state if needed
         const emptyState = document.querySelector('.text-center.py-5');
-        // We might need to add empty state HTML if missing, but let's just leave it for now
+        // Logic for empty state could go here
     }
 
     // Tab Listeners
@@ -800,25 +1069,80 @@
 
     if (btnGrandparents && btnStudents) {
         btnGrandparents.addEventListener('click', function () {
-            btnStudents.classList.remove('active');
-            this.classList.add('active');
-            filterState.type = 'grandparent';
+            if (this.classList.contains('active')) {
+                // Deselect — show all
+                this.classList.remove('active');
+                filterState.type = null;
+            } else {
+                btnStudents.classList.remove('active');
+                this.classList.add('active');
+                filterState.type = 'grandparent';
+            }
             filterQuestions();
         });
 
         btnStudents.addEventListener('click', function () {
-            btnGrandparents.classList.remove('active');
-            this.classList.add('active');
-            filterState.type = 'student';
+            if (this.classList.contains('active')) {
+                // Deselect — show all
+                this.classList.remove('active');
+                filterState.type = null;
+            } else {
+                btnGrandparents.classList.remove('active');
+                this.classList.add('active');
+                filterState.type = 'student';
+            }
             filterQuestions();
         });
     }
 
     // Initialize with default state
-    // Check which buttons are active in HTML
+    // Initialize with default state based on user role
+    const userType = "{{ user_type }}";
+
+    // Default setting: My Role
+    if (userType === 'youth') {
+        if (btnStudents) {
+            btnStudents.classList.add('active');
+            filterState.type = 'student';
+            // ensure grandparents btn is not active
+            if (btnGrandparents) btnGrandparents.classList.remove('active');
+        }
+    } else if (userType === 'senior') {
+        if (btnGrandparents) {
+            btnGrandparents.classList.add('active');
+            filterState.type = 'grandparent';
+            if (btnStudents) btnStudents.classList.remove('active');
+        }
+    }
+
+    // Check which buttons are active in HTML (overrides if needed, but above logic sets defaults)
     if (btnMyQuestions.classList.contains('active')) filterState.view = 'my';
-    if (btnGrandparents && btnGrandparents.classList.contains('active')) filterState.type = 'grandparent';
-    if (btnStudents && btnStudents.classList.contains('active')) filterState.type = 'student';
+
+    // Update UI based on filter
+    function updateAskButtonVisibility() {
+        const askBtn = document.querySelector('.btn-ask');
+        if (!askBtn) return; // Grandparents don't have this button anyway
+
+        // Logic: specific to user request
+        // "if im a student and I try posting a question in a grandparent ... DO NOT POST AT ALL"
+        // So we hide the button if filterState.type is explicitly the opposite role
+
+        let shouldHide = false;
+        if (userType === 'youth' && filterState.type === 'grandparent') shouldHide = true;
+
+        if (shouldHide) {
+            askBtn.style.display = 'none';
+        } else {
+            askBtn.style.display = 'inline-flex';
+        }
+    }
+
+    // Hook into filterQuestions
+    const originalFilterQuestions = filterQuestions;
+    filterQuestions = function () {
+        originalFilterQuestions();
+        updateAskButtonVisibility();
+    };
 
     filterQuestions();
 
@@ -829,42 +1153,16 @@
             categoryBtns.forEach(b => b.classList.remove('active'));
             this.classList.add('active');
 
-            const category = this.dataset.category;
-            questionCards.forEach(card => {
-                if (category === 'all' || card.dataset.category === category) {
-                    // Check if it should be visible based on My/All Questions toggle
-                    if (btnMyQuestions.classList.contains('active') && card.dataset.author !== 'you') {
-                        card.style.display = 'none';
-                    } else {
-                        card.style.display = 'block';
-                    }
-                } else {
-                    card.style.display = 'none';
-                }
-            });
-            updateQuestionCount();
+            filterState.category = this.dataset.category;
+            filterQuestions();
         });
     });
 
     // Search functionality
     const searchInput = document.getElementById('searchInput');
     searchInput.addEventListener('input', function () {
-        const query = this.value.toLowerCase();
-        questionCards.forEach(card => {
-            const title = card.querySelector('.question-title').textContent.toLowerCase();
-            const preview = card.querySelector('.question-preview').textContent.toLowerCase();
-            if (title.includes(query) || preview.includes(query)) {
-                // Respect My/All Questions filter
-                if (btnMyQuestions.classList.contains('active') && card.dataset.author !== 'you') {
-                    card.style.display = 'none';
-                } else {
-                    card.style.display = 'block';
-                }
-            } else {
-                card.style.display = 'none';
-            }
-        });
-        updateQuestionCount();
+        filterState.search = this.value;
+        filterQuestions();
     });
 
     // Initialize count
@@ -893,6 +1191,21 @@
         const el = document.getElementById('sub-reply-form-' + id);
         if (el) {
             el.style.display = (el.style.display === 'none') ? 'block' : 'none';
+        }
+    }
+
+    // Show error when trying to reply to same-type post
+    function showReplyError(el) {
+        const container = el.closest('.reply-input-container');
+        if (container) {
+            const errorMsg = container.querySelector('.reply-error-msg');
+            if (errorMsg) {
+                errorMsg.style.display = 'block';
+                // Hide after 3 seconds
+                setTimeout(() => {
+                    errorMsg.style.display = 'none';
+                }, 3000);
+            }
         }
     }
 
@@ -928,6 +1241,300 @@
                 btnEl.disabled = false;
                 btnEl.innerHTML = '<i class="bi bi-person-plus-fill"></i> Add';
             });
+    }
+</script>
+
+<!-- AI Chatbot Logic -->
+<style>
+    /* AI Chatbot Styles */
+    .ai-chat-btn {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(135deg, #6c5dd3, #8f94fb);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.8rem;
+        box-shadow: 0 4px 15px rgba(108, 93, 211, 0.4);
+        cursor: pointer;
+        z-index: 1000;
+        transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .ai-chat-btn:hover {
+        transform: scale(1.1) rotate(10deg);
+    }
+
+    .ai-chat-window {
+        position: fixed;
+        bottom: 100px;
+        right: 30px;
+        width: 350px;
+        height: 500px;
+        background: #fff;
+        border-radius: 20px;
+        box-shadow: 0 5px 30px rgba(0, 0, 0, 0.15);
+        display: none;
+        flex-direction: column;
+        z-index: 1001;
+        overflow: hidden;
+        border: 1px solid #eee;
+        animation: slideUp 0.3s ease;
+    }
+
+    .ai-chat-window.show {
+        display: flex;
+    }
+
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .chat-header {
+        background: linear-gradient(135deg, #6c5dd3, #8f94fb);
+        padding: 15px;
+        color: white;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .chat-header h3 {
+        margin: 0;
+        font-size: 1.1rem;
+    }
+
+    .btn-close-chat {
+        background: none;
+        border: none;
+        color: white;
+        cursor: pointer;
+        font-size: 1.2rem;
+    }
+
+    .chat-body {
+        flex: 1;
+        padding: 15px;
+        overflow-y: auto;
+        background: #f9f9f9;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .chat-message {
+        max-width: 80%;
+        padding: 10px 14px;
+        border-radius: 12px;
+        font-size: 0.9rem;
+        line-height: 1.4;
+    }
+
+    .chat-message.ai {
+        background: white;
+        color: #333;
+        align-self: flex-start;
+        border-bottom-left-radius: 2px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    }
+
+    .chat-message.user {
+        background: #6c5dd3;
+        color: white;
+        align-self: flex-end;
+        border-bottom-right-radius: 2px;
+    }
+
+    .chat-prompts {
+        padding: 10px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        border-top: 1px solid #eee;
+        background: white;
+    }
+
+    .prompt-chip {
+        background: #f0f2f5;
+        border: 1px solid #ddd;
+        border-radius: 15px;
+        padding: 5px 12px;
+        font-size: 0.8rem;
+        color: #555;
+        cursor: pointer;
+        transition: all 0.2s;
+        white-space: nowrap;
+    }
+
+    .prompt-chip:hover {
+        background: #e1e4e8;
+        transform: translateY(-1px);
+    }
+
+    .chat-footer {
+        padding: 10px;
+        border-top: 1px solid #eee;
+        background: white;
+        display: flex;
+        gap: 10px;
+    }
+
+    .chat-input {
+        flex: 1;
+        border: 1px solid #ddd;
+        border-radius: 20px;
+        padding: 8px 15px;
+        outline: none;
+    }
+
+    .btn-send-chat {
+        background: #6c5dd3;
+        color: white;
+        border: none;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+</style>
+
+<!-- AI Chatbot Button -->
+<div class="ai-chat-btn" onclick="toggleChat()">
+    <i class="bi bi-robot"></i>
+</div>
+
+<!-- AI Chat Window -->
+<div class="ai-chat-window" id="aiChatWindow">
+    <div class="chat-header">
+        <h3><i class="bi bi-stars"></i> Helper Bot</h3>
+        <button class="btn-close-chat" onclick="toggleChat()"><i class="bi bi-x"></i></button>
+    </div>
+    <div class="chat-body" id="aiChatBody">
+        <div class="chat-message ai">
+            Hello! I can help you find answers or suggest questions. What's on your mind?
+        </div>
+    </div>
+    <div class="chat-prompts" id="aiPrompts">
+        <!-- Prompts loaded here -->
+    </div>
+    <div class="chat-footer">
+        <input type="text" class="chat-input" id="aiChatInput" placeholder="Ask something..."
+            onkeypress="handleAiKeyPress(event)">
+        <button class="btn-send-chat" onclick="sendAiMessage()">
+            <i class="bi bi-send-fill"></i>
+        </button>
+    </div>
+</div>
+
+<script>
+    // --- AI Chatbot Logic ---
+    let promptsLoaded = false;
+
+    function toggleChat() {
+        const win = document.getElementById('aiChatWindow');
+        win.classList.toggle('show');
+        if (win.classList.contains('show') && !promptsLoaded) {
+            loadPrompts();
+            promptsLoaded = true;
+        }
+    }
+
+    function loadPrompts() {
+        fetch('/social/api/chatbot/prompts')
+            .then(res => res.json())
+            .then(data => {
+                const container = document.getElementById('aiPrompts');
+                container.innerHTML = '';
+                if (data.prompts && data.prompts.length > 0) {
+                    data.prompts.forEach(p => {
+                        const chip = document.createElement('div');
+                        chip.className = 'prompt-chip';
+                        chip.textContent = p;
+                        chip.onclick = () => {
+                            document.getElementById('aiChatInput').value = p;
+                            document.getElementById('aiChatInput').focus();
+                        };
+                        container.appendChild(chip);
+                    });
+                } else {
+                    container.style.display = 'none';
+                }
+            })
+            .catch(err => console.error('Error loading prompts:', err));
+    }
+
+    function handleAiKeyPress(e) {
+        if (e.key === 'Enter') sendAiMessage();
+    }
+
+    function sendAiMessage() {
+        const input = document.getElementById('aiChatInput');
+        const text = input.value.trim();
+        if (!text) return;
+
+        addAiMessage(text, 'user');
+        input.value = '';
+        input.disabled = true;
+
+        // Show typing indicator
+        const loadingId = addAiMessage('Thinking...', 'ai', true);
+
+        fetch('/social/api/chatbot/query', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ query: text })
+        })
+            .then(res => res.json())
+            .then(data => {
+                removeMessage(loadingId);
+                if (data.answer) {
+                    addAiMessage(data.answer, 'ai');
+                } else {
+                    addAiMessage("I couldn't find an answer, sorry!", 'ai');
+                }
+            })
+            .catch(err => {
+                console.error('Chatbot fetch error:', err);
+                removeMessage(loadingId);
+                addAiMessage("Error connecting to brain.", 'ai');
+            })
+            .finally(() => {
+                input.disabled = false;
+                input.focus();
+            });
+    }
+
+    function addAiMessage(text, type, isLoading = false) {
+        const body = document.getElementById('aiChatBody');
+        const msg = document.createElement('div');
+        msg.className = `chat-message ${type}`;
+        msg.textContent = text;
+        if (isLoading) msg.id = 'ai-loading-' + Date.now();
+        body.appendChild(msg);
+        body.scrollTop = body.scrollHeight;
+        return msg.id;
+    }
+
+    function removeMessage(id) {
+        if (!id) return;
+        const el = document.getElementById(id);
+        if (el) el.remove();
     }
 </script>
 {% endblock %}
