@@ -146,11 +146,16 @@
                 </div>
                 <div class="modal-footer justify-content-between">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
-                    <form id="directCompleteForm" method="POST">
-                        <button type="submit" class="btn btn-success btn-sm">
-                            <i class="bi bi-check-circle me-1"></i>Complete Without QR
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="copyVerifyLink()">
+                            <i class="bi bi-clipboard me-1"></i>Copy Link
                         </button>
-                    </form>
+                        <form id="directCompleteForm" method="POST">
+                            <button type="submit" class="btn btn-success btn-sm">
+                                <i class="bi bi-check-circle me-1"></i>Complete Without QR
+                            </button>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
@@ -162,6 +167,8 @@
 <!-- QR Code JS library -->
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 <script>
+    let currentVerifyUrl = '';
+
     function showQRCode(matchId, taskTitle) {
         // Set task title in modal
         document.getElementById('qrTaskTitle').textContent = taskTitle;
@@ -170,7 +177,7 @@
         document.getElementById('directCompleteForm').action = '/support_swap/complete/' + matchId;
 
         // Build verification URL
-        const verifyUrl = window.location.origin + '/support_swap/verify/' + matchId;
+        currentVerifyUrl = window.location.origin + '/support_swap/verify/' + matchId;
 
         // Clear old QR code
         const qrContainer = document.getElementById('qrcode');
@@ -178,7 +185,7 @@
 
         // Generate new QR code
         new QRCode(qrContainer, {
-            text: verifyUrl,
+            text: currentVerifyUrl,
             width: 200,
             height: 200,
             colorDark: "#1e3a5f",
@@ -189,6 +196,16 @@
         // Show modal
         const modal = new bootstrap.Modal(document.getElementById('qrModal'));
         modal.show();
+    }
+
+    function copyVerifyLink() {
+        navigator.clipboard.writeText(currentVerifyUrl).then(() => {
+            // Change button text briefly
+            const btn = event.target.closest('button');
+            const original = btn.innerHTML;
+            btn.innerHTML = '<i class="bi bi-check me-1"></i>Copied!';
+            setTimeout(() => { btn.innerHTML = original; }, 2000);
+        });
     }
 </script>
 {% endblock %}
