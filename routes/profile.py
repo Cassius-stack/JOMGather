@@ -144,32 +144,50 @@ def delete_account():
         
         # 0. HANDLE COMMUNITIES (must happen BEFORE user update)
         try:
+            # Remove user's roles in all communities
+            supabase.table('community_roles').delete().eq('user_id', user_id).execute()
+        except Exception as e:
+            print(f"  - community_roles cleanup: {e}")
+        try:
             # Remove user from community memberships
             supabase.table('community_members').delete().eq('user_id', user_id).execute()
-        except:
-            pass
+        except Exception as e:
+            print(f"  - community_members cleanup: {e}")
         try:
             # Delete communities created by this user
-            # First delete members/messages in those communities
-            my_communities = supabase.table('communities').select('id').eq('created_by', user_id).execute()
+            # First delete all dependent data in those communities
+            my_communities = supabase.table('communities').select('community_id').eq('created_by', user_id).execute()
             if my_communities.data:
-                comm_ids = [c['id'] for c in my_communities.data]
-                for comm_id in comm_ids:
+                for comm in my_communities.data:
+                    comm_id = comm['community_id']
+                    # Get all channels in this community
+                    channels = supabase.table('community_channels').select('channel_id').eq('community_id', comm_id).execute()
+                    if channels.data:
+                        for ch in channels.data:
+                            # Delete messages in each channel
+                            try:
+                                supabase.table('community_messages').delete().eq('channel_id', ch['channel_id']).execute()
+                            except Exception as e:
+                                print(f"  - community_messages cleanup (channel {ch['channel_id']}): {e}")
+                    # Delete channels
                     try:
-                        supabase.table('community_message_reactions').delete().eq('community_id', comm_id).execute()
-                    except:
-                        pass
+                        supabase.table('community_channels').delete().eq('community_id', comm_id).execute()
+                    except Exception as e:
+                        print(f"  - community_channels cleanup: {e}")
+                    # Delete roles for this community
                     try:
-                        supabase.table('community_messages').delete().eq('community_id', comm_id).execute()
-                    except:
-                        pass
+                        supabase.table('community_roles').delete().eq('community_id', comm_id).execute()
+                    except Exception as e:
+                        print(f"  - community_roles cleanup (community {comm_id}): {e}")
+                    # Delete members of this community
                     try:
                         supabase.table('community_members').delete().eq('community_id', comm_id).execute()
-                    except:
-                        pass
+                    except Exception as e:
+                        print(f"  - community_members cleanup (community {comm_id}): {e}")
+                # Finally delete the communities themselves
                 supabase.table('communities').delete().eq('created_by', user_id).execute()
-        except:
-            pass
+        except Exception as e:
+            print(f"  - communities delete error: {e}")
         
         # 1. ANONYMIZE USER RECORD (preserve user_id for FK integrity)
         supabase.table('users').update({
