@@ -107,7 +107,8 @@ def spin_wheel():
         
         return jsonify({
             'success': True,
-            'song': selected_song
+            'song': selected_song,
+            'allSongs': songs  # Return all songs for wheel display
         })
         
     except Exception as e:

@@ -39,13 +39,46 @@
         border: 10px solid #fff;
         position: relative;
         transition: transform 4s cubic-bezier(0.17, 0.67, 0.12, 0.99);
-        background: conic-gradient(#ff6b6b 0 60deg,
-                #feca57 60deg 120deg,
-                #48dbfb 120deg 180deg,
-                #ff9ff3 180deg 240deg,
-                #54a0ff 240deg 300deg,
-                #1dd1a1 300deg 360deg);
         box-shadow: 0 0 20px rgba(0, 243, 255, 0.5);
+        overflow: hidden;
+    }
+
+    .wheel-segment {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        clip-path: polygon(50% 50%, 50% 0%, 100% 0%);
+    }
+
+    .segment-text {
+        position: absolute;
+        top: 25%;
+        right: 15%;
+        color: white;
+        font-weight: bold;
+        font-size: 0.8rem;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+        white-space: nowrap;
+        max-width: 100px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .wheel-center {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 60px;
+        height: 60px;
+        background: white;
+        border-radius: 50%;
+        z-index: 100;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
     }
 
     .wheel-arrow {
@@ -172,6 +205,7 @@
     <div class="wheel-container">
         <div class="wheel-arrow"></div>
         <div class="wheel" id="wheel"></div>
+        <div class="wheel-center">🎵</div>
     </div>
 
     <button id="spinBtn" class="spin-btn">SPIN THE WHEEL!</button>
@@ -215,6 +249,65 @@
 
     let currentRotation = 0;
     let currentSongId = null;
+    let availableSongs = [];
+
+    // Vibrant colors for wheel segments
+    const segmentColors = [
+        '#ff6b6b', '#feca57', '#48dbfb', '#ff9ff3',
+        '#54a0ff', '#1dd1a1', '#ee5a6f', '#f368e0',
+        '#00d2d3', '#ffa502', '#5f27cd', '#00b894'
+    ];
+
+    // Function to build the wheel with song titles
+    async function buildWheel() {
+        try {
+            // Fetch all available songs
+            const response = await fetch('/jukebox/api/spin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ community_id: communityId })
+            });
+
+            const data = await response.json();
+            if (!data.success || !data.allSongs || data.allSongs.length === 0) {
+                wheel.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: white; text-align: center; padding: 20px;">No songs available. Add songs to the song-recommendations channel!</div>';
+                spinBtn.disabled = true;
+                return;
+            }
+
+            availableSongs = data.allSongs;
+            const numSegments = Math.min(availableSongs.length, 12); // Max 12 segments
+            const anglePerSegment = 360 / numSegments;
+
+            wheel.innerHTML = ''; // Clear wheel
+
+            for (let i = 0; i < numSegments; i++) {
+                const segment = document.createElement('div');
+                segment.className = 'wheel-segment';
+                segment.style.backgroundColor = segmentColors[i % segmentColors.length];
+
+                // Simple rotation for each segment
+                const rotation = i * anglePerSegment;
+                segment.style.transform = `rotate(${rotation}deg)`;
+
+                const text = document.createElement('div');
+                text.className = 'segment-text';
+                text.textContent = availableSongs[i].title;
+
+                segment.appendChild(text);
+                wheel.appendChild(segment);
+            }
+
+            console.log(`✅ Wheel built with ${numSegments} songs`);
+        } catch (error) {
+            console.error('Error building wheel:', error);
+            wheel.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: white;">Error loading songs</div>';
+            spinBtn.disabled = true;
+        }
+    }
+
+    // Build wheel on page load
+    buildWheel();
 
     spinBtn.addEventListener('click', async () => {
         // Reset UI

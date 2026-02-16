@@ -49,6 +49,27 @@ def get_communities():
         memberships = supabase.table('community_members').select('community_id').eq('user_id', user_id).execute()
         community_ids = [m['community_id'] for m in memberships.data]
         
+        # AUTO-JOIN MUSICLY: If user isn't in any communities, add them to Musicly automatically
+        if not community_ids:
+            try:
+                # Check if Musicly exists
+                musicly = supabase.table('communities').select('community_id').eq('name', 'Musicly').execute()
+                if musicly.data:
+                    musicly_id = musicly.data[0]['community_id']
+                    # Add user to Musicly
+                    supabase.table('community_members').insert({
+                        'community_id': musicly_id,
+                        'user_id': user_id,
+                        'joined_at': 'now()'
+                    }).execute()
+                    print(f"✅ Auto-joined user {user_id} to Musicly")
+                    # Add Musicly to their community list
+                    community_ids = [musicly_id]
+                else:
+                    print("⚠️ Musicly community not found. Please run the setup SQL.")
+            except Exception as e:
+                print(f"⚠️ Error auto-joining Musicly: {e}")
+        
         if not community_ids:
             return jsonify([])
         
