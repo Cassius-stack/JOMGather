@@ -166,6 +166,9 @@ def login():
         if email.startswith('dev_'):
             try:
                 internal_user = fetch_one('users', email=email)
+                if internal_user and internal_user.get('is_deleted'):
+                     flash("This account has been deleted.", "danger")
+                     return render_template('auth/login.html')
                 if internal_user and check_password_hash(internal_user.get('password_hash', ''), password):
                      session['user_id'] = internal_user['user_id']
                      session['username'] = internal_user['username']
@@ -194,6 +197,11 @@ def login():
             
             # 2. Lookup Internal User ID using auth_id
             internal_user = fetch_one('users', auth_id=user_uuid)
+            
+            if internal_user and internal_user.get('is_deleted'):
+                session.clear()
+                flash("This account has been deleted.", "danger")
+                return render_template('auth/login.html')
             
             if internal_user:
                 # 3. Create Session with Internal ID
