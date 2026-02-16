@@ -12,6 +12,10 @@ import random
 
 jukebox_bp = Blueprint('jukebox', __name__)
 
+# Initialize Supabase client
+supabase = get_supabase()
+
+
 
 def get_current_user_id():
     """Get current user ID from session."""
@@ -31,7 +35,18 @@ def get_current_username():
 @login_required
 def jukebox_page():
     """Main jukebox page with spinning wheel."""
-    community_id = request.args.get('community', type=int) or 2  # Default to Musicly (ID 2)
+    # Always find Musicly community dynamically
+    try:
+        musicly = supabase.table('communities').select('community_id').eq('name', 'Musicly').execute()
+        if musicly.data and len(musicly.data) > 0:
+            community_id = musicly.data[0]['community_id']
+        else:
+            # Fallback if Musicly doesn't exist
+            community_id = 2
+    except Exception as e:
+        print(f"Error finding Musicly: {e}")
+        community_id = 2
+    
     return render_template('jukebox/juke.html', community_id=community_id)
 
 
