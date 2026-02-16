@@ -410,6 +410,159 @@
         display: flex;
     }
 
+    /* Bottom Toast Notification */
+    .bottom-toast {
+        position: fixed;
+        bottom: 30px;
+        left: 50%;
+        transform: translateX(-50%) translateY(100px);
+        background: rgba(0, 200, 100, 0.9);
+        backdrop-filter: blur(16px);
+        padding: 14px 28px;
+        border-radius: 16px;
+        color: white;
+        font-weight: 600;
+        font-size: 0.95rem;
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        box-shadow: 0 8px 32px rgba(0, 200, 100, 0.4);
+        transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        pointer-events: none;
+    }
+
+    .bottom-toast.show {
+        transform: translateX(-50%) translateY(0);
+    }
+
+    .bottom-toast i {
+        font-size: 1.2rem;
+    }
+
+    /* Friend Request Popup */
+    .friend-request-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.6);
+        z-index: 9998;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        animation: fadeIn 0.3s ease;
+    }
+
+    .friend-request-overlay.show {
+        display: flex;
+    }
+
+    .friend-request-popup {
+        background: rgba(30, 30, 45, 0.95);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 24px;
+        padding: 35px 40px;
+        text-align: center;
+        max-width: 380px;
+        width: 90%;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .friend-request-popup .popup-icon {
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #00f2fe, #4facfe);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 20px;
+        font-size: 1.8rem;
+    }
+
+    .friend-request-popup h3 {
+        color: white;
+        font-size: 1.3rem;
+        margin-bottom: 8px;
+    }
+
+    .friend-request-popup p {
+        color: rgba(255, 255, 255, 0.6);
+        font-size: 0.9rem;
+        margin-bottom: 25px;
+    }
+
+    .popup-actions {
+        display: flex;
+        gap: 12px;
+        justify-content: center;
+    }
+
+    .popup-btn {
+        padding: 12px 28px;
+        border-radius: 14px;
+        font-weight: 700;
+        font-size: 0.95rem;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .popup-btn.accept {
+        background: linear-gradient(135deg, #00c853, #00e676);
+        color: white;
+    }
+
+    .popup-btn.accept:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0, 200, 83, 0.5);
+    }
+
+    .popup-btn.decline {
+        background: rgba(255, 255, 255, 0.08);
+        color: rgba(255, 255, 255, 0.7);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .popup-btn.decline:hover {
+        background: rgba(255, 65, 108, 0.2);
+        border-color: #ff416c;
+        color: #ff416c;
+    }
+
+    /* Add Friend Button States */
+    .control-btn.friend-sent {
+        background: rgba(0, 200, 100, 0.2);
+        color: #00c864;
+        pointer-events: none;
+    }
+
+    @keyframes popIn {
+        from {
+            transform: scale(0.8);
+            opacity: 0;
+        }
+
+        to {
+            transform: scale(1);
+            opacity: 1;
+        }
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+        }
+
+        to {
+            opacity: 1;
+        }
+    }
+
     @media (max-width: 1000px) {
         .app-container {
             flex-direction: column;
@@ -526,6 +679,31 @@
                     <i class="bi bi-send-fill"></i>
                 </button>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bottom Toast -->
+<div class="bottom-toast" id="bottomToast">
+    <i class="bi bi-check-circle-fill"></i>
+    <span id="bottomToastText">Friend request sent!</span>
+</div>
+
+<!-- Friend Request Popup -->
+<div class="friend-request-overlay" id="friendRequestOverlay">
+    <div class="friend-request-popup">
+        <div class="popup-icon">
+            <i class="bi bi-person-plus-fill"></i>
+        </div>
+        <h3>Friend Request!</h3>
+        <p><span id="friendRequestName">Someone</span> wants to add you as a friend</p>
+        <div class="popup-actions">
+            <button class="popup-btn decline" onclick="respondFriendRequest(false)">
+                <i class="bi bi-x-lg"></i> Decline
+            </button>
+            <button class="popup-btn accept" onclick="respondFriendRequest(true)">
+                <i class="bi bi-check-lg"></i> Accept
+            </button>
         </div>
     </div>
 </div>
@@ -667,6 +845,30 @@
             `;
         });
 
+        // Friend request received from partner
+        socket.on('boomerang_friend_request', (data) => {
+            handleIncomingFriendRequest(data);
+        });
+
+        // Friend response from partner (they accepted/declined our request)
+        socket.on('boomerang_friend_response', (data) => {
+            if (data.accepted) {
+                showBottomToast(`${data.from_name} accepted your friend request! 🎉`);
+                // Update the add friend button to show accepted
+                const addBtn = document.getElementById('addFriendBtn');
+                addBtn.classList.add('friend-sent');
+                addBtn.innerHTML = '<i class="bi bi-people-fill"></i>';
+                addBtn.title = 'Friends!';
+            } else {
+                showBottomToast(`${data.from_name} declined the request`, true);
+                // Re-enable button so they can try again later
+                const addBtn = document.getElementById('addFriendBtn');
+                addBtn.disabled = false;
+                addBtn.classList.remove('friend-sent');
+                addBtn.innerHTML = '<i class="bi bi-person-plus"></i>';
+            }
+        });
+
         socket.on('disconnect', () => {
             showStatus('Connection lost', 'error');
         });
@@ -749,9 +951,13 @@
 
     document.getElementById('addFriendBtn').addEventListener('click', async function () {
         if (!partnerId) {
-            alert("No partner info available to add friend.");
+            showBottomToast('No partner info available', true);
             return;
         }
+
+        // Disable immediately to prevent double-click
+        this.disabled = true;
+        this.innerHTML = '<i class="bi bi-hourglass-split"></i>';
 
         try {
             const response = await fetch('/social/api/friend-request', {
@@ -764,17 +970,101 @@
 
             const data = await response.json();
             if (data.success) {
-                this.classList.add('active');
+                // Update button to sent state
+                this.classList.add('friend-sent');
                 this.innerHTML = '<i class="bi bi-check-lg"></i>';
-                this.disabled = true;
+                this.title = 'Friend request sent';
+
+                // Show toast notification
+                showBottomToast('Friend request sent!');
+
+                // Notify partner via Socket.IO
+                if (socket) {
+                    socket.emit('boomerang_friend_request', {
+                        from_name: userName,
+                        from_id: '{{ session.get("user_id", "") }}'
+                    });
+                }
             } else {
-                alert(data.error || 'Failed to send friend request');
+                // Re-enable button on failure
+                this.disabled = false;
+                this.innerHTML = '<i class="bi bi-person-plus"></i>';
+                showBottomToast(data.error || 'Request already sent', true);
             }
         } catch (e) {
             console.error(e);
-            alert('Error sending friend request');
+            this.disabled = false;
+            this.innerHTML = '<i class="bi bi-person-plus"></i>';
+            showBottomToast('Error sending request', true);
         }
     });
+
+    // Show bottom toast notification
+    function showBottomToast(message, isError = false) {
+        const toast = document.getElementById('bottomToast');
+        const toastText = document.getElementById('bottomToastText');
+        toastText.textContent = message;
+        toast.style.background = isError
+            ? 'rgba(255, 65, 108, 0.9)'
+            : 'rgba(0, 200, 100, 0.9)';
+        toast.style.boxShadow = isError
+            ? '0 8px 32px rgba(255, 65, 108, 0.4)'
+            : '0 8px 32px rgba(0, 200, 100, 0.4)';
+        toast.querySelector('i').className = isError
+            ? 'bi bi-exclamation-circle-fill'
+            : 'bi bi-check-circle-fill';
+        toast.classList.add('show');
+        setTimeout(() => { toast.classList.remove('show'); }, 3000);
+    }
+
+    // Handle incoming friend request from partner
+    let pendingFriendRequestId = null;
+    function handleIncomingFriendRequest(data) {
+        pendingFriendRequestId = data.from_id;
+        document.getElementById('friendRequestName').textContent = data.from_name || 'Your partner';
+        document.getElementById('friendRequestOverlay').classList.add('show');
+    }
+
+    // Respond to friend request
+    async function respondFriendRequest(accept) {
+        document.getElementById('friendRequestOverlay').classList.remove('show');
+
+        if (accept && pendingFriendRequestId) {
+            // Accept: the request is already in the DB as 'pending', update to 'accepted'
+            try {
+                const response = await fetch('/social/api/friend-accept', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ requester_id: pendingFriendRequestId })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    showBottomToast('Friend added! 🎉');
+                    // Notify partner
+                    if (socket) {
+                        socket.emit('boomerang_friend_response', {
+                            accepted: true,
+                            from_name: userName
+                        });
+                    }
+                } else {
+                    showBottomToast(data.error || 'Could not accept', true);
+                }
+            } catch (e) {
+                console.error(e);
+                showBottomToast('Error accepting request', true);
+            }
+        } else {
+            showBottomToast('Friend request declined');
+            if (socket) {
+                socket.emit('boomerang_friend_response', {
+                    accepted: false,
+                    from_name: userName
+                });
+            }
+        }
+        pendingFriendRequestId = null;
+    }
 
     function sendMessage() {
         const input = document.getElementById('messageInput');

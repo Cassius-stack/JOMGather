@@ -188,6 +188,12 @@ def send_friend_request():
         
         if not target_id:
             return jsonify({'error': 'Missing target_id'}), 400
+        
+        # Ensure target_id is an integer
+        try:
+            target_id = int(target_id)
+        except (ValueError, TypeError):
+            return jsonify({'error': 'Invalid target_id'}), 400
             
         supabase = get_supabase()
         # Check existing

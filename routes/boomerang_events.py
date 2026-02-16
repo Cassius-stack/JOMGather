@@ -177,6 +177,30 @@ def register_boomerang_events(socketio):
                 'name': data.get('name', 'Anonymous')
             }, room=room_id, include_self=False)
     
+    @socketio.on('boomerang_friend_request')
+    def handle_friend_request(data):
+        """Relay friend request to partner in the room."""
+        sid = request.sid
+        room_id = user_room_map.get(sid)
+        
+        if room_id and room_id in active_rooms:
+            emit('boomerang_friend_request', {
+                'from_name': data.get('from_name', 'Someone'),
+                'from_id': data.get('from_id')
+            }, room=room_id, include_self=False)
+    
+    @socketio.on('boomerang_friend_response')
+    def handle_friend_response(data):
+        """Relay friend request response to partner in the room."""
+        sid = request.sid
+        room_id = user_room_map.get(sid)
+        
+        if room_id and room_id in active_rooms:
+            emit('boomerang_friend_response', {
+                'accepted': data.get('accepted', False),
+                'from_name': data.get('from_name', 'Partner')
+            }, room=room_id, include_self=False)
+    
     @socketio.on('boomerang_end_call')
     def handle_end_call():
         """User ends the call (leave or next)."""
