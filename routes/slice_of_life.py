@@ -15,6 +15,11 @@ slice_of_life_bp = Blueprint('slice_of_life', __name__)
 def get_current_user_id():
     return session.get('user_id')
 
+def _get_profile_pic(user_id):
+    """Helper to get profile picture safely."""
+    p = fetch_one('profiles', user_id=user_id)
+    return p['profile_picture'] if p and p.get('profile_picture') else None
+
 # ============================================
 # MAIN FLOW ROUTES
 # ============================================
@@ -155,6 +160,11 @@ def choose_recipients():
     # 2. Fetch friend details (manually filtering for now since fetch_all is simple)
     # In a real app: supabase.table('users').select('*').in_('user_id', friend_ids)...
     all_users = fetch_all('users')
+
+    # Optimization: Fetch all profiles once to map avatars
+    all_profiles = fetch_all('profiles')
+    profile_map = {p['user_id']: p.get('profile_picture') for p in all_profiles}
+
     friends = []
     for u in all_users:
         if u['user_id'] in friend_ids:
@@ -172,6 +182,8 @@ def choose_recipients():
                 except:
                     pass
             u['is_active'] = is_active
+            # Attach real profile picture
+            u['profile_picture'] = profile_map.get(u['user_id'])
             friends.append(u)
 
     # 3. Sort by active status first, then username
@@ -353,6 +365,7 @@ def waiting_room():
             # Fetch partner info
             partner = fetch_one('users', user_id=partner_id)
             partner_name = partner['username'] if partner else f"User {partner_id}"
+            partner_pic = _get_profile_pic(partner_id)
             
             # Fetch query prompt text
             prompt = fetch_one('sol_prompts', prompt_id=invite['prompt_id'])
@@ -365,6 +378,7 @@ def waiting_room():
                 'invite': invite,
                 'display': display,
                 'partner_name': partner_name,
+                'partner_pic': partner_pic,
                 'is_me_sender': is_me_sender,
                 'prompt_text': prompt['prompt_text'] if prompt else "Daily Prompt",
                 'my_submission': my_sub
@@ -406,6 +420,7 @@ def review(display_id):
     for c in comments:
         u = fetch_one('users', user_id=c['user_id'])
         c['username'] = u['username'] if u else 'Unknown'
+        c['profile_picture'] = _get_profile_pic(c['user_id'])
         
     likes = fetch_all('sol_likes', display_id=display_id)
     like_count = len(likes)
@@ -414,6 +429,8 @@ def review(display_id):
     # Fetch partner info
     partner_id = display['partner_id'] if display['creator_id'] == get_current_user_id() else display['creator_id']
     partner = fetch_one('users', user_id=partner_id)
+    if partner:
+        partner['profile_picture'] = _get_profile_pic(partner_id)
 
     if request.method == 'POST':
         # This POST block handles the 'Partner Comment' (the one being renamed)
@@ -425,6 +442,12 @@ def review(display_id):
                 # Refresh submissions
                 submissions = fetch_all('sol_submissions', display_id=display_id)
     
+    # Enrich submissions with user info
+    for sub in submissions:
+        sub['profile_picture'] = _get_profile_pic(sub['user_id'])
+        u = fetch_one('users', user_id=sub['user_id'])
+        sub['username'] = u['username'] if u else f"User {sub['user_id']}"
+
     # Sort submissions: Current user ALWAYS first (on the left)
     submissions.sort(key=lambda x: x['user_id'] != get_current_user_id())
     
@@ -723,8 +746,17 @@ def catalog():
         
     elif filter_type == 'friends':
         # Friend's displays: displays where creator OR partner is my friend AND is_public=True
-        # TODO: Implement Friend Logic
-        displays = []
+        friendships = fetch_all('friendships', status='accepted')
+        friend_ids = set()
+        for f in friendships:
+            if f['user_id_1'] == current_uid:
+                friend_ids.add(f['user_id_2'])
+            elif f['user_id_2'] == current_uid:
+                friend_ids.add(f['user_id_1'])
+
+        # Fetch all public displays and filter by friends
+        all_public = fetch_all('sol_displays', status='completed', is_public=True)
+        displays = [d for d in all_public if d['creator_id'] in friend_ids or d['partner_id'] in friend_ids]
     
     # Enrich displays with submissions (images), prompt text, and sorting
     enriched_displays = []
@@ -744,7 +776,14 @@ def catalog():
         
         # Top 3 Comments
         all_comments = fetch_all('sol_comments', display_id=d['display_id'])
-        d['comments_preview'] = all_comments[:3]
+        preview = all_comments[:3]
+        # Enrich comments with user info
+        for c in preview:
+            u = fetch_one('users', user_id=c['user_id'])
+            c['username'] = u['username'] if u else 'Unknown'
+            c['profile_picture'] = _get_profile_pic(c['user_id'])
+
+        d['comments_preview'] = preview
         
         enriched_displays.append(d)
 
@@ -795,6 +834,8 @@ def receiver_respond(invite_id):
     # 3. Fetch Prompt and Sender Details
     prompt = fetch_one('sol_prompts', prompt_id=invite['prompt_id'])
     sender = fetch_one('users', user_id=invite['sender_id'])
+    if sender:
+        sender['profile_picture'] = _get_profile_pic(invite['sender_id'])
 
     if request.method == 'POST':
         story = request.form.get('story')
