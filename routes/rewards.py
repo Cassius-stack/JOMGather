@@ -15,12 +15,12 @@ rewards_bp = Blueprint('rewards', __name__)
 
 # List of available rewards (can be moved to database later)
 REWARDS = [
-    {'id': 1, 'name': 'Welcome Gift', 'price': 200, 'image': 'giftbox.svg'},
-    {'id': 2, 'name': 'NTUC: $10 Voucher', 'price': 1500, 'image': 'bulb.svg'},
-    {'id': 3, 'name': 'Reusable Tote', 'price': 2000, 'image': 'giftbox.svg'},
-    {'id': 4, 'name': 'Tiger Balm Plaster', 'price': 2500, 'image': 'bulb.svg'},
-    {'id': 5, 'name': 'Pei Pa Koa: Nin Joim', 'price': 6767, 'image': 'giftbox.svg'},
-    {'id': 6, 'name': 'Essence of Chicken (Pack of 6)', 'price': 22750, 'image': 'bulb.svg'},
+    {'id': 1, 'name': 'Welcome Gift', 'price': 15, 'image': 'giftbox.svg'},
+    {'id': 2, 'name': 'NTUC: $10 Voucher', 'price': 30, 'image': 'bulb.svg'},
+    {'id': 3, 'name': 'Reusable Tote', 'price': 50, 'image': 'giftbox.svg'},
+    {'id': 4, 'name': 'Tiger Balm Plaster', 'price': 100, 'image': 'bulb.svg'},
+    {'id': 5, 'name': 'Pei Pa Koa: Nin Joim', 'price': 300, 'image': 'giftbox.svg'},
+    {'id': 6, 'name': 'Essence of Chicken (Pack of 6)', 'price': 500, 'image': 'bulb.svg'},
 ]
 
 
