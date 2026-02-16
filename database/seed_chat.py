@@ -73,3 +73,4 @@ def seed_chat_data():
 
 if __name__ == '__main__':
     seed_chat_data()
+
