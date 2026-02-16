@@ -7,6 +7,27 @@ from flask import Blueprint, render_template, request, redirect, url_for, jsonif
 from utils.supabase_db import get_supabase, fetch_all, fetch_one, insert, retry_query
 from utils.auth_middleware import login_required
 import traceback
+import os
+import uuid
+from werkzeug.utils import secure_filename
+
+UPLOAD_FOLDER = os.path.join('static', 'uploads', 'social')
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'mp4', 'mov', 'mp3', 'wav'}
+
+def validate_media_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def get_media_type(filename):
+    if '.' not in filename: return None
+    ext = filename.rsplit('.', 1)[1].lower()
+    if ext in ['png', 'jpg', 'jpeg', 'gif', 'webp']:
+        return 'image'
+    elif ext in ['mp4', 'mov', 'webm']:
+        return 'video'
+    elif ext in ['mp3', 'wav', 'ogg']:
+        return 'audio'
+    return None
 
 social_bp = Blueprint('social', __name__)
 
@@ -680,7 +701,8 @@ def ask_grandfriend():
     except Exception as e:
         print(f"Error building history: {e}")
         
-    return render_template('social/ask_grandfriend.html', questions=questions, current_user_id=current_user_id, current_username=current_username, history_users=history_users)
+    user_type = session.get('user_type', 'youth')
+    return render_template('social/ask_grandfriend.html', questions=questions, current_user_id=current_user_id, current_username=current_username, history_users=history_users, user_type=user_type)
 
 @social_bp.route('/ask-grandfriend/post', methods=['GET', 'POST'])
 def post_question():
@@ -691,6 +713,13 @@ def post_question():
             from flask import flash
             flash("Please log in to ask a question.", "warning")
             return redirect(url_for('auth.login'))
+        
+        # Role check: only students (youth) can post questions
+        current_type = session.get('user_type', 'youth')
+        if current_type == 'senior':
+            from flask import flash
+            flash("Grandparents can reply to questions but cannot post new ones.", "warning")
+            return redirect(url_for('social.ask_grandfriend'))
             
         title = request.form.get('title', '').strip()
         content = request.form.get('content', '').strip()
@@ -719,11 +748,37 @@ def post_question():
             author_name = "User"
             author_type = "student"
 
+        # Handle File Upload
+        media_url = None
+        media_type = None
+        media_file = request.files.get('media')
+        
+        if media_file and media_file.filename:
+            if validate_media_file(media_file.filename):
+                filename = secure_filename(media_file.filename)
+                unique_name = f"{uuid.uuid4()}_{filename}"
+                
+                # ensure directory exists
+                if not os.path.exists(UPLOAD_FOLDER):
+                    os.makedirs(UPLOAD_FOLDER)
+                    
+                local_path = os.path.join(UPLOAD_FOLDER, unique_name)
+                media_file.save(local_path)
+                
+                # relative URL for static
+                # Note: need to fix path slashes for URL
+                media_url = url_for('static', filename=f'uploads/social/{unique_name}')
+                media_type = get_media_type(filename)
+            else:
+                from flask import flash
+                flash("Invalid file type. Allowed: Image, Video, Audio.", "warning")
+                return redirect(url_for('social.ask_grandfriend'))
+
         if title:
             success = False
             try:
                 # Try inserting with user_id (New Schema)
-                insert('questions', {
+                data = {
                     'title': title,
                     'content': content,
                     'category': category,
@@ -731,20 +786,32 @@ def post_question():
                     'author_type': author_type,
                     'is_anonymous': is_anonymous,
                     'user_id': user_id
-                })
+                }
+                if media_url:
+                    data['media_url'] = media_url
+                    data['media_type'] = media_type
+                    
+                insert('questions', data)
                 success = True
             except Exception as e:
                 print(f"Error posting with user_id: {e}")
                 # Fallback to Old Schema (no user_id column)
                 try:
-                    insert('questions', {
+                     # try original fallback without media first if column missing?
+                     # actually lets assume user ran schema update
+                    data = {
                         'title': title,
                         'content': content,
                         'category': category,
                         'author_name': 'Anonymous' if is_anonymous else author_name,
                         'author_type': author_type,
                         'is_anonymous': is_anonymous
-                    })
+                    }
+                    if media_url:
+                        data['media_url'] = media_url
+                        data['media_type'] = media_type
+                        
+                    insert('questions', data)
                     success = True
                 except Exception as e2:
                     print(f"Error posting fallback: {e2}")
@@ -854,6 +921,21 @@ def post_reply(question_id):
     if not content:
         return redirect(url_for('social.ask_grandfriend'))
 
+    # Role check: can only reply to opposite type's questions
+    current_type = session.get('user_type', 'youth')
+    try:
+        q_data = fetch_one('questions', id=question_id)
+        if q_data:
+            q_author_type = q_data.get('author_type', '')
+            # Students can only reply to grandparent posts, grandparents to student posts
+            if (current_type == 'youth' and q_author_type == 'student') or \
+               (current_type == 'senior' and q_author_type == 'grandparent'):
+                from flask import flash
+                flash("You can only reply to posts from the other group.", "warning")
+                return redirect(url_for('social.ask_grandfriend'))
+    except Exception as e:
+        print(f"Error checking question author type: {e}")
+
     # Determine Author
     try:
         user_data = fetch_one('users', user_id=user_id)
@@ -867,6 +949,29 @@ def post_reply(question_id):
         author_name = "User"
         author_type = "student"
 
+    # Handle File Upload
+    media_url = None
+    media_type = None
+    media_file = request.files.get('media')
+    
+    if media_file and media_file.filename:
+        if validate_media_file(media_file.filename):
+            filename = secure_filename(media_file.filename)
+            unique_name = f"{uuid.uuid4()}_{filename}"
+            
+            if not os.path.exists(UPLOAD_FOLDER):
+                os.makedirs(UPLOAD_FOLDER)
+                
+            local_path = os.path.join(UPLOAD_FOLDER, unique_name)
+            media_file.save(local_path)
+            
+            media_url = url_for('static', filename=f'uploads/social/{unique_name}')
+            media_type = get_media_type(filename)
+        else:
+            from flask import flash
+            flash("Invalid file type.", "warning")
+            return redirect(url_for('social.ask_grandfriend'))
+
     try:
         data = {
             'question_id': question_id,
@@ -875,6 +980,10 @@ def post_reply(question_id):
             'author_name': author_name,
             'author_type': author_type
         }
+        if media_url:
+            data['media_url'] = media_url
+            data['media_type'] = media_type
+
         if parent_reply_id:
             data['parent_reply_id'] = parent_reply_id
             
