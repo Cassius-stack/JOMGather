@@ -172,7 +172,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     users.forEach(user => {
                         const item = document.createElement('div');
-                        item.className = 'list-group-item border-0 d-flex align-items-center gap-3 py-3 px-0';
+                        item.className = 'list-group-item border-0 d-flex align-items-center gap-3 py-3 px-3';
 
                         let actionBtn = '';
                         if (user.friendship_status === 'pending') {
