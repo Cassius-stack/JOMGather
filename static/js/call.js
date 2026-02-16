@@ -2,6 +2,9 @@
  * Video & Voice Call Module
  * Uses WebRTC for peer-to-peer media and Socket.IO for signaling
  */
+// JOMGather - Voice & Video Call System
+// Uses WebRTC for peer-to-peer communication
+console.log('%c[Call.js] VERSION 2.0 LOADED - TURN+ICE FIX', 'background: red; color: white; font-size: 16px; padding: 4px;');
 
 // ========== CALL STATE ==========
 let currentCall = {
@@ -17,14 +20,18 @@ let currentCall = {
     connectedTime: null,  // When call actually connected (for duration)
     wasConnected: false,  // Track if call was ever answered/connected
     durationTimer: null,
-    offerSent: false  // Track if we've already sent an offer
+    offerSent: false,  // Track if we've already sent an offer
+    iceCandidateQueue: []  // Buffer ICE candidates that arrive before remote description
 };
 
-// WebRTC configuration - using public STUN servers
+// WebRTC configuration - STUN servers for NAT traversal
 const rtcConfig = {
     iceServers: [
         { urls: 'stun:stun.l.google.com:19302' },
-        { urls: 'stun:stun1.l.google.com:19302' }
+        { urls: 'stun:stun1.l.google.com:19302' },
+        { urls: 'stun:stun2.l.google.com:19302' },
+        { urls: 'stun:stun3.l.google.com:19302' },
+        { urls: 'stun:stun4.l.google.com:19302' }
     ]
 };
 
@@ -215,7 +222,11 @@ function declineCall() {
         call_type: currentCall.callType
     });
 
-    resetCallState();
+    // Reset call state (was referencing non-existent resetCallState)
+    currentCall.active = false;
+    currentCall.remoteUserId = null;
+    currentCall.remoteUserName = null;
+    currentCall.callType = 'voice';
 }
 
 // ========== END CALL ==========
@@ -268,24 +279,30 @@ function setupPeerConnection() {
 
     // Handle incoming tracks
     currentCall.peerConnection.ontrack = (event) => {
-        console.log('[Call] Received remote track');
+        console.log('[Call] Received remote track:', event.track.kind);
         currentCall.remoteStream = event.streams[0];
         const remoteVideo = document.getElementById('remoteVideo');
         if (remoteVideo) {
             remoteVideo.srcObject = currentCall.remoteStream;
 
-            // Hide placeholder when video starts playing
-            remoteVideo.addEventListener('loadedmetadata', () => {
-                console.log('[Call] Remote video metadata loaded');
-                const placeholder = remoteVideo.parentElement.querySelector('.video-placeholder');
-                if (placeholder) placeholder.style.display = 'none';
-            });
+            // Immediately hide placeholder when we have a stream
+            const placeholder = remoteVideo.parentElement.querySelector('.video-placeholder');
+            if (placeholder) placeholder.style.display = 'none';
 
+            // Also ensure remote avatar placeholder is hidden for video calls
+            const remoteAvatar = document.getElementById('remoteAvatarPlaceholder');
+            if (remoteAvatar && currentCall.callType === 'video') {
+                remoteAvatar.style.display = 'none';
+            }
+
+            // Ensure video is visible
+            remoteVideo.style.opacity = '1';
+
+            // Fallback: hide placeholder when video actually starts playing
             remoteVideo.addEventListener('playing', () => {
                 console.log('[Call] Remote video playing');
-                const placeholder = remoteVideo.parentElement.querySelector('.video-placeholder');
                 if (placeholder) placeholder.style.display = 'none';
-            });
+            }, { once: true });
         }
         updateCallScreen('connected');
     };
@@ -293,19 +310,29 @@ function setupPeerConnection() {
     // Handle ICE candidates
     currentCall.peerConnection.onicecandidate = (event) => {
         if (event.candidate) {
+            console.log(`[Call] ICE candidate: type=${event.candidate.type} protocol=${event.candidate.protocol} address=${event.candidate.address}`);
             socket.emit('ice_candidate', {
                 from_user_id: CURRENT_USER_ID,
                 to_user_id: currentCall.remoteUserId,
                 candidate: event.candidate
             });
+        } else {
+            console.log('[Call] ICE gathering complete');
         }
     };
 
     // Connection state changes
+    let iceRestartAttempts = 0;
+    const MAX_ICE_RESTARTS = 2;
+
     currentCall.peerConnection.onconnectionstatechange = () => {
-        console.log('[Call] Connection state:', currentCall.peerConnection.connectionState);
-        if (currentCall.peerConnection.connectionState === 'connected') {
+        if (!currentCall.peerConnection) return;
+        const connState = currentCall.peerConnection.connectionState;
+        console.log('[Call] Connection state:', connState);
+
+        if (connState === 'connected') {
             console.log('[Call] ✅ WebRTC connection established');
+            iceRestartAttempts = 0;  // Reset on success
 
             // Mark call as connected and record time for duration tracking
             currentCall.wasConnected = true;
@@ -316,22 +343,68 @@ function setupPeerConnection() {
 
             // Send initial camera/mic status to remote user
             sendInitialMediaStatus();
-        } else if (currentCall.peerConnection.connectionState === 'disconnected') {
+        } else if (connState === 'disconnected') {
             console.log('[Call] ⚠️ Connection disconnected');
             setTimeout(() => {
                 if (currentCall.peerConnection?.connectionState === 'disconnected') {
                     endCall();
                 }
-            }, 3000); // Wait 3s before ending (might reconnect)
-        } else if (currentCall.peerConnection.connectionState === 'failed') {
-            console.log('[Call] ❌ Connection failed');
-            endCall();
+            }, 10000);
+        } else if (connState === 'failed') {
+            iceRestartAttempts++;
+            if (iceRestartAttempts <= MAX_ICE_RESTARTS && currentCall.isInitiator) {
+                console.log(`[Call] ⚠️ Connection failed — attempting ICE restart (${iceRestartAttempts}/${MAX_ICE_RESTARTS})...`);
+                // Restart ICE to gather new candidates (e.g., STUN srflx)
+                setTimeout(async () => {
+                    try {
+                        if (!currentCall.peerConnection || currentCall.peerConnection.connectionState === 'closed') return;
+                        currentCall.peerConnection.restartIce();
+                        const offer = await currentCall.peerConnection.createOffer({ iceRestart: true });
+                        await currentCall.peerConnection.setLocalDescription(offer);
+                        socket.emit('webrtc_offer', {
+                            caller_id: CURRENT_USER_ID,
+                            callee_id: currentCall.remoteUserId,
+                            offer: offer
+                        });
+                        console.log('[Call] ICE restart offer sent');
+                    } catch (err) {
+                        console.error('[Call] ICE restart failed:', err);
+                        endCall();
+                    }
+                }, 2000);  // Wait 2s before restarting to let STUN responses arrive
+            } else if (!currentCall.isInitiator && iceRestartAttempts <= MAX_ICE_RESTARTS) {
+                // Callee: wait for the caller to send an ICE restart offer
+                console.log('[Call] ⚠️ Connection failed — waiting for ICE restart from caller...');
+                setTimeout(() => {
+                    if (currentCall.peerConnection &&
+                        currentCall.peerConnection.connectionState === 'failed') {
+                        console.log('[Call] ❌ No ICE restart received — ending call');
+                        endCall();
+                    }
+                }, 10000);  // Wait 10s for caller to restart
+            } else {
+                console.log('[Call] ❌ Connection failed after all retry attempts');
+                endCall();
+            }
         }
     };
 
-    // ICE connection state (for debugging)
+    // ICE connection state — also set wasConnected here as a fallback
+    // Some browsers (especially in local/ngrok setups) only fire ICE state changes,
+    // never reaching connectionState === 'connected'
     currentCall.peerConnection.oniceconnectionstatechange = () => {
-        console.log('[Call] ICE connection state:', currentCall.peerConnection.iceConnectionState);
+        const iceState = currentCall.peerConnection.iceConnectionState;
+        console.log('[Call] ICE connection state:', iceState);
+
+        if (iceState === 'connected' || iceState === 'completed') {
+            if (!currentCall.wasConnected) {
+                console.log('[Call] ✅ ICE connected (fallback) — marking wasConnected');
+                currentCall.wasConnected = true;
+                currentCall.connectedTime = currentCall.connectedTime || Date.now();
+                updateCallScreen('connected');
+                sendInitialMediaStatus();
+            }
+        }
     };
 }
 
@@ -375,9 +448,31 @@ async function handleWebRTCOffer(data) {
         return;
     }
 
-    // Prevent processing duplicate offers if peer connection already exists and is not closed
+    // If peer connection exists and is in stable state, this is likely an ICE restart offer
+    if (currentCall.peerConnection && currentCall.peerConnection.signalingState === 'stable') {
+        console.log('[Call] Received ICE restart offer — processing re-negotiation');
+        try {
+            await currentCall.peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
+            const answer = await currentCall.peerConnection.createAnswer();
+            await currentCall.peerConnection.setLocalDescription(answer);
+
+            socket.emit('webrtc_answer', {
+                caller_id: data.caller_id,
+                callee_id: CURRENT_USER_ID,
+                answer: answer
+            });
+
+            await flushIceCandidateQueue();
+            console.log('[Call] ICE restart answer sent');
+        } catch (err) {
+            console.error('[Call] Error handling ICE restart offer:', err);
+        }
+        return;
+    }
+
+    // Prevent processing duplicate offers if peer connection already exists and is negotiating
     if (currentCall.peerConnection && currentCall.peerConnection.signalingState !== 'closed') {
-        console.log('[Call] Ignoring duplicate offer - peer connection already established');
+        console.log('[Call] Ignoring duplicate offer - peer connection in state:', currentCall.peerConnection.signalingState);
         return;
     }
 
@@ -394,6 +489,9 @@ async function handleWebRTCOffer(data) {
             callee_id: CURRENT_USER_ID,
             answer: answer
         });
+
+        // Flush any ICE candidates that arrived before the offer was processed
+        await flushIceCandidateQueue();
 
         console.log('[Call] Answer sent');
     } catch (err) {
@@ -421,6 +519,10 @@ async function handleWebRTCAnswer(data) {
 
     try {
         await currentCall.peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+        console.log('[Call] Remote description set successfully. Signaling state:', currentCall.peerConnection.signalingState);
+        // Flush any ICE candidates that arrived before the answer
+        await flushIceCandidateQueue();
+        console.log('[Call] Answer processing complete. ICE gathering state:', currentCall.peerConnection.iceGatheringState);
     } catch (err) {
         console.error('[Call] Error handling answer:', err);
         endCall();
@@ -429,11 +531,32 @@ async function handleWebRTCAnswer(data) {
 
 // ========== HANDLE ICE CANDIDATE ==========
 async function handleICECandidate(data) {
-    if (currentCall.peerConnection && data.candidate) {
+    if (!data.candidate) return;
+
+    // If peer connection doesn't exist yet or remote description isn't set,
+    // queue the candidate for later
+    if (!currentCall.peerConnection || !currentCall.peerConnection.remoteDescription) {
+        console.log('[Call] Queuing ICE candidate (remote description not set yet)');
+        currentCall.iceCandidateQueue.push(data.candidate);
+        return;
+    }
+
+    try {
+        await currentCall.peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
+    } catch (err) {
+        console.error('[Call] Error adding ICE candidate:', err);
+    }
+}
+
+// Flush any queued ICE candidates after remote description is set
+async function flushIceCandidateQueue() {
+    console.log(`[Call] Flushing ${currentCall.iceCandidateQueue.length} queued ICE candidates`);
+    while (currentCall.iceCandidateQueue.length > 0) {
+        const candidate = currentCall.iceCandidateQueue.shift();
         try {
-            await currentCall.peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
+            await currentCall.peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
         } catch (err) {
-            console.error('[Call] Error adding ICE candidate:', err);
+            console.error('[Call] Error adding queued ICE candidate:', err);
         }
     }
 }
@@ -746,7 +869,8 @@ function cleanupCall() {
         connectedTime: null,
         wasConnected: false,
         durationTimer: null,
-        offerSent: false
+        offerSent: false,
+        iceCandidateQueue: []
     };
 }
 
@@ -766,7 +890,7 @@ function registerCallSocketEvents() {
     socket.on('call_declined', (data) => {
         console.log('[Call] Call declined');
         // Only process if we're actually in a call with this person
-        if (currentCall.active && currentCall.remoteUserId === data.callee_id) {
+        if (currentCall.active && currentCall.remoteUserId == data.callee_id) {
             showToast('Call declined', 'info');
             cleanupCall();
         } else {
@@ -779,7 +903,7 @@ function registerCallSocketEvents() {
         console.log('[Call] Received call_ended event from', data.user_id);
         // Only end the call if we're actually in an active call
         // This prevents stale events from ending newly started calls
-        if (currentCall.active && currentCall.remoteUserId === data.user_id) {
+        if (currentCall.active && currentCall.remoteUserId == data.user_id) {
             console.log('[Call] Call ended by other user');
             showToast('Call ended', 'info');
             cleanupCall();

@@ -620,7 +620,7 @@ def register_chat_events(socketio):
         }, room=f"user_{other_user_id}")
         
         # Only save call message if it was connected (completed call)
-        if was_connected and duration > 0:
+        if was_connected:
             # Create call message content as JSON
             call_content = json.dumps({
                 'type': 'call',
@@ -705,6 +705,8 @@ def register_chat_events(socketio):
         
         if not from_user_id or not to_user_id:
             return
+        
+        print(f"[Socket.IO] ICE candidate from {from_user_id} to {to_user_id}")
         
         emit('ice_candidate', {
             'from_user_id': from_user_id,

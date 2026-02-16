@@ -38,8 +38,8 @@ def create_app(config_name='default'):
     socketio.init_app(app, 
                       cors_allowed_origins="*", 
                       async_mode='threading',
-                      ping_timeout=10,  # seconds to wait for pong
-                      ping_interval=5)  # seconds between pings
+                      ping_timeout=60,  # seconds to wait for pong (increased for ngrok)
+                      ping_interval=25)  # seconds between pings
     
     # Register blueprints
     app.register_blueprint(auth_bp, url_prefix='/auth')

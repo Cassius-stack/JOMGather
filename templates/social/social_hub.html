@@ -219,6 +219,6 @@
         startCall(currentContactId, contactName, 'video');
     }
 </script>
-<script src="{{ url_for('static', filename='js/call.js') }}"></script>
-<script src="{{ url_for('static', filename='js/chat.js') }}"></script>
+<script src="{{ url_for('static', filename='js/call.js') }}?v={{ range(10000, 99999) | random }}"></script>
+<script src="{{ url_for('static', filename='js/chat.js') }}?v={{ range(10000, 99999) | random }}"></script>
 {% endblock %}

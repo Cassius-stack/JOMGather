@@ -1,0 +1,30 @@
+﻿0b0f7ef edit
+c028d50 Merge branch 'kevin_part'
+1ff8bdf Merge branch 'main' of https://github.com/Cassius-stack/JOMGather
+de47705 edited account user id
+37c56ad Merge branch 'brandon'
+6e1fa25 Hello
+d3fc820 Merge pull request #5 from Cassius-stack/fix-sol-crash-chat-respond-4696424841084173789
+fe24e44 Fix Internal Server Error in waiting room and disable response button for sender in chat
+6ed62bb Merge branch 'main' of https://github.com/Cassius-stack/JOMGather into deon-comm
+c93a5f2 Fix Comms
+31c8174 Merge pull request #4 from Cassius-stack/fix-slice-of-life-status-2828123695845153043
+8778278 Merge branch 'main' of https://github.com/Cassius-stack/JOMGather into kevin_part
+5f2046e Merge branch 'kevin_part'
+614dd40 edited somethings for retarded
+f28579f Merge branch 'kevin_part'
+2e475e9 Edited profie for deleting acc
+b7fbc2f Merge branch 'main' of https://github.com/Cassius-stack/JOMGather into kevin_part
+bedafa3 Merge branch 'kevin_part'
+f9aea79 Edited profile for comminty
+7b57c45 Fix Slice of Life display status transition to enable review mode.
+4d7d051 Merge branch 'main' of https://github.com/Cassius-stack/JOMGather into kevin_part
+c0ec185 merge branch 'kevin_part'
+aac244e edited delete account functions
+bacc8b4 Update jukebox
+34acd25 Merge branch 'main' of https://github.com/Cassius-stack/JOMGather into deon-comm
+2f2a983 Update JB
+5a246ed Update jukebox
+7f5c3c6 jukebox update
+95a9239 Jukebox update
+db4a5b3 Fixing up my communty
