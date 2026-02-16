@@ -138,10 +138,23 @@
                     <p class="text-muted mb-3">Ask your partner to scan this QR code to verify the session completion:
                     </p>
                     <h6 class="text-primary mb-3" id="qrTaskTitle"></h6>
-                    <div id="qrcode" class="d-flex justify-content-center mb-3"></div>
-                    <p class="text-muted small mt-2">
+                    <div id="qrcode" class="d-flex justify-content-center mb-3">
+                        <img id="qrImage" src="" alt="QR Code" style="width: 200px; height: 200px; display: none;">
+                        <div id="qrLoading" class="text-muted">
+                            <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+                            Generating QR code...
+                        </div>
+                    </div>
+                    <div id="qrStatus" style="display: none;">
+                        <div class="mb-3">
+                            <i class="bi bi-check-circle-fill text-success" style="font-size: 4rem;"></i>
+                        </div>
+                        <h5 class="text-success">Session Verified!</h5>
+                        <p class="text-muted">Your partner scanned the QR code. Refreshing...</p>
+                    </div>
+                    <p id="qrHint" class="text-muted small mt-2">
                         <i class="bi bi-info-circle me-1"></i>
-                        The session will be marked complete once your partner scans and confirms.
+                        Waiting for your partner to scan... The page will update automatically.
                     </p>
                 </div>
                 <div class="modal-footer justify-content-between">
@@ -164,47 +177,97 @@
 </main>
 <footer></footer>
 
-<!-- QR Code JS library -->
-<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+{% endblock %}
+
+{% block scripts %}
 <script>
-    let currentVerifyUrl = '';
+    var currentVerifyUrl = '';
+    var pollingInterval = null;
 
     function showQRCode(matchId, taskTitle) {
         // Set task title in modal
         document.getElementById('qrTaskTitle').textContent = taskTitle;
 
         // Set the direct complete form action
-        document.getElementById('directCompleteForm').action = '/support_swap/complete/' + matchId;
+        document.getElementById('directCompleteForm').action = '/support-swap/complete/' + matchId;
 
         // Build verification URL
-        currentVerifyUrl = window.location.origin + '/support_swap/verify/' + matchId;
+        currentVerifyUrl = window.location.origin + '/support-swap/verify/' + matchId;
 
-        // Clear old QR code
-        const qrContainer = document.getElementById('qrcode');
-        qrContainer.innerHTML = '';
+        // Reset UI
+        var qrImage = document.getElementById('qrImage');
+        var qrLoading = document.getElementById('qrLoading');
+        var qrStatus = document.getElementById('qrStatus');
+        var qrHint = document.getElementById('qrHint');
+        var qrcodeDiv = document.getElementById('qrcode');
+        qrImage.style.display = 'none';
+        qrLoading.style.display = 'block';
+        qrLoading.innerHTML = '<div class="spinner-border spinner-border-sm me-2" role="status"></div>Generating QR code...';
+        qrStatus.style.display = 'none';
+        qrHint.style.display = 'block';
+        qrcodeDiv.style.display = 'flex';
 
-        // Generate new QR code
-        new QRCode(qrContainer, {
-            text: currentVerifyUrl,
-            width: 200,
-            height: 200,
-            colorDark: "#1e3a5f",
-            colorLight: "#ffffff",
-            correctLevel: QRCode.CorrectLevel.H
-        });
+        // Generate QR code using the free QR Server API
+        var qrApiUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(currentVerifyUrl);
+        qrImage.onload = function () {
+            qrLoading.style.display = 'none';
+            qrImage.style.display = 'block';
+        };
+        qrImage.onerror = function () {
+            qrLoading.innerHTML = '<i class="bi bi-exclamation-triangle text-warning me-2"></i>Could not generate QR code. Use the Copy Link button instead.';
+        };
+        qrImage.src = qrApiUrl;
 
         // Show modal
-        const modal = new bootstrap.Modal(document.getElementById('qrModal'));
+        var modal = new bootstrap.Modal(document.getElementById('qrModal'));
         modal.show();
+
+        // Start polling for completion every 3 seconds
+        if (pollingInterval) clearInterval(pollingInterval);
+        pollingInterval = setInterval(function () {
+            fetch('/support-swap/status/' + matchId)
+                .then(function (res) { return res.json(); })
+                .then(function (data) {
+                    if (data.status === 'completed') {
+                        clearInterval(pollingInterval);
+                        pollingInterval = null;
+
+                        // Show success in modal
+                        qrcodeDiv.style.display = 'none';
+                        qrHint.style.display = 'none';
+                        qrStatus.style.display = 'block';
+
+                        // Auto-refresh after 2 seconds
+                        setTimeout(function () {
+                            window.location.reload();
+                        }, 2000);
+                    }
+                })
+                .catch(function (err) {
+                    console.log('Poll error:', err);
+                });
+        }, 3000);
     }
 
+    // Stop polling when modal is closed
+    document.addEventListener('DOMContentLoaded', function () {
+        var qrModalEl = document.getElementById('qrModal');
+        if (qrModalEl) {
+            qrModalEl.addEventListener('hidden.bs.modal', function () {
+                if (pollingInterval) {
+                    clearInterval(pollingInterval);
+                    pollingInterval = null;
+                }
+            });
+        }
+    });
+
     function copyVerifyLink() {
-        navigator.clipboard.writeText(currentVerifyUrl).then(() => {
-            // Change button text briefly
-            const btn = event.target.closest('button');
-            const original = btn.innerHTML;
+        navigator.clipboard.writeText(currentVerifyUrl).then(function () {
+            var btn = event.target.closest('button');
+            var original = btn.innerHTML;
             btn.innerHTML = '<i class="bi bi-check me-1"></i>Copied!';
-            setTimeout(() => { btn.innerHTML = original; }, 2000);
+            setTimeout(function () { btn.innerHTML = original; }, 2000);
         });
     }
 </script>
