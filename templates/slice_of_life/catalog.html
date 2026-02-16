@@ -64,9 +64,14 @@
         position: relative;
         z-index: 10;
         flex-wrap: wrap;
+        width: 100%;
+        max-width: 900px;
+        margin-left: auto;
+        margin-right: auto;
     }
 
     .tab-item {
+        flex: 1;
         background: white;
         padding: 1rem 2rem;
         border-radius: 50px;
@@ -77,7 +82,9 @@
         transition: all 0.3s ease;
         display: flex;
         align-items: center;
+        justify-content: center;
         gap: 8px;
+        min-width: 250px;
     }
 
     .tab-item:hover,
@@ -86,6 +93,43 @@
         color: white;
         transform: translateY(-2px);
         box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3);
+    }
+
+    /* Ranking System */
+    .rank-medal {
+        position: absolute;
+        top: 15px;
+        left: 15px;
+        z-index: 5;
+        width: 45px;
+        height: 45px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 900;
+        font-family: 'Outfit', sans-serif;
+        color: white;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        border: 2px solid white;
+    }
+
+    .rank-1 {
+        background: linear-gradient(135deg, #ffd700 0%, #ffac00 100%);
+    }
+
+    .rank-2 {
+        background: linear-gradient(135deg, #c0c0c0 0%, #8e8e8e 100%);
+    }
+
+    .rank-3 {
+        background: linear-gradient(135deg, #cd7f32 0%, #a0522d 100%);
+    }
+
+    .glow-top-3 {
+        box-shadow: 0 0 25px rgba(255, 215, 0, 0.4) !important;
+        border: 2px solid rgba(255, 215, 0, 0.3) !important;
     }
 
     /* Cards */
@@ -191,8 +235,9 @@
             style="font-size: 1.4rem; opacity: 0.9; margin-bottom: 3rem; font-weight: 500; letter-spacing: -0.5px; max-width: 650px; margin-left: auto; margin-right: auto;">
             A shared vault of moments, wisdom, and laughter that bridge generations together.
         </p>
-        <a href="{{ url_for('slice_of_life.prompt') }}" class="btn-create-slice shadow-lg">
-            <i class="bi bi-plus-circle-fill"></i> New Slice of Life
+        <a href="{{ url_for('slice_of_life.index') }}" class="btn-create-slice shadow-lg"
+            style="background: rgba(255,255,255,0.15); backdrop-filter: blur(10px); border: 2px solid rgba(255,255,255,0.3); box-shadow: none;">
+            <i class="bi bi-arrow-left"></i> Back to Slice of Life
         </a>
     </div>
 </div>
@@ -211,100 +256,169 @@
         </a>
     </div>
 
+    <!-- Weekly Incentive Note -->
+    {% if current_filter == 'public' %}
+    <div class="mx-auto mb-5" style="max-width: 900px;">
+        <div class="p-3 rounded-4 d-flex align-items-center gap-3"
+            style="background: linear-gradient(90deg, #fffbeb 0%, #fef3c7 100%); border: 1px solid #fde68a;">
+            <div class="bg-warning text-white rounded-circle d-flex align-items-center justify-content-center"
+                style="width: 40px; height: 40px; flex-shrink: 0;">
+                <i class="bi bi-trophy-fill"></i>
+            </div>
+            <div class="flex-grow-1">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <div>
+                        <strong style="color: #92400e;">Weekly Hall of Fame:</strong>
+                        <span style="color: #b45309;">Top 3 public slices win <strong class="fs-5">1,000 Coins Every
+                                Week</strong>! 💰</span>
+                    </div>
+                    <div class="bg-white bg-opacity-50 px-3 py-1 rounded-pill d-flex align-items-center gap-2 shadow-sm"
+                        style="border: 1px solid rgba(251, 191, 36, 0.4);">
+                        <i class="bi bi-stopwatch text-warning"></i>
+                        <span id="weekly-countdown" class="small fw-bold"
+                            style="color: #92400e; font-family: 'Courier New', Courier, monospace;">--:--:--:--</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function updateCountdown() {
+            const now = new Date();
+            const nowMs = now.getTime();
+
+            // Target: Next Monday at 00:00:00 UTC
+            const currentDay = now.getUTCDay(); // 0 (Sun) to 6 (Sat)
+            let daysUntilMonday = (1 - currentDay + 7) % 7;
+            if (daysUntilMonday === 0) daysUntilMonday = 7; // If it's Monday, target next Monday
+
+            const target = new Date(Date.UTC(
+                now.getUTCFullYear(),
+                now.getUTCMonth(),
+                now.getUTCDate() + daysUntilMonday,
+                0, 0, 0
+            )).getTime();
+
+            const diff = target - nowMs;
+
+            if (diff <= 0) {
+                document.getElementById('weekly-countdown').innerText = "00d 00h 00m 00s";
+                return;
+            }
+
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const secs = Math.floor((diff % (1000 * 60)) / 1000);
+
+            document.getElementById('weekly-countdown').innerText =
+                `${days.toString().padStart(2, '0')}d ${hours.toString().padStart(2, '0')}h ${mins.toString().padStart(2, '0')}m ${secs.toString().padStart(2, '0')}s`;
+        }
+
+        setInterval(updateCountdown, 1000);
+        updateCountdown();
+    </script>
+    {% endif %}
+
     <!-- Grid -->
     <div class="row g-4">
         {% if displays %}
         {% for display in displays %}
         <div class="col-md-6 col-lg-4">
-            <div class="memory-card" data-url="{{ url_for('slice_of_life.review', display_id=display.display_id) }}"
-                onclick="window.location.href=this.getAttribute('data-url');" style="cursor: pointer;">
-                <!-- Combined Image Header -->
-                <div class="card-header-img" style="height: 220px; display: flex; background: #000;">
-                    {% if display.submissions|length >= 2 %}
-                    <div style="flex: 1; height: 100%; border-right: 2px solid white;">
-                        <img src="{{ display.submissions[0].image_url }}"
-                            style="width: 100%; height: 100%; object-fit: cover;" alt="Memory 1">
-                    </div>
-                    <div style="flex: 1; height: 100%;">
-                        <img src="{{ display.submissions[1].image_url }}"
-                            style="width: 100%; height: 100%; object-fit: cover;" alt="Memory 2">
-                    </div>
-                    {% elif display.submissions|length == 1 %}
+            <div class="memory-card {{ 'glow-top-3' if loop.index <= 3 and current_filter == 'public' }}"
+                data-url="{{ url_for('slice_of_life.review', display_id=display.display_id) }}"
+                onclick="window.location.href=this.getAttribute('data-url');"
+                style="cursor: pointer; position: relative;">
+
+                <!-- Medal Ranking (Top 3 Public Only) -->
+                {% if loop.index <= 3 and current_filter=='public' %} <div class="rank-medal rank-{{ loop.index }}">
+                    {{ loop.index }}
+            </div>
+            {% endif %}
+            <!-- Combined Image Header -->
+            <div class="card-header-img" style="height: 220px; display: flex; background: #000;">
+                {% if display.submissions|length >= 2 %}
+                <div style="flex: 1; height: 100%; border-right: 2px solid white;">
                     <img src="{{ display.submissions[0].image_url }}"
-                        style="width: 100%; height: 100%; object-fit: cover;" alt="Memory">
-                    {% else %}
-                    <div class="w-100 d-flex align-items-center justify-content-center bg-light">
-                        <i class="bi bi-images text-muted fs-1"></i>
-                    </div>
-                    {% endif %}
+                        style="width: 100%; height: 100%; object-fit: cover;" alt="Memory 1">
+                </div>
+                <div style="flex: 1; height: 100%;">
+                    <img src="{{ display.submissions[1].image_url }}"
+                        style="width: 100%; height: 100%; object-fit: cover;" alt="Memory 2">
+                </div>
+                {% elif display.submissions|length == 1 %}
+                <img src="{{ display.submissions[0].image_url }}" style="width: 100%; height: 100%; object-fit: cover;"
+                    alt="Memory">
+                {% else %}
+                <div class="w-100 d-flex align-items-center justify-content-center bg-light">
+                    <i class="bi bi-images text-muted fs-1"></i>
+                </div>
+                {% endif %}
 
-                    {% if display.is_private and current_filter != 'public' %}
-                    <span class="card-badge"><i class="bi bi-lock-fill"></i> Private</span>
-                    {% endif %}
+                {% if display.is_private and current_filter != 'public' %}
+                <span class="card-badge"><i class="bi bi-lock-fill"></i> Private</span>
+                {% endif %}
+            </div>
+
+            <div class="card-body-custom">
+                <!-- AI Summary Title -->
+                <h5 class="card-title fw-bold"
+                    style="color: #1e3a5f; min-height: 2.5em; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                    {{ display.title or "A New Shared Memory" }}
+                </h5>
+
+                <!-- Prompt Context -->
+                <div class="mb-3 p-2 rounded-3" style="background: #f1f5f9; border-left: 3px solid #3b82f6;">
+                    <small class="text-muted d-block"
+                        style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase;">Question of the
+                        Day</small>
+                    <p class="mb-0 small fw-medium" style="color: #475569;">{{ display.prompt_text }}</p>
                 </div>
 
-                <div class="card-body-custom">
-                    <!-- AI Summary Title -->
-                    <h5 class="card-title fw-bold"
-                        style="color: #1e3a5f; min-height: 2.5em; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
-                        {{ display.title or "A New Shared Memory" }}
-                    </h5>
-
-                    <!-- Prompt Context -->
-                    <div class="mb-3 p-2 rounded-3" style="background: #f1f5f9; border-left: 3px solid #3b82f6;">
-                        <small class="text-muted d-block"
-                            style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase;">Question of the
-                            Day</small>
-                        <p class="mb-0 small fw-medium" style="color: #475569;">{{ display.prompt_text }}</p>
+                <!-- Comments Preview (Max 3) -->
+                {% if display.comments_preview %}
+                <div class="mb-3">
+                    <small class="text-muted fw-bold" style="font-size: 0.7rem;">RECENT COMMENTS</small>
+                    {% for comm in display.comments_preview %}
+                    <div class="small text-truncate text-muted mt-1">
+                        <i class="bi bi-chat-dots me-1"></i> {{ comm.content }}
                     </div>
-
-                    <!-- Comments Preview (Max 3) -->
-                    {% if display.comments_preview %}
-                    <div class="mb-3">
-                        <small class="text-muted fw-bold" style="font-size: 0.7rem;">RECENT COMMENTS</small>
-                        {% for comm in display.comments_preview %}
-                        <div class="small text-truncate text-muted mt-1">
-                            <i class="bi bi-chat-dots me-1"></i> {{ comm.content }}
-                        </div>
-                        {% endfor %}
-                    </div>
-                    {% endif %}
+                    {% endfor %}
                 </div>
+                {% endif %}
+            </div>
 
-                <div class="card-footer-custom">
-                    <div class="d-flex gap-3">
-                        <!-- Like Feature (Only for Public) -->
-                        {% if current_filter == 'public' %}
-                        <form action="{{ url_for('slice_of_life.like_display', display_id=display.display_id) }}"
-                            method="POST">
-                            <button type="submit" class="border-0 bg-transparent p-0 d-flex align-items-center gap-1"
-                                title="{{ 'Unlike' if display.has_liked else 'Like' }}">
-                                <i
-                                    class="bi {{ 'bi-heart-fill text-danger' if display.has_liked else 'bi-heart text-secondary' }}"></i>
-                                <span class="small fw-bold text-muted">{{ display.likes or 0 }}</span>
-                            </button>
-                        </form>
-                        {% endif %}
+            <div class="card-footer-custom">
+                <div class="d-flex gap-3">
+                    <!-- Like Feature (Only for Public) -->
+                    {% if current_filter == 'public' %}
+                    <form action="{{ url_for('slice_of_life.like_display', display_id=display.display_id) }}"
+                        method="POST">
+                        <button type="submit" class="border-0 bg-transparent p-0 d-flex align-items-center gap-1"
+                            title="{{ 'Unlike' if display.has_liked else 'Like' }}">
+                            <i
+                                class="bi {{ 'bi-heart-fill text-danger' if display.has_liked else 'bi-heart text-secondary' }}"></i>
+                            <span class="small fw-bold text-muted">{{ display.likes or 0 }}</span>
+                        </button>
+                    </form>
+                    {% endif %}
 
-                        <div class="d-flex align-items-center gap-1">
-                            <i class="bi bi-chat-text text-primary"></i>
-                            <span class="small fw-bold text-muted">{{ display.comments_preview|length if
-                                display.comments_preview else 0 }}</span>
-                        </div>
+                    <div class="d-flex align-items-center gap-1">
+                        <i class="bi bi-chat-text text-primary"></i>
+                        <span class="small fw-bold text-muted">{{ display.comments_preview|length if
+                            display.comments_preview else 0 }}</span>
                     </div>
-                    <div class="d-flex text-end">
-                        <a href="{{ url_for('slice_of_life.review', display_id=display.display_id) }}"
-                            class="view-link">
-                            View <i class="bi bi-arrow-right"></i>
-                        </a>
-
+                </div>
+                <div class="d-flex text-end">
+                    <div class="ms-auto">
                         <!-- Delete Button (Creator/Partner Only) -->
                         {% if session.get('user_id') == display.creator_id or session.get('user_id') ==
                         display.partner_id %}
                         <form action="{{ url_for('slice_of_life.delete_display', display_id=display.display_id) }}"
                             method="POST"
                             onsubmit="return confirm('Are you sure you want to delete this memory permanently? This cannot be undone.');"
-                            class="d-inline-block ms-3">
+                            class="d-inline-block">
                             <button type="submit" class="border-0 bg-transparent p-0 text-danger"
                                 title="Delete permanently">
                                 <i class="bi bi-trash"></i>
@@ -315,22 +429,23 @@
                 </div>
             </div>
         </div>
-        {% endfor %}
-        {% else %}
-        <div class="col-12 py-5 text-center">
-            <div class="bg-white rounded-5 shadow-sm p-5 d-inline-block">
-                <div class="bg-light rounded-circle d-inline-flex p-5 mb-4 text-muted" style="background: #f8fafc;">
-                    <i class="bi bi-journal-x fs-1" style="color: #cbd5e1;"></i>
-                </div>
-                <h3 class="fw-bold text-dark mb-2">No Slice of Life Yet</h3>
-                <p class="text-muted mb-4 lead">Be the first to share a memory in this collection.</p>
-                <a href="{{ url_for('slice_of_life.prompt') }}" class="btn-create-slice">
-                    Start a Conversation
-                </a>
-            </div>
-        </div>
-        {% endif %}
     </div>
+    {% endfor %}
+    {% else %}
+    <div class="col-12 py-5 text-center">
+        <div class="bg-white rounded-5 shadow-sm p-5 d-inline-block">
+            <div class="bg-light rounded-circle d-inline-flex p-5 mb-4 text-muted" style="background: #f8fafc;">
+                <i class="bi bi-journal-x fs-1" style="color: #cbd5e1;"></i>
+            </div>
+            <h3 class="fw-bold text-dark mb-2">No Slice of Life Yet</h3>
+            <p class="text-muted mb-4 lead">Be the first to share a memory in this collection.</p>
+            <a href="{{ url_for('slice_of_life.prompt') }}" class="btn-create-slice">
+                Start a Conversation
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
 
 </div>
 {% endblock %}
