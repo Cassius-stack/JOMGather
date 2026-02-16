@@ -309,9 +309,26 @@
     <div class="search-stats-container">
         <div class="search-input-wrapper">
             <i class="bi bi-search text-muted"></i>
-            <input type="text" class="search-input" placeholder="Search activity...">
+            <input type="text" class="search-input" id="activitySearchInput" placeholder="Search activity..."
+                oninput="filterActivities()">
         </div>
+    </div>
 
+    <!-- Search Results (hidden by default) -->
+    <div id="searchResultsSection" style="display: none;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+            <h2 class="section-title" style="margin-bottom: 0;">Search Results</h2>
+            <button onclick="clearSearch()"
+                style="background: rgba(138,43,226,0.12); border: 1px solid rgba(138,43,226,0.25); color: #8A2BE2; padding: 6px 18px; border-radius: 20px; font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: all 0.2s;">
+                <i class="bi bi-x-lg"></i> Clear
+            </button>
+        </div>
+        <div id="searchResultsGrid" class="search-results-grid"></div>
+        <div id="noResultsMsg" style="display: none; text-align: center; padding: 60px 20px; color: #999;">
+            <i class="bi bi-search" style="font-size: 3rem; opacity: 0.3; display: block; margin-bottom: 15px;"></i>
+            <p style="font-size: 1.1rem; font-weight: 600;">No activities found</p>
+            <p style="font-size: 0.9rem;">Try a different search term</p>
+        </div>
     </div>
 
     <!-- Top Activities (Grid) -->
@@ -685,7 +702,246 @@
 
 </div>
 
+<style>
+    .search-results-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+
+    .search-result-card {
+        background: white;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease;
+        cursor: pointer;
+        text-decoration: none;
+        display: block;
+        animation: searchFadeIn 0.3s ease forwards;
+        opacity: 0;
+    }
+
+    .search-result-card:nth-child(1) {
+        animation-delay: 0.05s;
+    }
+
+    .search-result-card:nth-child(2) {
+        animation-delay: 0.1s;
+    }
+
+    .search-result-card:nth-child(3) {
+        animation-delay: 0.15s;
+    }
+
+    .search-result-card:nth-child(4) {
+        animation-delay: 0.2s;
+    }
+
+    .search-result-card:nth-child(5) {
+        animation-delay: 0.25s;
+    }
+
+    .search-result-card:nth-child(6) {
+        animation-delay: 0.3s;
+    }
+
+    .search-result-card:nth-child(7) {
+        animation-delay: 0.35s;
+    }
+
+    @keyframes searchFadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(15px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .search-result-card:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 12px 40px rgba(138, 43, 226, 0.18);
+    }
+
+    .search-result-card .card-img {
+        width: 100%;
+        height: 160px;
+        object-fit: cover;
+        display: block;
+    }
+
+    .search-result-card .card-body {
+        padding: 16px;
+    }
+
+    .search-result-card .card-title {
+        font-weight: 700;
+        font-size: 1rem;
+        color: #1a1a2e;
+        margin-bottom: 6px;
+    }
+
+    .search-result-card .card-desc {
+        font-size: 0.82rem;
+        color: #777;
+        line-height: 1.5;
+        margin-bottom: 12px;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .search-result-card .card-action {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: linear-gradient(135deg, #8A2BE2, #a855f7);
+        color: white;
+        padding: 8px 18px;
+        border-radius: 20px;
+        font-size: 0.82rem;
+        font-weight: 600;
+        transition: all 0.2s;
+    }
+
+    .search-result-card:hover .card-action {
+        background: linear-gradient(135deg, #7B26C9, #9333ea);
+        transform: scale(1.03);
+    }
+
+    @media (max-width: 992px) {
+        .search-results-grid {
+            grid-template-columns: repeat(3, 1fr);
+        }
+    }
+
+    @media (max-width: 768px) {
+        .search-results-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (max-width: 480px) {
+        .search-results-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
 <script>
+    // Activity data for search
+    const allActivities = [
+        {
+            name: 'Slice of Life VR',
+            desc: 'Transform a single picture into a heartfelt connection by blending unique perspectives of youth and elderly.',
+            img: "{{ url_for('static', filename='images/activities/SliceOfLife.png') }}",
+            link: "{{ url_for('slice_of_life.prompt') }}",
+            tags: 'slice life vr photo picture'
+        },
+        {
+            name: 'Ask a Grandfriend',
+            desc: 'Wisdom on demand! Get life advice, tech help, and stories from experienced grandparents.',
+            img: "{{ url_for('static', filename='images/activities/AskAGrandfriend.png') }}",
+            link: "{{ url_for('social.ask_grandfriend') }}",
+            tags: 'ask grandfriend wisdom advice forum'
+        },
+        {
+            name: 'Skills Swap Marketplace',
+            desc: 'Teach what you know, learn what you love! Exchange skills across generations.',
+            img: "{{ url_for('static', filename='images/activities/SkillsSwap.png') }}",
+            link: "{{ url_for('support_swap.ss_dashboard') }}",
+            tags: 'skills swap marketplace teach learn exchange'
+        },
+        {
+            name: 'BOOMERang',
+            desc: 'Random video calls connecting Boomers with Students for spontaneous intergenerational chats!',
+            img: "{{ url_for('static', filename='images/activities/BOOMerang.jpg') }}",
+            link: "{{ url_for('activities.boomerang') }}",
+            tags: 'boomerang video call chat random'
+        },
+        {
+            name: 'Cyber Challenge',
+            desc: 'Test your cybersecurity skills! Identify scams vs real scenarios in this daily challenge.',
+            img: "{{ url_for('static', filename='images/activities/TruthOrTrap.png') }}",
+            link: "{{ url_for('social.social_hub') }}",
+            tags: 'cyber challenge truth trap scam quiz'
+        },
+        {
+            name: 'Intergenerational Jukebox',
+            desc: 'Share music across generations! Discover songs from different eras and bond over tunes.',
+            img: "{{ url_for('static', filename='images/activities/enerationalJukebox.png') }}",
+            link: "{{ url_for('jukebox.jukebox_page', community=2) }}",
+            tags: 'jukebox music songs intergenerational'
+        }
+    ];
+
+    // Elements to hide/show
+    const normalSections = ['heroCarousel', 'searchResultsSection'];
+
+    function filterActivities() {
+        const query = document.getElementById('activitySearchInput').value.trim().toLowerCase();
+        const searchSection = document.getElementById('searchResultsSection');
+        const grid = document.getElementById('searchResultsGrid');
+        const noResults = document.getElementById('noResultsMsg');
+
+        // Get all normal page content (everything between search bar and script)
+        const allNormalContent = document.querySelectorAll('#heroCarousel, .section-title, .bento-grid, .horizontal-scroll-wrapper');
+
+        if (!query) {
+            // Show normal content, hide search results
+            searchSection.style.display = 'none';
+            allNormalContent.forEach(el => el.style.display = '');
+            return;
+        }
+
+        // Hide normal content, show search results
+        allNormalContent.forEach(el => el.style.display = 'none');
+        searchSection.style.display = 'block';
+
+        // Filter activities
+        const results = allActivities.filter(a => {
+            const searchable = (a.name + ' ' + a.desc + ' ' + a.tags).toLowerCase();
+            return searchable.includes(query);
+        });
+
+        // Build results
+        grid.innerHTML = '';
+        if (results.length === 0) {
+            noResults.style.display = 'block';
+        } else {
+            noResults.style.display = 'none';
+            results.forEach(activity => {
+                const card = document.createElement('a');
+                card.href = activity.link;
+                card.className = 'search-result-card';
+                card.innerHTML = `
+                    <img src="${activity.img}" alt="${activity.name}" class="card-img"
+                         onerror="this.src='https://placehold.co/400x200?text=${encodeURIComponent(activity.name)}'">
+                    <div class="card-body">
+                        <div class="card-title">${activity.name}</div>
+                        <div class="card-desc">${activity.desc}</div>
+                        <span class="card-action">
+                            <i class="bi bi-play-circle-fill"></i> Play Now
+                        </span>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+    }
+
+    function clearSearch() {
+        document.getElementById('activitySearchInput').value = '';
+        filterActivities();
+        document.getElementById('activitySearchInput').focus();
+    }
+
     // Netflix-style video preview on hover
     document.querySelectorAll('.activity-card-wrapper').forEach(wrapper => {
         const popup = wrapper.querySelector('.hover-popup');
@@ -696,12 +952,10 @@
         let hoverTimeout;
 
         wrapper.addEventListener('mouseenter', () => {
-            // Delay before showing popup
             hoverTimeout = setTimeout(() => {
                 if (video) {
                     video.currentTime = 0;
                     video.play().catch(() => { });
-                    // Hide thumbnail when video plays
                     if (thumbnail) thumbnail.style.opacity = '0';
                 }
             }, 400);
@@ -713,7 +967,6 @@
                 video.pause();
                 video.currentTime = 0;
             }
-            // Show thumbnail again
             if (thumbnail) thumbnail.style.opacity = '1';
         });
     });

@@ -429,9 +429,15 @@
             <div class="main-header">
                 <h2><span id="headerTitle">All Questions</span> (<span id="questionCount">{{ questions|length if
                         questions else 0 }}</span>)</h2>
+                {% if user_type != 'senior' %}
                 <button type="button" class="btn-ask" data-bs-toggle="modal" data-bs-target="#askQuestionModal">
                     <i class="bi bi-plus-circle"></i> Ask A Question
                 </button>
+                {% else %}
+                <span style="color: #999; font-size: 0.85rem; font-style: italic;">
+                    <i class="bi bi-info-circle"></i> Grandparents reply to student questions
+                </span>
+                {% endif %}
             </div>
 
             <!-- Question Cards -->
@@ -472,6 +478,24 @@
                         {{ q.content if q.content else q.title[:100] }}{% if q.content and q.content|length > 100
                         %}...{% endif %}
                     </div>
+
+                    <!-- Question Media -->
+                    {% if q.media_url %}
+                    <div class="mt-3 mb-2">
+                        {% if q.media_type == 'image' %}
+                        <img src="{{ q.media_url }}" class="img-fluid rounded" alt="Media"
+                            style="max-height: 300px; width: auto; display: block;">
+                        {% elif q.media_type == 'video' %}
+                        <video controls class="w-100 rounded" style="max-height: 300px;">
+                            <source src="{{ q.media_url }}" type="video/mp4">
+                        </video>
+                        {% elif q.media_type == 'audio' %}
+                        <audio controls class="w-100 mt-2">
+                            <source src="{{ q.media_url }}" type="audio/mpeg">
+                        </audio>
+                        {% endif %}
+                    </div>
+                    {% endif %}
                     <div class="question-footer">
                         <a href="javascript:void(0)" class="see-replies-link"
                             onclick="toggleReplies(event, 'replies-{{ q.id }}')">
@@ -530,6 +554,24 @@
                                 <div class="reply-content">
                                     {{ reply.content }}
                                 </div>
+
+                                <!-- Reply Media -->
+                                {% if reply.media_url %}
+                                <div class="mt-2 mb-2">
+                                    {% if reply.media_type == 'image' %}
+                                    <img src="{{ reply.media_url }}" class="img-fluid rounded" alt="Reply Media"
+                                        style="max-height: 200px;">
+                                    {% elif reply.media_type == 'video' %}
+                                    <video controls class="w-100 rounded" style="max-height: 250px;">
+                                        <source src="{{ reply.media_url }}">
+                                    </video>
+                                    {% elif reply.media_type == 'audio' %}
+                                    <audio controls class="w-100 mt-1">
+                                        <source src="{{ reply.media_url }}">
+                                    </audio>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
                                 <div class="reply-footer d-flex justify-content-between align-items-center">
                                     <div class="d-flex align-items-center">
                                         <span class="reply-author text-muted small">{{ reply.author_name }}</span>
@@ -580,8 +622,17 @@
 
                                 <!-- Sub Reply Form -->
                                 <div id="sub-reply-form-{{ reply.reply_id }}" style="display: none; margin-top: 10px;">
-                                    <form action="{{ url_for('social.post_reply', question_id=q.id) }}" method="POST">
+                                    <form action="{{ url_for('social.post_reply', question_id=q.id) }}" method="POST"
+                                        enctype="multipart/form-data">
                                         <input type="hidden" name="parent_reply_id" value="{{ reply.reply_id }}">
+
+                                        <div class="mb-2">
+                                            <label class="small text-muted mb-1"><i class="bi bi-paperclip"></i> Attach
+                                                Media</label>
+                                            <input type="file" name="media" class="form-control form-control-sm"
+                                                accept="image/*,video/*,audio/*">
+                                        </div>
+
                                         <div class="input-group">
                                             <textarea name="content" class="form-control reply-textarea"
                                                 placeholder="Write a reply..." rows="1"
@@ -630,9 +681,19 @@
                             {% endif %}
                         </div>
 
-                        <!-- Reply Input -->
+                        <!-- Reply Input - only show for opposite type -->
+                        {% set can_reply = (user_type == 'youth' and q.author_type == 'grandparent') or (user_type ==
+                        'senior' and q.author_type == 'student') %}
+                        {% if can_reply %}
                         <div class="reply-input-container">
-                            <form action="{{ url_for('social.post_reply', question_id=q.id) }}" method="POST">
+                            <form action="{{ url_for('social.post_reply', question_id=q.id) }}" method="POST"
+                                enctype="multipart/form-data">
+                                <div class="mb-2">
+                                    <label class="small text-muted mb-1"><i class="bi bi-paperclip"></i> Attach
+                                        (Image/Video/Audio)</label>
+                                    <input type="file" name="media" class="form-control form-control-sm"
+                                        accept="image/*,video/*,audio/*">
+                                </div>
                                 <div class="input-group">
                                     <textarea name="content" class="form-control reply-textarea"
                                         placeholder="Post your reply here..." required rows="2"
@@ -643,6 +704,24 @@
                                 </div>
                             </form>
                         </div>
+                        {% else %}
+                        <div class="reply-input-container">
+                            <div class="input-group">
+                                <textarea class="form-control reply-textarea" placeholder="Post your reply here..."
+                                    rows="2" style="border-radius: 15px; resize: none;"
+                                    onfocus="showReplyError(this)"></textarea>
+                                <button class="btn btn-send-reply" type="button" onclick="showReplyError(this)">
+                                    <i class="bi bi-send-fill"></i>
+                                </button>
+                            </div>
+                            <div class="reply-error-msg"
+                                style="display: none; background: #fff3f3; color: #d32f2f; border: 1px solid #ffcdd2; border-radius: 10px; padding: 8px 14px; margin-top: 8px; font-size: 0.82rem; font-weight: 600; text-align: center;">
+                                <i class="bi bi-exclamation-triangle-fill"></i>
+                                {% if user_type == 'youth' %}Students can only reply to grandparent posts{% else
+                                %}Grandparents can only reply to student posts{% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
                 {% endfor %}
@@ -675,7 +754,8 @@
                         information</span>
                 </div>
 
-                <form id="askQuestionForm" action="{{ url_for('social.post_question') }}" method="POST">
+                <form id="askQuestionForm" action="{{ url_for('social.post_question') }}" method="POST"
+                    enctype="multipart/form-data">
                     <!-- Question Input -->
                     <div class="mb-4">
                         <label class="form-label" style="font-weight: 700; color: #333;">Your Question</label>
@@ -711,6 +791,14 @@
 
                     <!-- Hidden fields -->
                     <input type="hidden" name="content" value="">
+
+                    <!-- Media Upload -->
+                    <div class="mb-4">
+                        <label class="form-label" style="font-weight: 700; color: #333;">Attach Media (Optional)</label>
+                        <input type="file" name="media" class="form-control" accept="image/*,video/*,audio/*"
+                            style="border-radius: 12px; border: 1px solid #e0e0e0; padding: 0.75rem;">
+                        <div class="form-text">Support Image, Video, or Audio files</div>
+                    </div>
 
                     <!-- Submit Button -->
                     <div class="text-center">
@@ -800,25 +888,80 @@
 
     if (btnGrandparents && btnStudents) {
         btnGrandparents.addEventListener('click', function () {
-            btnStudents.classList.remove('active');
-            this.classList.add('active');
-            filterState.type = 'grandparent';
+            if (this.classList.contains('active')) {
+                // Deselect — show all
+                this.classList.remove('active');
+                filterState.type = null;
+            } else {
+                btnStudents.classList.remove('active');
+                this.classList.add('active');
+                filterState.type = 'grandparent';
+            }
             filterQuestions();
         });
 
         btnStudents.addEventListener('click', function () {
-            btnGrandparents.classList.remove('active');
-            this.classList.add('active');
-            filterState.type = 'student';
+            if (this.classList.contains('active')) {
+                // Deselect — show all
+                this.classList.remove('active');
+                filterState.type = null;
+            } else {
+                btnGrandparents.classList.remove('active');
+                this.classList.add('active');
+                filterState.type = 'student';
+            }
             filterQuestions();
         });
     }
 
     // Initialize with default state
-    // Check which buttons are active in HTML
+    // Initialize with default state based on user role
+    const userType = "{{ user_type }}";
+
+    // Default setting: My Role
+    if (userType === 'youth') {
+        if (btnStudents) {
+            btnStudents.classList.add('active');
+            filterState.type = 'student';
+            // ensure grandparents btn is not active
+            if (btnGrandparents) btnGrandparents.classList.remove('active');
+        }
+    } else if (userType === 'senior') {
+        if (btnGrandparents) {
+            btnGrandparents.classList.add('active');
+            filterState.type = 'grandparent';
+            if (btnStudents) btnStudents.classList.remove('active');
+        }
+    }
+
+    // Check which buttons are active in HTML (overrides if needed, but above logic sets defaults)
     if (btnMyQuestions.classList.contains('active')) filterState.view = 'my';
-    if (btnGrandparents && btnGrandparents.classList.contains('active')) filterState.type = 'grandparent';
-    if (btnStudents && btnStudents.classList.contains('active')) filterState.type = 'student';
+
+    // Update UI based on filter
+    function updateAskButtonVisibility() {
+        const askBtn = document.querySelector('.btn-ask');
+        if (!askBtn) return; // Grandparents don't have this button anyway
+
+        // Logic: specific to user request
+        // "if im a student and I try posting a question in a grandparent ... DO NOT POST AT ALL"
+        // So we hide the button if filterState.type is explicitly the opposite role
+
+        let shouldHide = false;
+        if (userType === 'youth' && filterState.type === 'grandparent') shouldHide = true;
+
+        if (shouldHide) {
+            askBtn.style.display = 'none';
+        } else {
+            askBtn.style.display = 'inline-flex';
+        }
+    }
+
+    // Hook into filterQuestions
+    const originalFilterQuestions = filterQuestions;
+    filterQuestions = function () {
+        originalFilterQuestions();
+        updateAskButtonVisibility();
+    };
 
     filterQuestions();
 
@@ -893,6 +1036,21 @@
         const el = document.getElementById('sub-reply-form-' + id);
         if (el) {
             el.style.display = (el.style.display === 'none') ? 'block' : 'none';
+        }
+    }
+
+    // Show error when trying to reply to same-type post
+    function showReplyError(el) {
+        const container = el.closest('.reply-input-container');
+        if (container) {
+            const errorMsg = container.querySelector('.reply-error-msg');
+            if (errorMsg) {
+                errorMsg.style.display = 'block';
+                // Hide after 3 seconds
+                setTimeout(() => {
+                    errorMsg.style.display = 'none';
+                }, 3000);
+            }
         }
     }
 
