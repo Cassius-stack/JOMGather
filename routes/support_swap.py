@@ -4,7 +4,8 @@ Support Library, Support Assignment, Support Match
 """
 
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash, jsonify
-from utils.supabase_db import get_supabase
+from utils.supabase_db import get_supabase, fetch_one, insert
+from models.reward import add_coins, get_user_coins
 
 support_swap_bp = Blueprint('support_swap', __name__)
 
@@ -59,7 +60,10 @@ def ss_dashboard():
         return redirect(url_for('support_swap.ss_dashboard'))
     
     # Calculate VIA hours from completed support sessions (where user was the helper)
+    # Seniors earn coins instead of VIA hours
+    current_user_type = session.get('user_type', 'youth')
     via_hours = 0
+    senior_coins = 0
     try:
         # Get completed matches where user is the helper, join with help_requests to get duration
         completed_response = supabase.table('support_matches').select(
@@ -70,6 +74,10 @@ def ss_dashboard():
             for match in completed_response.data:
                 if match.get('help_requests') and match['help_requests'].get('duration_hours'):
                     via_hours += match['help_requests']['duration_hours']
+        
+        # For seniors, get their coin balance
+        if current_user_type == 'senior':
+            senior_coins = get_user_coins(user_id)
     except Exception as e:
         print(f"Error calculating VIA hours: {e}")
     
@@ -81,19 +89,36 @@ def ss_dashboard():
         matched_ids = [m['request_id'] for m in matched_response.data] if matched_response.data else []
         
         response = supabase.table('help_requests').select(
-            '*, users(username)'
+            '*, users(username, user_type)'
         ).neq('user_id', user_id).eq('status', 'open').order('created_at', desc=True).execute()
         
         # Filter out requests that already have a match
         requests = [r for r in response.data if r['id'] not in matched_ids]
+        
+        # Cross-generational filter: youth sees senior requests, senior sees youth requests
+        # Admin sees all requests
+        current_user_type = session.get('user_type', 'youth')
+        if current_user_type != 'admin':
+            opposite_type = 'senior' if current_user_type == 'youth' else 'youth'
+            requests = [r for r in requests if r.get('users', {}).get('user_type') == opposite_type]
     except Exception as e:
         print(f"Error fetching requests: {e}")
+    
+    # Skill-based recommendation: mark and sort requests matching user's skills
+    user_skills_lower = [s.lower() for s in skills] if skills else []
+    for req in requests:
+        req_skills = (req.get('skills_needed') or '').lower()
+        req['is_recommended'] = any(skill in req_skills for skill in user_skills_lower)
+    # Sort: recommended first, then by original order
+    requests.sort(key=lambda r: (not r.get('is_recommended', False)))
     
     return render_template('support_swap/ss_dashboard.html', 
                           skills=skills, 
                           user_profile=user_profile,
                           user_region=get_user_region(user_id),
                           via_hours=via_hours,
+                          senior_coins=senior_coins,
+                          current_user_type=current_user_type,
                           requests=requests)
 
 @support_swap_bp.route('/delete_skill', methods=['POST'])
@@ -247,6 +272,53 @@ def offer_help(request_id):
             }).execute()
             # Remove from dashboard by marking the request as matched
             supabase.table('help_requests').update({'status': 'matched'}).eq('id', request_id).execute()
+            
+            # Auto-friend and auto-message the request poster
+            try:
+                # Get the request details (poster user_id, title, description, location, duration)
+                req_data = supabase.table('help_requests').select('user_id, title, description, location, duration_hours, scheduled_date').eq('id', request_id).execute()
+                if req_data.data:
+                    poster_id = req_data.data[0]['user_id']
+                    req_title = req_data.data[0].get('title', 'your request')
+                    req_desc = req_data.data[0].get('description', 'No description')
+                    req_location = req_data.data[0].get('location', 'TBD')
+                    req_duration = req_data.data[0].get('duration_hours', 'N/A')
+                    req_date = req_data.data[0].get('scheduled_date', 'TBD')
+                    helper_username = session.get('username', 'Someone')
+                    
+                    # Create friendship if not already friends
+                    existing_friendship = supabase.table('friendships').select('*').or_(
+                        f"and(user_id_1.eq.{user_id},user_id_2.eq.{poster_id}),and(user_id_1.eq.{poster_id},user_id_2.eq.{user_id})"
+                    ).execute()
+                    
+                    if not existing_friendship.data:
+                        insert('friendships', {
+                            'user_id_1': user_id,
+                            'user_id_2': poster_id,
+                            'status': 'accepted'
+                        })
+                    elif existing_friendship.data[0].get('status') == 'pending':
+                        # Upgrade pending to accepted
+                        supabase.table('friendships').update({'status': 'accepted'}).or_(
+                            f"and(user_id_1.eq.{user_id},user_id_2.eq.{poster_id}),and(user_id_1.eq.{poster_id},user_id_2.eq.{user_id})"
+                        ).execute()
+                    
+                    # Send automated message with request details
+                    msg = (f"I am {helper_username}. I have accepted your request regard {req_title} from your post.\n\n"
+                           f"Request Details:\n"
+                           f"- Title: {req_title}\n"
+                           f"- Description: {req_desc}\n"
+                           f"- Date: {req_date}\n"
+                           f"- Location: {req_location}\n"
+                           f"- Duration: {req_duration} hour(s)")
+                    insert('messages', {
+                        'sender_id': user_id,
+                        'receiver_id': poster_id,
+                        'content': msg
+                    })
+            except Exception as auto_err:
+                print(f"Auto-friend/message error: {auto_err}")
+            
             flash('Your offer to help has been sent!', 'success')
     except Exception as e:
         flash(f'Error offering help: {str(e)}', 'error')
@@ -299,10 +371,30 @@ def complete_support_session(match_id):
     
     try:
         from datetime import datetime
+        # Get match details before completing (need helper_id and duration)
+        match_data = supabase.table('support_matches').select(
+            '*, help_requests(duration_hours)'
+        ).eq('id', match_id).execute()
+        
         supabase.table('support_matches').update({
             'status': 'completed',
             'completed_at': datetime.now().isoformat()
         }).eq('id', match_id).execute()
+        
+        # Award coins to helper
+        if match_data.data:
+            match = match_data.data[0]
+            helper_data = fetch_one('users', 'user_id, user_type', user_id=match['helper_id'])
+            if helper_data:
+                if helper_data.get('user_type') == 'senior':
+                    # Senior: hours * 10 coins
+                    duration = match.get('help_requests', {}).get('duration_hours', 1)
+                    coins_earned = int(duration) * 10
+                    add_coins(match['helper_id'], coins_earned)
+                elif helper_data.get('user_type') == 'youth':
+                    # Youth: flat 10 coins per task
+                    add_coins(match['helper_id'], 10)
+        
         flash('Session marked as complete! Thank you for helping!', 'success')
     except Exception as e:
         flash(f'Error completing session: {str(e)}', 'error')
@@ -333,7 +425,11 @@ def cancel_match(match_id):
 @support_swap_bp.route('/verify/<int:match_id>')
 def verify_match(match_id):
     """Verification page — shown when partner scans the QR code.
-    Auto-completes the match immediately upon scanning."""
+    Only admin accounts can verify and auto-complete a match."""
+    user_id = session.get('user_id')
+    user_type = session.get('user_type')
+    is_admin = (user_id is not None and user_type == 'admin')
+    
     supabase = get_supabase()
     
     try:
@@ -351,9 +447,15 @@ def verify_match(match_id):
         helper = supabase.table('users').select('username').eq('user_id', match['helper_id']).execute()
         helper_name = helper.data[0]['username'] if helper.data else 'Unknown'
         
-        # Auto-complete: if the match is still active, mark it as completed now
+        # Only admin can auto-complete the match
         auto_completed = False
-        if match['status'] in ['pending', 'accepted']:
+        access_denied = False
+        
+        if not is_admin:
+            # Non-admin user or not logged in — show access denied
+            access_denied = True
+        elif match['status'] in ['pending', 'accepted']:
+            # Admin scanned — auto-complete the match
             from datetime import datetime
             supabase.table('support_matches').update({
                 'status': 'completed',
@@ -361,11 +463,27 @@ def verify_match(match_id):
             }).eq('id', match_id).execute()
             match['status'] = 'completed'
             auto_completed = True
+            
+            # Award coins to helper
+            try:
+                helper_data = fetch_one('users', 'user_id, user_type', user_id=match['helper_id'])
+                if helper_data:
+                    if helper_data.get('user_type') == 'senior':
+                        # Senior: hours * 10 coins
+                        duration = match.get('help_requests', {}).get('duration_hours', 1)
+                        coins_earned = int(duration) * 10
+                        add_coins(match['helper_id'], coins_earned)
+                    elif helper_data.get('user_type') == 'youth':
+                        # Youth: flat 10 coins per task
+                        add_coins(match['helper_id'], 10)
+            except Exception as coin_err:
+                print(f'Error awarding coins: {coin_err}')
         
         return render_template('support_swap/ss_verify.html', 
                              match=match, 
                              helper_name=helper_name,
-                             auto_completed=auto_completed)
+                             auto_completed=auto_completed,
+                             access_denied=access_denied)
     except Exception as e:
         flash(f'Error loading verification: {str(e)}', 'error')
         return redirect(url_for('support_swap.ss_match'))
@@ -385,20 +503,40 @@ def match_status(match_id):
 
 @support_swap_bp.route('/confirm/<int:match_id>', methods=['POST'])
 def confirm_match(match_id):
-    """Confirm completion from the verification page."""
+    """Confirm completion from the verification page (admin only)."""
     user_id = session.get('user_id')
     if not user_id:
         flash("Please log in to confirm.", "warning")
         return redirect(url_for('auth.login'))
     
+    # Only admin can confirm via QR
+    if session.get('user_type') != 'admin':
+        flash("Only admin can verify support swap sessions.", "danger")
+        return redirect(url_for('support_swap.ss_match'))
+    
     supabase = get_supabase()
     
     try:
         from datetime import datetime
+        # Get match details before completing (need helper_id and duration)
+        match_data = supabase.table('support_matches').select(
+            '*, help_requests(duration_hours)'
+        ).eq('id', match_id).execute()
+        
         supabase.table('support_matches').update({
             'status': 'completed',
             'completed_at': datetime.now().isoformat()
         }).eq('id', match_id).execute()
+        
+        # Award coins to senior helper (hours * 10)
+        if match_data.data:
+            match = match_data.data[0]
+            helper_data = fetch_one('users', 'user_id, user_type', user_id=match['helper_id'])
+            if helper_data and helper_data.get('user_type') == 'senior':
+                duration = match.get('help_requests', {}).get('duration_hours', 1)
+                coins_earned = int(duration) * 10
+                add_coins(match['helper_id'], coins_earned)
+        
         flash('Session verified and marked as complete! Thank you!', 'success')
     except Exception as e:
         flash(f'Error confirming session: {str(e)}', 'error')
