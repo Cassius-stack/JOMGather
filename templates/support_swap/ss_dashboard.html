@@ -46,7 +46,12 @@
                     </div>
                     <div class="card-body">
                         <p class="mb-2"><strong>Region:</strong> {{ user_profile.region or 'Not set' }}</p>
+                        {% if current_user_type == 'senior' %}
+                        <p class="mb-0"><strong>Coins earned:</strong> {{ senior_coins }}
+                        </p>
+                        {% else %}
                         <p class="mb-0"><strong>VIA hours:</strong> {{ via_hours }} hour(s)</p>
+                        {% endif %}
                     </div>
                 </div>
                 {% endif %}
@@ -99,9 +104,15 @@
                     {% if requests %}
                     {% for req in requests %}
                     <div class="col-md-6">
-                        <div class="card shadow-sm h-100">
+                        <div
+                            class="card shadow-sm h-100{% if req.is_recommended %} border-start border-success border-3{% endif %}">
                             <div class="card-body py-3">
-                                <h6 class="card-title mb-1">{{ req.title }}</h6>
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <h6 class="card-title mb-1">{{ req.title }}</h6>
+                                    {% if req.is_recommended %}
+                                    <span class="badge bg-success small">Recommended</span>
+                                    {% endif %}
+                                </div>
                                 <p class="card-text text-muted small text-truncate mb-2">{{ req.description or 'No
                                     description' }}</p>
                                 <span
@@ -111,7 +122,12 @@
                                 <div class="mt-2">
                                     <small class="text-muted">
                                         <i class="bi bi-geo-alt"></i> {{ req.location or 'TBD' }} |
-                                        <i class="bi bi-clock"></i> {{ req.duration_hours }}h
+                                        Duration: {{ req.duration_hours }}h |
+                                        {% if current_user_type == 'senior' %}
+                                        Coins: {{ req.duration_hours * 10 }}
+                                        {% else %}
+                                        Coins: 10
+                                        {% endif %}
                                     </small>
                                 </div>
                             </div>

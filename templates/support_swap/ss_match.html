@@ -60,6 +60,9 @@
                 <p class="text-muted small">{{ match.help_requests.description if match.help_requests else '' }}</p>
 
                 <div class="text-end mt-3 d-flex gap-2 justify-content-end">
+                    <a href="{{ url_for('social.social_hub') }}" class="btn btn-primary btn-sm">
+                        <i class="bi bi-chat-dots me-1"></i>Message
+                    </a>
                     <!-- QR Code button instead of direct complete -->
                     <button type="button" class="btn btn-success btn-sm"
                         onclick="showQRCode({{ match.id }}, '{{ match.help_requests.title if match.help_requests else 'Help Request' }}')">
@@ -135,7 +138,7 @@
                         aria-label="Close"></button>
                 </div>
                 <div class="modal-body text-center py-4">
-                    <p class="text-muted mb-3">Ask your partner to scan this QR code to verify the session completion:
+                    <p class="text-muted mb-3">Approach the admin to scan this QR code to verify the session completion:
                     </p>
                     <h6 class="text-primary mb-3" id="qrTaskTitle"></h6>
                     <div id="qrcode" class="d-flex justify-content-center mb-3">
@@ -150,11 +153,11 @@
                             <i class="bi bi-check-circle-fill text-success" style="font-size: 4rem;"></i>
                         </div>
                         <h5 class="text-success">Session Verified!</h5>
-                        <p class="text-muted">Your partner scanned the QR code. Refreshing...</p>
+                        <p class="text-muted">The admin scanned the QR code. Refreshing...</p>
                     </div>
                     <p id="qrHint" class="text-muted small mt-2">
                         <i class="bi bi-info-circle me-1"></i>
-                        Waiting for your partner to scan... The page will update automatically.
+                        Waiting for the admin to scan... The page will update automatically.
                     </p>
                 </div>
                 <div class="modal-footer justify-content-between">

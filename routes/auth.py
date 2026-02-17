@@ -23,6 +23,11 @@ def register():
             flash("Please fill in all fields.", "danger")
             return render_template('auth/register.html')
         
+        # Block reserved admin username
+        if username.strip().lower() == 'admin':
+            flash("This username is reserved. Please choose a different one.", "danger")
+            return render_template('auth/register.html')
+        
         # Default user type (can be updated later in profile settings)
         user_type = 'youth'
         
@@ -124,6 +129,10 @@ def onboarding():
             user_type = 'senior' if user_age > 55 else 'youth'
         except ValueError:
             user_type = 'youth'
+        
+        # Never allow user_type to be set to 'admin' via onboarding
+        if session.get('user_type') == 'admin':
+            user_type = 'admin'
         
         try:
             # Update the user's profile with onboarding data
