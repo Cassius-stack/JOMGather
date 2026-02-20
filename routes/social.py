@@ -371,8 +371,11 @@ def get_contacts():
                         except:
                             pass
                     
+                    stripped_content = content.strip().lower() if content else ''
                     if 'Slice of Life Invite' in content:
                         preview = f"{prefix}🎨 Slice of Life Invite"
+                    elif stripped_content == '!cyber':
+                        preview = f"{prefix}🎮 Cyber Challenge!"
                     else:
                         preview = f"{prefix}{content[:30]}"
                 
@@ -1025,3 +1028,17 @@ def get_cyber_challenge_status(challenge_id):
     except Exception as e:
         print(f"Error getting cyber challenge status: {e}")
         return jsonify({'found': False, 'error': str(e)}), 500
+
+
+@social_bp.route('/api/debug/trigger-challenges')
+def debug_trigger_challenges():
+    """Manual trigger for daily cyber challenges (for testing)."""
+    try:
+        from extensions import socketio
+        from utils.scheduler import send_daily_cyber_challenges
+        send_daily_cyber_challenges(socketio)
+        return jsonify({'success': True, 'message': 'Daily challenges triggered.'})
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500

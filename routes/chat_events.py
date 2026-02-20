@@ -17,14 +17,8 @@ SCENARIO_ANSWERS = {
 # Track online users: {user_id: socket_id}
 online_users = {}
 
-
 def register_chat_events(socketio):
     """Register all chat-related Socket.IO events."""
-    
-    # Catch-all handler to debug ALL incoming events
-    @socketio.on('*')
-    def catch_all(event, data):
-        print(f"[Socket.IO DEBUG] Event received: {event}", flush=True)
     
     @socketio.on('connect')
     def handle_connect():
@@ -847,4 +841,5 @@ def register_chat_events(socketio):
 def get_room_name(user1_id, user2_id):
     """Create a consistent room name for two users."""
     ids = sorted([int(user1_id), int(user2_id)])
+    return f"chat_{ids[0]}_{ids[1]}"
 

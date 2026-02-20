@@ -208,64 +208,111 @@ const processedMessageIds = new Set();
 socket.on('new_message', (data) => {
     console.log('[Socket.IO] New message received:', data);
 
-    // If I am the receiver and the chat is open, mark it as read immediately
-    if (data.receiver_id === CURRENT_USER_ID && data.sender_id === currentContactId) {
+    // Normalize data (backend might use 'text' or 'content')
+    const messageContent = data.text || data.content || '';
+    const senderId = String(data.sender_id || data.senderId);
+    const receiverId = String(data.receiver_id || data.receiverId);
+    const msgId = data.id || data.message_id;
+
+    console.log(`[Socket.IO] Processing message ${msgId} from ${senderId} to ${receiverId}. Current UI Contact: ${currentContactId}`);
+
+    // Security/Filtering: Only process if I am the sender or receiver
+    const isForMe = senderId === String(CURRENT_USER_ID) || receiverId === String(CURRENT_USER_ID);
+    if (!isForMe) {
+        console.log('[Socket.IO] Skipping message: Not for me');
+        return;
+    }
+
+    // Mark as read if relevant
+    if (receiverId === String(CURRENT_USER_ID) && senderId === String(currentContactId)) {
         socket.emit('mark_read', { user_id: CURRENT_USER_ID, sender_id: currentContactId });
     }
 
-    // Prevent duplicate processing (message may arrive from both chat room and personal room)
-    if (processedMessageIds.has(data.id)) {
-        console.log('[Socket.IO] Skipping duplicate message:', data.id);
-        return;
+    // Prevent duplicate processing
+    if (processedMessageIds.has(msgId)) return;
+    processedMessageIds.add(msgId);
+
+    // Determine roles for UI
+    const messageType = senderId === String(CURRENT_USER_ID) ? 'sent' : 'received';
+    const otherUserId = senderId === String(CURRENT_USER_ID) ? receiverId : senderId;
+
+    // Robust Challenge Detection
+    const isCyber = data.is_cyber_challenge ||
+        (messageContent.trim().toLowerCase() === '!cyber') ||
+        data.challenge_id ||
+        data.challengeId;
+
+    console.log(`[Socket.IO] isCyber detected: ${isCyber}. content: "${messageContent}"`);
+
+    // Visual Alert for automated challenges
+    if (isCyber && (data.is_broadcast || data.isBroadcast) && messageType === 'received') {
+        console.log('[Socket.IO] Displaying Toast for Cyber Challenge');
+        if (typeof showToast === 'function') {
+            showToast('🎮 New Daily Cyber Challenge received!', 'info');
+        }
     }
-    processedMessageIds.add(data.id);
 
-    // Determine if this is a sent or received message for us
-    const messageType = data.sender_id === CURRENT_USER_ID ? 'sent' : 'received';
-    const otherUserId = data.sender_id === CURRENT_USER_ID ? data.receiver_id : data.sender_id;
-
-    // Only add to chat if it's for the current conversation
-    if (otherUserId === currentContactId) {
-        // Check if this is a cyber challenge
-        if (data.is_cyber_challenge) {
-            appendCyberChallenge(data.id, data.challenge_id, data.scenario_id);
+    // Update Chat View if open
+    if (String(otherUserId) === String(currentContactId)) {
+        if (isCyber) {
+            console.log(`[Socket.IO] Auto-reloading messages for contact ${currentContactId}`);
+            setTimeout(() => {
+                loadMessages(currentContactId);
+            }, 500);
         } else {
             appendMessage({
-                id: data.id,
+                id: msgId,
                 type: messageType,
-                text: data.text,
-                image_url: data.image_url,
-                sent_at: data.sent_at
+                text: messageContent,
+                image_url: data.image_url || data.imageUrl,
+                sent_at: data.sent_at || data.sentAt
             });
         }
     } else if (messageType === 'received') {
-        // Message from a different contact - increment unread count
+        // Increment unread count for other contacts
         unreadCounts[otherUserId] = (unreadCounts[otherUserId] || 0) + 1;
         updateUnreadBadge(otherUserId);
     }
 
-    // Always update the contact preview
-    let previewText = data.text;
-    if (data.is_cyber_challenge) {
+    // Always update sidebar
+    let previewText = messageContent;
+    if (isCyber) {
         previewText = '🎮 Cyber Challenge!';
-    } else if (!data.text && data.image_url) {
+    } else if (!messageContent && (data.image_url || data.imageUrl)) {
         previewText = '📷 Photo';
-    } else if (data.text && data.text.startsWith('{')) {
-        // Check if this is a call message
+    } else if (messageContent.startsWith('{')) {
         try {
-            const parsed = JSON.parse(data.text);
+            const parsed = JSON.parse(messageContent);
             if (parsed.type === 'call') {
                 previewText = parsed.call_type === 'video' ? '📹 Video call' : '📞 Voice call';
             }
-        } catch (e) {
-            // Not JSON, use as-is
-        }
+        } catch (e) { }
     }
 
+    console.log(`[Socket.IO] Sidebar update for ${otherUserId}: ${previewText}`);
     updateContactPreview(otherUserId, previewText, messageType);
-
-    // Move this contact to top of the list
     moveContactToTop(otherUserId);
+});
+
+/**
+ * Force Refresh Event (Fallback for automated challenges)
+ */
+socket.on('FORCE_CHAT_REFRESH', (data) => {
+    console.log('[Socket.IO] FORCE_CHAT_REFRESH received:', data);
+
+    // Check if it involves me
+    const isForMe = String(data.target_id) === String(CURRENT_USER_ID) ||
+        String(data.sender_id) === String(CURRENT_USER_ID);
+
+    if (isForMe) {
+        const otherId = String(data.target_id) === String(CURRENT_USER_ID) ? String(data.sender_id) : String(data.target_id);
+
+        // If this contact is currently open, reload messages
+        if (otherId === String(currentContactId)) {
+            console.log('[Socket.IO] Force refreshing current chat...');
+            loadMessages(currentContactId);
+        }
+    }
 });
 
 /**
@@ -753,6 +800,10 @@ function getPreviewText(text) {
     // Handle Slice of Life HTML cards in preview
     if (text.includes('Slice of Life Invite')) {
         return '🎨 Slice of Life Invite';
+    }
+
+    if (text === '!cyber' || text === '🎮 Cyber Challenge!') {
+        return '🎮 Cyber Challenge!';
     }
 
     try {

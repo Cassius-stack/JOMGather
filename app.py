@@ -24,8 +24,8 @@ from routes.slice_of_life import slice_of_life_bp
 from routes.community import community_bp
 from routes.jukebox import jukebox_bp
 
-# Create SocketIO instance (initialized later with app)
-socketio = SocketIO()
+# Import SocketIO instance from extensions (Singleton pattern)
+from extensions import socketio
 
 def create_app(config_name='default'):
     """Application factory function."""
@@ -60,6 +60,12 @@ def create_app(config_name='default'):
     # Register BOOMERang video chat events
     from routes.boomerang_events import register_boomerang_events
     register_boomerang_events(socketio)
+    
+    # Start background scheduler (only in main process to avoid duplicates with reloader)
+    import os
+    if os.environ.get('WERKZEUG_RUN_MAIN') == 'true' or not app.debug:
+        from utils.scheduler import start_scheduler
+        start_scheduler(socketio)
     
     # Track user activity (throttled to avoid excessive DB calls)
     @app.before_request
