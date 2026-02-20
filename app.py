@@ -88,6 +88,32 @@ def create_app(config_name='default'):
     @app.context_processor
     def inject_notifications():
         from flask import session
+        
+        # Default ICE servers for WebRTC NAT traversal
+        # ==========================================
+        # STUN servers (for simple NATs)
+        ice_servers = [
+            {'urls': 'stun:stun.l.google.com:19302'},
+            {'urls': 'stun:stun1.l.google.com:19302'},
+            {'urls': 'stun:stun2.l.google.com:19302'},
+            {'urls': 'stun:stun3.l.google.com:19302'},
+            {'urls': 'stun:stun4.l.google.com:19302'},
+        ]
+
+        ice_servers.extend([
+            {
+                'urls': 'turn:global.relay.metered.ca:3478',
+                'username': 'a6706b430a8936a5959d6f72',
+                'credential': '2C9gDd/WzYF+j37q'
+            },
+            {
+                'urls': 'turns:global.relay.metered.ca:443?transport=tcp',
+                'username': 'a6706b430a8936a5959d6f72',
+                'credential': '2C9gDd/WzYF+j37q'
+            }
+        ])
+        # ==========================================
+        
         if session.get('user_id'):
             try:
                 from utils.supabase_db import get_supabase
@@ -100,11 +126,12 @@ def create_app(config_name='default'):
                 coin_res = supabase.table('coins').select('total_coins').eq('user_id', session.get('user_id')).execute()
                 total_coins = coin_res.data[0]['total_coins'] if coin_res.data else 0
                 
-                return dict(notifications=notifications, unread_notifications_count=unread_count, total_coins=total_coins)
+                return dict(notifications=notifications, unread_notifications_count=unread_count, total_coins=total_coins, ice_servers=ice_servers)
             except Exception as e:
                 print(f"Error fetching notifications/coins: {e}")
-                return dict(notifications=[], unread_notifications_count=0, total_coins=0)
-        return dict(notifications=[], unread_notifications_count=0, total_coins=0)
+                return dict(notifications=[], unread_notifications_count=0, total_coins=0, ice_servers=ice_servers)
+        
+        return dict(notifications=[], unread_notifications_count=0, total_coins=0, ice_servers=ice_servers)
 
     # Home route
     @app.route('/')

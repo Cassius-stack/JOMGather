@@ -725,7 +725,7 @@
     if (partnerNameDisplay) partnerNameDisplay.textContent = partnerName || 'Connecting...';
 
     const rtcConfig = {
-        iceServers: [
+        iceServers: window.ICE_SERVERS && window.ICE_SERVERS.length > 0 ? window.ICE_SERVERS : [
             { urls: 'stun:stun.l.google.com:19302' },
             { urls: 'stun:stun1.l.google.com:19302' }
         ]
@@ -802,10 +802,23 @@
             }
         });
 
+        async function processQueuedIceCandidates() {
+            console.log(`[Meetup] Processing ${iceCandidateQueue.length} queued ICE candidates`);
+            while (iceCandidateQueue.length > 0) {
+                const candidate = iceCandidateQueue.shift();
+                try {
+                    await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+                } catch (e) {
+                    console.error('Error adding queued ICE candidate:', e);
+                }
+            }
+        }
+
         socket.on('boomerang_offer', async (data) => {
             console.log('[Meetup] Received offer');
             if (peerConnection) {
                 await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
+                await processQueuedIceCandidates();
                 const answer = await peerConnection.createAnswer();
                 await peerConnection.setLocalDescription(answer);
                 socket.emit('boomerang_answer', { answer: answer });
@@ -816,12 +829,21 @@
             console.log('[Meetup] Received answer');
             if (peerConnection) {
                 await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+                await processQueuedIceCandidates();
             }
         });
 
+        const iceCandidateQueue = [];
+
         socket.on('boomerang_ice_candidate', async (data) => {
             console.log('[Meetup] Received ICE candidate');
-            if (peerConnection && data.candidate) {
+            if (!peerConnection || !peerConnection.remoteDescription) {
+                console.log('[Meetup] Queuing ICE candidate (remote description not set)');
+                iceCandidateQueue.push(data.candidate);
+                return;
+            }
+
+            if (data.candidate) {
                 try {
                     await peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
                 } catch (e) {

@@ -26,7 +26,7 @@ let currentCall = {
 
 // WebRTC configuration - STUN servers for NAT traversal
 const rtcConfig = {
-    iceServers: [
+    iceServers: window.ICE_SERVERS && window.ICE_SERVERS.length > 0 ? window.ICE_SERVERS : [
         { urls: 'stun:stun.l.google.com:19302' },
         { urls: 'stun:stun1.l.google.com:19302' },
         { urls: 'stun:stun2.l.google.com:19302' },

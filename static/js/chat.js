@@ -630,17 +630,24 @@ function getMessageHtml(msg) {
     if (callData) {
         const isVideo = callData.call_type === 'video';
         const isMissed = callData.status === 'missed';
+        const isFailed = callData.status === 'failed';
         const icon = isVideo
-            ? (isMissed ? 'bi-camera-video-off' : 'bi-camera-video')
-            : (isMissed ? 'bi-telephone-x' : 'bi-telephone');
+            ? (isMissed || isFailed ? 'bi-camera-video-off' : 'bi-camera-video')
+            : (isMissed || isFailed ? 'bi-telephone-x' : 'bi-telephone');
 
-        const title = isMissed
+        let title = isMissed
             ? `Missed ${callData.call_type} call`
             : `${callData.call_type.charAt(0).toUpperCase() + callData.call_type.slice(1)} call`;
+
+        if (isFailed) {
+            title = `Failed ${callData.call_type} call`;
+        }
 
         let subtitle = '';
         if (isMissed) {
             subtitle = 'Tap to call back';
+        } else if (isFailed) {
+            subtitle = 'Could not establish connection';
         } else if (callData.duration > 0) {
             const mins = Math.floor(callData.duration / 60);
             const secs = callData.duration % 60;

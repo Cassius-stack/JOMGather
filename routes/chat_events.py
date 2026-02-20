@@ -59,6 +59,7 @@ def register_chat_events(socketio):
         except Exception as e:
             print(f"[Socket.IO] BOOMERang cleanup error: {e}")
     
+    @socketio.on('register')
     @socketio.on('register_user')
     def handle_register_user(data):
         """
@@ -619,14 +620,18 @@ def register_chat_events(socketio):
             'user_id': user_id
         }, room=f"user_{other_user_id}")
         
-        # Only save call message if it was connected (completed call)
-        if was_connected:
+        # Save call message if it was connected OR if it failed (for history)
+        # (Missed calls are handled separately in call_decline)
+        if True: # Always save a record of the call ending
+            status = 'completed' if was_connected else 'failed'
+            
             # Create call message content as JSON
             call_content = json.dumps({
                 'type': 'call',
                 'call_type': call_type,
-                'status': 'completed',
-                'duration': duration
+                'status': status,
+                'duration': duration,
+                'was_connected': was_connected
             })
             
             # Sender is who INITIATED the call (caller), not who ended it
