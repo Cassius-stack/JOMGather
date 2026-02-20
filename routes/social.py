@@ -342,18 +342,27 @@ def get_contacts():
         for friend_id in friends:
             user_data = fetch_one('users', user_id=friend_id)
             if user_data:
-                # Get last message
+                # Get messages for preview and sorting
                 last_msg = None
                 last_msg_time = None
                 try:
+                    # 1. Get the absolute last message for the preview text
                     msg_res = supabase.table('messages').select('*').or_(
                         f"and(sender_id.eq.{current_user_id},receiver_id.eq.{friend_id}),and(sender_id.eq.{friend_id},receiver_id.eq.{current_user_id})"
                     ).order('sent_at', desc=True).limit(1).execute()
                     if msg_res.data:
                         last_msg = msg_res.data[0]
-                        last_msg_time = last_msg.get('sent_at')
-                except:
-                    pass
+                    
+                    # 2. Get the last NON-CYBER message for sorting
+                    # This ensures automated challenges don't jump the contact to the top
+                    real_msg_res = supabase.table('messages').select('sent_at').or_(
+                        f"and(sender_id.eq.{current_user_id},receiver_id.eq.{friend_id}),and(sender_id.eq.{friend_id},receiver_id.eq.{current_user_id})"
+                    ).neq('content', '!cyber').order('sent_at', desc=True).limit(1).execute()
+                    
+                    if real_msg_res.data:
+                        last_msg_time = real_msg_res.data[0].get('sent_at')
+                except Exception as e:
+                    print(f"[Contacts] Error fetching last message for {friend_id}: {e}")
                 
                 preview = ''
                 if last_msg:

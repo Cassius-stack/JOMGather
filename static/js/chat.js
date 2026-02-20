@@ -290,8 +290,13 @@ socket.on('new_message', (data) => {
     }
 
     console.log(`[Socket.IO] Sidebar update for ${otherUserId}: ${previewText}`);
-    updateContactPreview(otherUserId, previewText, messageType);
-    moveContactToTop(otherUserId);
+    updateContactPreview(otherUserId, previewText, messageType, data.sent_at || data.sentAt);
+
+    // EXCLUSION: Don't move the contact to the top for cyber challenges
+    // This allows them to "appear" in the sidebar without overtaking human chats
+    if (!isCyber) {
+        moveContactToTop(otherUserId);
+    }
 });
 
 /**
@@ -823,16 +828,38 @@ function getPreviewText(text) {
 }
 
 /**
+ * Format timestamp for the sidebar (e.g., 08:20 PM)
+ */
+function formatSidebarTime(isoString) {
+    if (!isoString) return '';
+    try {
+        const date = new Date(isoString);
+        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+    } catch (e) {
+        return '';
+    }
+}
+
+/**
  * Update the preview text for a contact in the sidebar
  */
-function updateContactPreview(contactId, text, type) {
+function updateContactPreview(contactId, text, type, timestamp = null) {
     const contactItem = document.querySelector(`[data-contact-id="${contactId}"]`);
     if (contactItem) {
+        // Update Preview Text
         const preview = contactItem.querySelector('.preview');
         if (preview) {
             const prefix = type === 'sent' ? 'You: ' : '';
             const displayMessage = getPreviewText(text);
             preview.textContent = `${prefix}${displayMessage.substring(0, 25)}${displayMessage.length > 25 ? '...' : ''}`;
+        }
+
+        // Update Timestamp (if provided and not a cyber challenge)
+        if (timestamp && text !== '!cyber' && text !== '🎮 Cyber Challenge!') {
+            const timeEl = contactItem.querySelector('.timestamp');
+            if (timeEl) {
+                timeEl.textContent = formatSidebarTime(timestamp);
+            }
         }
     }
 }
@@ -1879,7 +1906,10 @@ async function loadContacts() {
                     <i class="bi bi-person-fill"></i>
                 </div>
                 <div class="contact-info">
-                    <span class="name">${contact.name}</span>
+                    <div class="name-row">
+                        <span class="name">${contact.name}</span>
+                        <span class="timestamp">${formatSidebarTime(contact.lastMessageTime)}</span>
+                    </div>
                     <span class="preview">${getPreviewText(contact.lastMessage)}</span>
                 </div>
                 ${contact.unreadCount > 0 ? `<span class="unread-badge">${contact.unreadCount > 9 ? '9+' : contact.unreadCount}</span>` : ''}
