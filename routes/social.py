@@ -390,6 +390,7 @@ def get_contacts():
                 result.append({
                     'id': friend_id,
                     'name': user_data['username'],
+                    'type': user_data.get('user_type', 'youth'),
                     'lastMessage': preview,
                     'status': status,
                     'lastMessageTime': last_msg_time,
@@ -521,8 +522,10 @@ def get_messages(contact_id):
         # Get reactions for these messages
         message_ids = [m['message_id'] for m in messages]
         reactions_map = {}
+        challenge_map = {}
         
         if message_ids:
+            # 1. Fetch reactions
             try:
                 reactions_res = supabase.table('message_reactions').select('*').in_('message_id', message_ids).execute()
                 for r in reactions_res.data:
@@ -536,6 +539,17 @@ def get_messages(contact_id):
                     reactions_map[mid][emoji].append(uid)
             except Exception as re:
                 print(f"Error fetching message reactions: {re}")
+
+            # 2. Fetch cyber challenges
+            try:
+                challenges_res = supabase.table('cyber_challenges').select('*').in_('message_id', message_ids).execute()
+                for c in challenges_res.data:
+                    challenge_map[c['message_id']] = {
+                        'challenge_id': c['challenge_id'],
+                        'scenario_id': c['scenario_id']
+                    }
+            except Exception as ce:
+                print(f"Error fetching cyber challenges: {ce}")
         
         return jsonify([{
             'id': m['message_id'],
@@ -544,6 +558,9 @@ def get_messages(contact_id):
             'sent_at': m['sent_at'],
             'read': m.get('read', False),
             'image_url': m.get('image_url'),
+            'is_cyber_challenge': m['message_id'] in challenge_map,
+            'challenge_id': challenge_map.get(m['message_id'], {}).get('challenge_id'),
+            'scenario_id': challenge_map.get(m['message_id'], {}).get('scenario_id'),
             'reactions': reactions_map.get(m['message_id'], {})
         } for m in messages])
     except Exception as e:

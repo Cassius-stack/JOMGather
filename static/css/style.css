@@ -1259,6 +1259,23 @@ body {
     font-weight: 500;
 }
 
+.meta-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.user-details .text .role {
+    font-size: 13px;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.user-details .text .separator {
+    font-size: 13px;
+    color: #cbd5e1;
+}
+
 .header-actions {
     display: flex;
     align-items: center;
