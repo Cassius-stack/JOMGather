@@ -63,6 +63,10 @@
           ]
         }
     </script>
+    <script>
+        // Global WebRTC Configuration
+        window.ICE_SERVERS = {{ ice_servers | default([]) | tojson }};
+    </script>
 </head>
 
 <body>
