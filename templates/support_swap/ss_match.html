@@ -52,9 +52,14 @@
                 <div class="text-muted small mb-3">
                     <i class="bi bi-person-circle me-1"></i>
                     Partner: <strong>{{ match.help_requests.users.username if match.help_requests and
-                        match.help_requests.users else 'Unknown' }}</strong> &bull;
+                        match.help_requests.users else (match.users.username if match.users else 'Unknown') }}</strong>
+                    &bull;
                     <i class="bi bi-geo-alt-fill me-1"></i>
                     Location: <strong>{{ match.help_requests.location if match.help_requests else 'TBD' }}</strong>
+                    &bull;
+                    <i class="bi bi-calendar-event me-1"></i>
+                    Date: <strong>{{ match.help_requests.scheduled_date if match.help_requests and
+                        match.help_requests.scheduled_date else 'TBD' }}</strong>
                 </div>
 
                 <p class="text-muted small">{{ match.help_requests.description if match.help_requests else '' }}</p>
@@ -63,11 +68,13 @@
                     <a href="{{ url_for('social.social_hub') }}" class="btn btn-primary btn-sm">
                         <i class="bi bi-chat-dots me-1"></i>Message
                     </a>
-                    <!-- QR Code button instead of direct complete -->
+                    <!-- QR Code button — only shown to the helper -->
+                    {% if match.helper_id == current_user_id %}
                     <button type="button" class="btn btn-success btn-sm"
                         onclick="showQRCode({{ match.id }}, '{{ match.help_requests.title if match.help_requests else 'Help Request' }}')">
                         <i class="bi bi-qr-code me-1"></i>Mark Complete
                     </button>
+                    {% endif %}
                     <form action="{{ url_for('support_swap.cancel_match', match_id=match.id) }}" method="POST">
                         <button type="submit" class="btn btn-outline-danger btn-sm">Cancel Match</button>
                     </form>
@@ -103,9 +110,14 @@
                 <div class="text-muted small mb-3">
                     <i class="bi bi-person-circle me-1"></i>
                     Partner: <strong>{{ match.help_requests.users.username if match.help_requests and
-                        match.help_requests.users else 'Unknown' }}</strong> &bull;
+                        match.help_requests.users else (match.users.username if match.users else 'Unknown') }}</strong>
+                    &bull;
                     <i class="bi bi-geo-alt-fill me-1"></i>
                     Location: <strong>{{ match.help_requests.location if match.help_requests else 'TBD' }}</strong>
+                    &bull;
+                    <i class="bi bi-calendar-event me-1"></i>
+                    Date: <strong>{{ match.help_requests.scheduled_date if match.help_requests and
+                        match.help_requests.scheduled_date else 'TBD' }}</strong>
                 </div>
 
                 {% if match.feedback %}
@@ -138,7 +150,7 @@
                         aria-label="Close"></button>
                 </div>
                 <div class="modal-body text-center py-4">
-                    <p class="text-muted mb-3">Approach the admin to scan this QR code to verify the session completion:
+                    <p class="text-muted mb-3">Show this QR code to the requester to verify the session completion:
                     </p>
                     <h6 class="text-primary mb-3" id="qrTaskTitle"></h6>
                     <div id="qrcode" class="d-flex justify-content-center mb-3">
@@ -153,11 +165,11 @@
                             <i class="bi bi-check-circle-fill text-success" style="font-size: 4rem;"></i>
                         </div>
                         <h5 class="text-success">Session Verified!</h5>
-                        <p class="text-muted">The admin scanned the QR code. Refreshing...</p>
+                        <p class="text-muted">The requester has verified the session. Refreshing...</p>
                     </div>
                     <p id="qrHint" class="text-muted small mt-2">
                         <i class="bi bi-info-circle me-1"></i>
-                        Waiting for the admin to scan... The page will update automatically.
+                        Waiting for the requester to scan... The page will update automatically.
                     </p>
                 </div>
                 <div class="modal-footer justify-content-between">
