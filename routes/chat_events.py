@@ -17,14 +17,8 @@ SCENARIO_ANSWERS = {
 # Track online users: {user_id: socket_id}
 online_users = {}
 
-
 def register_chat_events(socketio):
     """Register all chat-related Socket.IO events."""
-    
-    # Catch-all handler to debug ALL incoming events
-    @socketio.on('*')
-    def catch_all(event, data):
-        print(f"[Socket.IO DEBUG] Event received: {event}", flush=True)
     
     @socketio.on('connect')
     def handle_connect():
@@ -151,18 +145,34 @@ def register_chat_events(socketio):
         
         challenge_id = None
         
-        # If this is a cyber challenge, create a challenge record
+        # If this is a cyber challenge, verify roles (only allowed for Senior-Youth pairs)
         if is_cyber_challenge:
-            challenge = insert('cyber_challenges', {
-                'message_id': new_message['message_id'],
-                'scenario_id': scenario_id,
-                'user1_id': sender_id,
-                'user2_id': receiver_id,
-                'status': 'pending'
-            })
-            if challenge:
-                challenge_id = challenge['challenge_id']
-                print(f"[Socket.IO] Created cyber challenge {challenge_id} for message {new_message['message_id']}")
+            try:
+                sender = fetch_one('users', user_id=sender_id)
+                receiver = fetch_one('users', user_id=receiver_id)
+                
+                if sender and receiver:
+                    s_type = sender.get('user_type')
+                    r_type = receiver.get('user_type')
+                    
+                    # Only allow if one is senior and the other is youth
+                    if (s_type == 'senior' and r_type == 'youth') or (s_type == 'youth' and r_type == 'senior'):
+                        challenge = insert('cyber_challenges', {
+                            'message_id': new_message['message_id'],
+                            'scenario_id': scenario_id,
+                            'user1_id': sender_id,
+                            'user2_id': receiver_id,
+                            'status': 'pending'
+                        })
+                        if challenge:
+                            challenge_id = challenge['challenge_id']
+                            print(f"[Socket.IO] Created cyber challenge {challenge_id} for message {new_message['message_id']}")
+                    else:
+                        is_cyber_challenge = False # Silently block
+                        print(f"[Socket.IO] Blocked cyber challenge: same-role pair ({s_type} to {r_type})")
+            except Exception as e:
+                print(f"[Socket.IO] Error verifying roles for cyber challenge: {e}")
+                is_cyber_challenge = False
         
         response_data = {
             'id': new_message['message_id'],
@@ -831,4 +841,5 @@ def register_chat_events(socketio):
 def get_room_name(user1_id, user2_id):
     """Create a consistent room name for two users."""
     ids = sorted([int(user1_id), int(user2_id)])
+    return f"chat_{ids[0]}_{ids[1]}"
 

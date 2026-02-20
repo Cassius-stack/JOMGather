@@ -208,64 +208,116 @@ const processedMessageIds = new Set();
 socket.on('new_message', (data) => {
     console.log('[Socket.IO] New message received:', data);
 
-    // If I am the receiver and the chat is open, mark it as read immediately
-    if (data.receiver_id === CURRENT_USER_ID && data.sender_id === currentContactId) {
+    // Normalize data (backend might use 'text' or 'content')
+    const messageContent = data.text || data.content || '';
+    const senderId = String(data.sender_id || data.senderId);
+    const receiverId = String(data.receiver_id || data.receiverId);
+    const msgId = data.id || data.message_id;
+
+    console.log(`[Socket.IO] Processing message ${msgId} from ${senderId} to ${receiverId}. Current UI Contact: ${currentContactId}`);
+
+    // Security/Filtering: Only process if I am the sender or receiver
+    const isForMe = senderId === String(CURRENT_USER_ID) || receiverId === String(CURRENT_USER_ID);
+    if (!isForMe) {
+        console.log('[Socket.IO] Skipping message: Not for me');
+        return;
+    }
+
+    // Mark as read if relevant
+    if (receiverId === String(CURRENT_USER_ID) && senderId === String(currentContactId)) {
         socket.emit('mark_read', { user_id: CURRENT_USER_ID, sender_id: currentContactId });
     }
 
-    // Prevent duplicate processing (message may arrive from both chat room and personal room)
-    if (processedMessageIds.has(data.id)) {
-        console.log('[Socket.IO] Skipping duplicate message:', data.id);
-        return;
+    // Prevent duplicate processing
+    if (processedMessageIds.has(msgId)) return;
+    processedMessageIds.add(msgId);
+
+    // Determine roles for UI
+    const messageType = senderId === String(CURRENT_USER_ID) ? 'sent' : 'received';
+    const otherUserId = senderId === String(CURRENT_USER_ID) ? receiverId : senderId;
+
+    // Robust Challenge Detection
+    const isCyber = data.is_cyber_challenge ||
+        (messageContent.trim().toLowerCase() === '!cyber') ||
+        data.challenge_id ||
+        data.challengeId;
+
+    console.log(`[Socket.IO] isCyber detected: ${isCyber}. content: "${messageContent}"`);
+
+    // Visual Alert for automated challenges
+    if (isCyber && (data.is_broadcast || data.isBroadcast) && messageType === 'received') {
+        console.log('[Socket.IO] Displaying Toast for Cyber Challenge');
+        if (typeof showToast === 'function') {
+            showToast('🎮 New Daily Cyber Challenge received!', 'info');
+        }
     }
-    processedMessageIds.add(data.id);
 
-    // Determine if this is a sent or received message for us
-    const messageType = data.sender_id === CURRENT_USER_ID ? 'sent' : 'received';
-    const otherUserId = data.sender_id === CURRENT_USER_ID ? data.receiver_id : data.sender_id;
-
-    // Only add to chat if it's for the current conversation
-    if (otherUserId === currentContactId) {
-        // Check if this is a cyber challenge
-        if (data.is_cyber_challenge || data.text === '!cyber') {
-            appendCyberChallenge(data.id, data.challenge_id, data.scenario_id);
+    // Update Chat View if open
+    if (String(otherUserId) === String(currentContactId)) {
+        if (isCyber) {
+            console.log(`[Socket.IO] Auto-reloading messages for contact ${currentContactId}`);
+            setTimeout(() => {
+                loadMessages(currentContactId);
+            }, 500);
         } else {
             appendMessage({
-                id: data.id,
+                id: msgId,
                 type: messageType,
-                text: data.text,
-                image_url: data.image_url,
-                sent_at: data.sent_at
+                text: messageContent,
+                image_url: data.image_url || data.imageUrl,
+                sent_at: data.sent_at || data.sentAt
             });
         }
     } else if (messageType === 'received') {
-        // Message from a different contact - increment unread count
+        // Increment unread count for other contacts
         unreadCounts[otherUserId] = (unreadCounts[otherUserId] || 0) + 1;
         updateUnreadBadge(otherUserId);
     }
 
-    // Always update the contact preview
-    let previewText = data.text;
-    if (data.is_cyber_challenge) {
+    // Always update sidebar
+    let previewText = messageContent;
+    if (isCyber) {
         previewText = '🎮 Cyber Challenge!';
-    } else if (!data.text && data.image_url) {
+    } else if (!messageContent && (data.image_url || data.imageUrl)) {
         previewText = '📷 Photo';
-    } else if (data.text && data.text.startsWith('{')) {
-        // Check if this is a call message
+    } else if (messageContent.startsWith('{')) {
         try {
-            const parsed = JSON.parse(data.text);
+            const parsed = JSON.parse(messageContent);
             if (parsed.type === 'call') {
                 previewText = parsed.call_type === 'video' ? '📹 Video call' : '📞 Voice call';
             }
-        } catch (e) {
-            // Not JSON, use as-is
-        }
+        } catch (e) { }
     }
 
-    updateContactPreview(otherUserId, previewText, messageType);
+    console.log(`[Socket.IO] Sidebar update for ${otherUserId}: ${previewText}`);
+    updateContactPreview(otherUserId, previewText, messageType, data.sent_at || data.sentAt);
 
-    // Move this contact to top of the list
-    moveContactToTop(otherUserId);
+    // EXCLUSION: Don't move the contact to the top for cyber challenges
+    // This allows them to "appear" in the sidebar without overtaking human chats
+    if (!isCyber) {
+        moveContactToTop(otherUserId);
+    }
+});
+
+/**
+ * Force Refresh Event (Fallback for automated challenges)
+ */
+socket.on('FORCE_CHAT_REFRESH', (data) => {
+    console.log('[Socket.IO] FORCE_CHAT_REFRESH received:', data);
+
+    // Check if it involves me
+    const isForMe = String(data.target_id) === String(CURRENT_USER_ID) ||
+        String(data.sender_id) === String(CURRENT_USER_ID);
+
+    if (isForMe) {
+        const otherId = String(data.target_id) === String(CURRENT_USER_ID) ? String(data.sender_id) : String(data.target_id);
+
+        // If this contact is currently open, reload messages
+        if (otherId === String(currentContactId)) {
+            console.log('[Socket.IO] Force refreshing current chat...');
+            loadMessages(currentContactId);
+        }
+    }
 });
 
 /**
@@ -561,7 +613,7 @@ function getMessageHtml(msg) {
         return `<div class="timestamp">${msg.text}</div>`;
     }
 
-    if (msg.text === '!cyber' || msg.type === 'cyber-challenge') {
+    if (msg.is_cyber_challenge || msg.type === 'cyber-challenge') {
         const scenario = cyberScenarios[Math.floor(Math.random() * cyberScenarios.length)];
         const effectiveChallengeId = msg.challenge_id || `msg_${msg.id}`;
         const effectiveScenarioId = msg.scenario_id || scenario.id;
@@ -755,6 +807,10 @@ function getPreviewText(text) {
         return '🎨 Slice of Life Invite';
     }
 
+    if (text === '!cyber' || text === '🎮 Cyber Challenge!') {
+        return '🎮 Cyber Challenge!';
+    }
+
     try {
         if (text.startsWith('{')) {
             const parsed = JSON.parse(text);
@@ -772,16 +828,38 @@ function getPreviewText(text) {
 }
 
 /**
+ * Format timestamp for the sidebar (e.g., 08:20 PM)
+ */
+function formatSidebarTime(isoString) {
+    if (!isoString) return '';
+    try {
+        const date = new Date(isoString);
+        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+    } catch (e) {
+        return '';
+    }
+}
+
+/**
  * Update the preview text for a contact in the sidebar
  */
-function updateContactPreview(contactId, text, type) {
+function updateContactPreview(contactId, text, type, timestamp = null) {
     const contactItem = document.querySelector(`[data-contact-id="${contactId}"]`);
     if (contactItem) {
+        // Update Preview Text
         const preview = contactItem.querySelector('.preview');
         if (preview) {
             const prefix = type === 'sent' ? 'You: ' : '';
             const displayMessage = getPreviewText(text);
             preview.textContent = `${prefix}${displayMessage.substring(0, 25)}${displayMessage.length > 25 ? '...' : ''}`;
+        }
+
+        // Update Timestamp (if provided and not a cyber challenge)
+        if (timestamp && text !== '!cyber' && text !== '🎮 Cyber Challenge!') {
+            const timeEl = contactItem.querySelector('.timestamp');
+            if (timeEl) {
+                timeEl.textContent = formatSidebarTime(timestamp);
+            }
         }
     }
 }
@@ -1821,13 +1899,17 @@ async function loadContacts() {
             li.dataset.contactId = contact.id;
             li.dataset.contactName = contact.name;
             li.dataset.contactStatus = contact.status;
+            li.dataset.contactType = contact.type;
 
             li.innerHTML = `
                 <div class="avatar">
                     <i class="bi bi-person-fill"></i>
                 </div>
                 <div class="contact-info">
-                    <span class="name">${contact.name}</span>
+                    <div class="name-row">
+                        <span class="name">${contact.name}</span>
+                        <span class="timestamp">${formatSidebarTime(contact.lastMessageTime)}</span>
+                    </div>
                     <span class="preview">${getPreviewText(contact.lastMessage)}</span>
                 </div>
                 ${contact.unreadCount > 0 ? `<span class="unread-badge">${contact.unreadCount > 9 ? '9+' : contact.unreadCount}</span>` : ''}
@@ -1870,6 +1952,16 @@ async function loadContacts() {
             chatContactStatus.textContent = firstContact.status;
             chatContactStatus.style.color = firstContact.status === 'Active now' ? '#22c55e' : '#888';
 
+            // Update role in header
+            const roleSpan = document.getElementById('chat-contact-role');
+            const separator = document.getElementById('chat-header-separator');
+            if (roleSpan) {
+                const type = firstContact.type || 'youth';
+                roleSpan.textContent = type === 'youth' ? 'Youth' : (type.charAt(0).toUpperCase() + type.slice(1));
+                roleSpan.style.display = 'inline';
+                if (separator) separator.style.display = 'inline';
+            }
+
             // Join the chat room and load messages
             socket.emit('join_chat', { user_id: CURRENT_USER_ID, contact_id: firstContact.id });
             loadMessages(firstContact.id);
@@ -1909,6 +2001,17 @@ function switchContact(contactId, contactName, contactStatus) {
     chatContactName.textContent = contactName;
     chatContactStatus.textContent = contactStatus || 'Active now';
 
+    // Update role in header
+    const activeItem = document.querySelector(`[data-contact-id="${contactId}"]`);
+    const roleSpan = document.getElementById('chat-contact-role');
+    const separator = document.getElementById('chat-header-separator');
+    if (activeItem && roleSpan) {
+        let type = activeItem.dataset.contactType || 'youth';
+        roleSpan.textContent = type === 'youth' ? 'Youth' : (type.charAt(0).toUpperCase() + type.slice(1));
+        roleSpan.style.display = 'inline';
+        if (separator) separator.style.display = 'inline';
+    }
+
     // Update status color
     if (contactStatus === "Active now") {
         chatContactStatus.style.color = "#22c55e";
@@ -1920,7 +2023,7 @@ function switchContact(contactId, contactName, contactStatus) {
     document.querySelectorAll('.contact-item').forEach(item => {
         item.classList.remove('active');
     });
-    const activeItem = document.querySelector(`[data-contact-id="${contactId}"]`);
+    // activeItem is already defined above in the role update section
     if (activeItem) {
         activeItem.classList.add('active');
     }
@@ -1972,20 +2075,36 @@ async function sendMessage() {
 
     // Check for !cyber command (Dev tool for testing scenarios)
     if (text.toLowerCase() === '!cyber') {
-        // Determine a valid random scenario
-        const randomScenario = typeof cyberScenarios !== 'undefined' && cyberScenarios.length > 0
-            ? cyberScenarios[Math.floor(Math.random() * cyberScenarios.length)]
-            : { id: 1 }; // Fallback
+        const activeItem = document.querySelector(`[data-contact-id="${currentContactId}"]`);
+        const contactType = activeItem ? activeItem.dataset.contactType : null;
 
-        socket.emit('send_message', {
-            sender_id: CURRENT_USER_ID,
-            receiver_id: currentContactId,
-            content: text,
-            is_cyber_challenge: true,
-            scenario_id: randomScenario.id
-        });
-        messageInput.value = '';
-        return;
+        // Enforce restriction: Only Senior-Youth pairs
+        const currentUserType = typeof CURRENT_USER_TYPE !== 'undefined' ? CURRENT_USER_TYPE : 'youth';
+        const isSeniorYouthPair = (currentUserType === 'senior' && contactType === 'youth') ||
+            (currentUserType === 'youth' && contactType === 'senior');
+
+        if (isSeniorYouthPair) {
+            // Determine a valid random scenario
+            const randomScenario = typeof cyberScenarios !== 'undefined' && cyberScenarios.length > 0
+                ? cyberScenarios[Math.floor(Math.random() * cyberScenarios.length)]
+                : { id: 1 }; // Fallback
+
+            socket.emit('send_message', {
+                sender_id: CURRENT_USER_ID,
+                receiver_id: currentContactId,
+                content: text,
+                is_cyber_challenge: true,
+                scenario_id: randomScenario.id
+            });
+            messageInput.value = '';
+            return;
+        } else {
+            console.log('[Chat] !cyber blocked: same-role pair');
+            // User requested to block it from being sent as a challenge.
+            // We'll let it fall through and be sent as a regular message "!cyber"
+            // Or we could silently absorb it. The user said "block it from being sent if it is sent from youth-to-youth/senior-to-senior".
+            // I'll fall through so it's a normal message, and the backend will also block the challenge creation.
+        }
     }
 
     if (!text && !selectedImageFile) return;

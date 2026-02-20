@@ -450,18 +450,27 @@ def get_contacts():
         for friend_id in friends:
             user_data = fetch_one('users', user_id=friend_id)
             if user_data:
-                # Get last message
+                # Get messages for preview and sorting
                 last_msg = None
                 last_msg_time = None
                 try:
+                    # 1. Get the absolute last message for the preview text
                     msg_res = supabase.table('messages').select('*').or_(
                         f"and(sender_id.eq.{current_user_id},receiver_id.eq.{friend_id}),and(sender_id.eq.{friend_id},receiver_id.eq.{current_user_id})"
                     ).order('sent_at', desc=True).limit(1).execute()
                     if msg_res.data:
                         last_msg = msg_res.data[0]
-                        last_msg_time = last_msg.get('sent_at')
-                except:
-                    pass
+                    
+                    # 2. Get the last NON-CYBER message for sorting
+                    # This ensures automated challenges don't jump the contact to the top
+                    real_msg_res = supabase.table('messages').select('sent_at').or_(
+                        f"and(sender_id.eq.{current_user_id},receiver_id.eq.{friend_id}),and(sender_id.eq.{friend_id},receiver_id.eq.{current_user_id})"
+                    ).neq('content', '!cyber').order('sent_at', desc=True).limit(1).execute()
+                    
+                    if real_msg_res.data:
+                        last_msg_time = real_msg_res.data[0].get('sent_at')
+                except Exception as e:
+                    print(f"[Contacts] Error fetching last message for {friend_id}: {e}")
                 
                 preview = ''
                 if last_msg:
@@ -479,8 +488,11 @@ def get_contacts():
                         except:
                             pass
                     
+                    stripped_content = content.strip().lower() if content else ''
                     if 'Slice of Life Invite' in content:
                         preview = f"{prefix}🎨 Slice of Life Invite"
+                    elif stripped_content == '!cyber':
+                        preview = f"{prefix}🎮 Cyber Challenge!"
                     else:
                         preview = f"{prefix}{content[:30]}"
                 
@@ -498,6 +510,7 @@ def get_contacts():
                 result.append({
                     'id': friend_id,
                     'name': user_data['username'],
+                    'type': user_data.get('user_type', 'youth'),
                     'lastMessage': preview,
                     'status': status,
                     'lastMessageTime': last_msg_time,
@@ -629,8 +642,10 @@ def get_messages(contact_id):
         # Get reactions for these messages
         message_ids = [m['message_id'] for m in messages]
         reactions_map = {}
+        challenge_map = {}
         
         if message_ids:
+            # 1. Fetch reactions
             try:
                 reactions_res = supabase.table('message_reactions').select('*').in_('message_id', message_ids).execute()
                 for r in reactions_res.data:
@@ -644,6 +659,17 @@ def get_messages(contact_id):
                     reactions_map[mid][emoji].append(uid)
             except Exception as re:
                 print(f"Error fetching message reactions: {re}")
+
+            # 2. Fetch cyber challenges
+            try:
+                challenges_res = supabase.table('cyber_challenges').select('*').in_('message_id', message_ids).execute()
+                for c in challenges_res.data:
+                    challenge_map[c['message_id']] = {
+                        'challenge_id': c['challenge_id'],
+                        'scenario_id': c['scenario_id']
+                    }
+            except Exception as ce:
+                print(f"Error fetching cyber challenges: {ce}")
         
         return jsonify([{
             'id': m['message_id'],
@@ -652,6 +678,9 @@ def get_messages(contact_id):
             'sent_at': m['sent_at'],
             'read': m.get('read', False),
             'image_url': m.get('image_url'),
+            'is_cyber_challenge': m['message_id'] in challenge_map,
+            'challenge_id': challenge_map.get(m['message_id'], {}).get('challenge_id'),
+            'scenario_id': challenge_map.get(m['message_id'], {}).get('scenario_id'),
             'reactions': reactions_map.get(m['message_id'], {})
         } for m in messages])
     except Exception as e:
@@ -1293,3 +1322,16 @@ def chatbot_prompts():
     except Exception as e:
         print(f"Prompts Error: {e}")
         return jsonify({'prompts': ["Tell me a story", "Advice needed", "Childhood memory"]})
+
+@social_bp.route('/api/debug/trigger-challenges')
+def debug_trigger_challenges():
+    """Manual trigger for daily cyber challenges (for testing)."""
+    try:
+        from extensions import socketio
+        from utils.scheduler import send_daily_cyber_challenges
+        send_daily_cyber_challenges(socketio)
+        return jsonify({'success': True, 'message': 'Daily challenges triggered.'})
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500

@@ -50,7 +50,11 @@
                     </div>
                     <div class="text">
                         <span class="name" id="chat-contact-name">Select a contact</span>
-                        <span class="status" id="chat-contact-status">-</span>
+                        <div class="meta-row">
+                            <span class="role" id="chat-contact-role"></span>
+                            <span class="separator" id="chat-header-separator" style="display: none;"> • </span>
+                            <span class="status" id="chat-contact-status">-</span>
+                        </div>
                     </div>
                 </div>
                 <div class="header-actions">
@@ -196,9 +200,10 @@
 
 {% block scripts %}
 <script>
-    const CURRENT_USER_ID = {{ session.get('user_id') | tojson if session.get('user_id') else 'null' }};
-    const CURRENT_USERNAME = {{ session.get('username') | tojson if session.get('username') else '""' }};
-    const CURRENT_USER_NAME = {{ session.get('username') | tojson if session.get('username') else '""' }};
+    const CURRENT_USER_ID = {{ session.get('user_id') | tojson }};
+    const CURRENT_USER_TYPE = "{{ session.get('user_type', 'youth') }}";
+    const CURRENT_USERNAME = "{{ session.get('username') }}";
+    const CURRENT_USER_NAME = "{{ session.get('username') }}";
 
     // Helper functions for call buttons (use currentContactId from chat.js)
     function initiateVoiceCall() {
