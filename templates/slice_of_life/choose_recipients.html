@@ -83,7 +83,7 @@
                                     style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid {{ border_color }};">
                                 {% if person.is_active %}
                                 <div style="position: absolute; top: 0; right: 5px; width: 14px; height: 14px; border-radius: 50%; background: #22c55e; border: 2px solid white;"
-                                    title="Active Now"></div>
+                                    title="Active"></div>
                                 {% endif %}
                                 <div class="check-badge"
                                     style="position: absolute; bottom: 0; right: 0; width: 28px; height: 28px; border-radius: 50%; background: #22c55e; color: white; display: none; align-items: center; justify-content: center; border: 2px solid white;">
@@ -94,7 +94,7 @@
                                 person.username }}</h5>
                             <p
                                 style="font-size: 0.9rem; color: {{ status_color }}; margin: 0; font-weight: {{ '600' if person.is_active else '400' }};">
-                                {{ 'Active Now' if person.is_active else 'Last seen ' + (person.last_seen[:10] if
+                                {{ 'Active' if person.is_active else 'Last seen ' + (person.last_seen[:10] if
                                 person.last_seen else 'long ago') }}
                             </p>
                         </div>

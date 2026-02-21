@@ -51,6 +51,9 @@ let audioChunks = [];
 let recordingStartTime = null;
 let timerInterval = null;
 
+// Track the date of the last rendered message to inject separators
+let lastMessageDateStr = null;
+
 
 // ============================================
 // SOCKET.IO EVENT LISTENERS
@@ -341,9 +344,9 @@ socket.on('user_online', (data) => {
     console.log('[Socket.IO] User online:', data.user_id);
     const contactItem = document.querySelector(`[data-contact-id="${data.user_id}"]`);
     if (contactItem) {
-        contactItem.dataset.contactStatus = 'Active now';
+        contactItem.dataset.contactStatus = 'Active';
         if (data.user_id === currentContactId) {
-            chatContactStatus.textContent = 'Active now';
+            chatContactStatus.textContent = 'Active';
             chatContactStatus.style.color = '#22c55e';
         }
     }
@@ -586,17 +589,39 @@ function updateInboxAfterDelete(senderId, receiverId) {
     const otherUserId = senderId === CURRENT_USER_ID ? receiverId : senderId;
 
     // Only update if viewing this contact's chat
-    if (otherUserId === currentContactId) {
+    if (String(otherUserId) === String(currentContactId)) {
         const remainingMessages = document.querySelectorAll('#chat-messages .message');
         if (remainingMessages.length > 0) {
             const lastMessage = remainingMessages[remainingMessages.length - 1];
             if (lastMessage) {
-                const text = lastMessage.querySelector('.bubble p')?.textContent || '';
+                // Determine Text
+                let text = '';
+                const textEl = lastMessage.querySelector('.message-text');
+                if (textEl) {
+                    text = textEl.textContent;
+                } else if (lastMessage.querySelector('.voice-message-player')) {
+                    text = 'Voice message';
+                } else if (lastMessage.querySelector('.call-card')) {
+                    text = 'Call record';
+                } else {
+                    text = 'Photo attachment';
+                }
+
                 const isSent = lastMessage.classList.contains('sent');
-                updateContactPreview(otherUserId, text, isSent ? 'sent' : 'received');
+                const timestamp = lastMessage.dataset.sentAt;
+
+                updateContactPreview(otherUserId, text, isSent ? 'sent' : 'received', timestamp);
             }
         } else {
-            updateContactPreview(otherUserId, 'No messages yet', '');
+            // Truly empty chat
+            updateContactPreview(otherUserId, 'No messages yet', '', null);
+
+            // Explicitly clear sidebar timestamp if needed (already handled by null in updateContactPreview)
+            const contactItem = document.querySelector(`[data-contact-id="${otherUserId}"]`);
+            if (contactItem) {
+                const timeEl = contactItem.querySelector('.timestamp');
+                if (timeEl) timeEl.textContent = '';
+            }
         }
     }
 }
@@ -610,7 +635,7 @@ function updateInboxAfterDelete(senderId, receiverId) {
  */
 function getMessageHtml(msg) {
     if (msg.type === 'timestamp') {
-        return `<div class="timestamp">${msg.text}</div>`;
+        return `<div class="chat-date-separator"><span>${msg.text}</span></div>`;
     }
 
     if (msg.is_cyber_challenge || msg.type === 'cyber-challenge') {
@@ -756,22 +781,24 @@ function getMessageHtml(msg) {
     }
 
     return `
-        <div class="message ${msg.type} ${callData ? 'call-message' : ''}" data-message-id="${msg.id || ''}">
+        <div class="message ${msg.type} ${callData ? 'call-message' : ''}" data-message-id="${msg.id || ''}" data-sent-at="${msg.sent_at || ''}">
             <div class="message-content">
-                <div class="bubble ${voiceData ? 'voice-message' : ''}">
-                    ${imageHtml}
-                    <div class="message-body">
-                        ${contentHtml}
-                        <div class="message-metadata">
-                            ${editedIndicator}
-                            <span class="message-time">${formatMessageTime(msg.sent_at || new Date())}</span>
-                            ${isSent ? `<span class="message-tick ${msg.read ? 'read' : ''}"><i class="bi bi-check${msg.read ? '-all' : ''}"></i></span>` : ''}
+                <div class="bubble-with-actions">
+                    <div class="bubble ${voiceData ? 'voice-message' : ''}">
+                        ${imageHtml}
+                        <div class="message-body">
+                            ${contentHtml}
+                            <div class="message-metadata">
+                                ${editedIndicator}
+                                <span class="message-time">${formatMessageTime(msg.sent_at || new Date())}</span>
+                                ${isSent ? `<span class="message-tick ${msg.read ? 'read' : ''}"><i class="bi bi-check${msg.read ? '-all' : ''}"></i></span>` : ''}
+                            </div>
                         </div>
                     </div>
+                    ${actionsHtml}
                 </div>
                 <div class="msg-reactions-chat">${getReactionsHtml(msg.id, msg.reactions)}</div>
             </div>
-            ${actionsHtml}
         </div>
     `;
 }
@@ -779,6 +806,19 @@ function getMessageHtml(msg) {
 // Append a single message to the chat (for real-time updates)
 function appendMessage(msg) {
     if (!chatMessages) return;
+
+    // Check for day change for real-time messages
+    const date = parseTimestamp(msg.sent_at || new Date());
+    if (date) {
+        const currentDateStr = date.toDateString();
+        if (currentDateStr !== lastMessageDateStr) {
+            const separatorHtml = `<div class="chat-date-separator"><span>${formatDateSeparator(msg.sent_at)}</span></div>`;
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = separatorHtml;
+            chatMessages.appendChild(tempDiv.firstChild);
+            lastMessageDateStr = currentDateStr;
+        }
+    }
 
     const messageHtml = getMessageHtml(msg);
     const tempDiv = document.createElement('div');
@@ -828,16 +868,64 @@ function getPreviewText(text) {
 }
 
 /**
+ * Parse a timestamp into a Date object, handling UTC formats robustly
+ */
+function parseTimestamp(timestamp) {
+    if (!timestamp) return null;
+    if (timestamp instanceof Date) return timestamp;
+
+    let dateStr = String(timestamp).trim();
+
+    // If it's a standard ISO format but missing a timezone, assume UTC
+    if (dateStr.includes('T') && !dateStr.includes('Z') && !dateStr.includes('+')) {
+        dateStr += 'Z';
+    } else if (!dateStr.includes('T') && dateStr.includes(' ')) {
+        // Convert "YYYY-MM-DD HH:mm:ss" to "YYYY-MM-DDTHH:mm:ss"
+        dateStr = dateStr.replace(' ', 'T');
+        if (!dateStr.includes('Z') && !dateStr.includes('+')) {
+            dateStr += 'Z';
+        }
+    }
+
+    const date = new Date(dateStr);
+    return isNaN(date.getTime()) ? null : date;
+}
+
+/**
  * Format timestamp for the sidebar (e.g., 08:20 PM)
  */
 function formatSidebarTime(isoString) {
-    if (!isoString) return '';
-    try {
-        const date = new Date(isoString);
-        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
-    } catch (e) {
-        return '';
+    const date = parseTimestamp(isoString);
+    if (!date) return '';
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+}
+
+/**
+ * Format date separator (e.g., Today, Yesterday, or 11 December) + Time
+ */
+function formatDateSeparator(timestamp) {
+    const date = parseTimestamp(timestamp);
+    if (!date) return '';
+
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    const targetDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
+    let datePart = '';
+    if (targetDate.getTime() === today.getTime()) {
+        datePart = 'Today';
+    } else if (targetDate.getTime() === yesterday.getTime()) {
+        datePart = 'Yesterday';
+    } else {
+        // e.g., "11 December"
+        datePart = date.toLocaleDateString([], { day: 'numeric', month: 'long' });
     }
+
+    const timePart = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+    return `${datePart}, ${timePart}`;
 }
 
 /**
@@ -883,14 +971,17 @@ function updateUnreadBadge(contactId) {
     if (!contactItem) return;
 
     const count = unreadCounts[contactId] || 0;
-    let badge = contactItem.querySelector('.unread-badge');
+    const previewRow = contactItem.querySelector('.preview-row');
+    if (!previewRow) return;
+
+    let badge = previewRow.querySelector('.unread-badge');
 
     if (count > 0) {
         // Create badge if it doesn't exist
         if (!badge) {
             badge = document.createElement('span');
             badge.className = 'unread-badge';
-            contactItem.appendChild(badge);
+            previewRow.appendChild(badge);
         }
         // Display count (max "9+")
         badge.textContent = count > 9 ? '9+' : count;
@@ -946,11 +1037,24 @@ function renderMessages(messages) {
     chatMessages.innerHTML = '';
     console.log('[Chat] Rendering', messages.length, 'messages');
 
+    // Reset date tracking for a fresh render
+    lastMessageDateStr = null;
+
     let fullHtml = '';
     const challengesToUpdate = [];
 
     messages.forEach((msg) => {
         try {
+            // Check for day change
+            const date = parseTimestamp(msg.sent_at);
+            if (date) {
+                const currentDateStr = date.toDateString();
+                if (currentDateStr !== lastMessageDateStr) {
+                    fullHtml += `<div class="chat-date-separator"><span>${formatDateSeparator(msg.sent_at)}</span></div>`;
+                    lastMessageDateStr = currentDateStr;
+                }
+            }
+
             fullHtml += getMessageHtml(msg);
 
             // Collect challenges for post-render update
@@ -1131,8 +1235,19 @@ function cancelEditMessage(button) {
 function showDeleteModal(button) {
     const messageDiv = button.closest('.message');
     const messageId = messageDiv.dataset.messageId;
-    const pElement = messageDiv.querySelector('.bubble p');
-    const messageText = pElement ? pElement.textContent : 'Photo attachment';
+
+    let messageText = '';
+    const textElement = messageDiv.querySelector('.message-text');
+
+    if (textElement) {
+        messageText = textElement.textContent;
+    } else if (messageDiv.querySelector('.voice-message-player')) {
+        messageText = 'Voice message';
+    } else if (messageDiv.querySelector('.call-card')) {
+        messageText = 'Call record';
+    } else {
+        messageText = 'Photo attachment';
+    }
 
     // Create modal overlay
     const overlay = document.createElement('div');
@@ -1234,7 +1349,7 @@ function getReactionsHtml(messageId, reactions) {
 // REACTION FUNCTIONS
 // ============================================
 
-const chatEmojis = ['👍', '❤️', '🎉'];
+const chatEmojis = ['👍', '❤️', '🎉', '🔥', '⭐', '✨'];
 
 /**
  * Toggle reaction emoji picker for a message
@@ -1824,6 +1939,9 @@ function showExplanationModal(challengeId, scenarioId) {
  */
 async function loadMessages(contactId) {
     try {
+        // Reset lastMessageDateStr when loading messages for a new contact
+        lastMessageDateStr = null;
+
         const response = await fetch(`/social/api/messages/${contactId}?user=${CURRENT_USER_ID}`);
 
         // Check if response is OK
@@ -1910,9 +2028,11 @@ async function loadContacts() {
                         <span class="name">${contact.name}</span>
                         <span class="timestamp">${formatSidebarTime(contact.lastMessageTime)}</span>
                     </div>
-                    <span class="preview">${getPreviewText(contact.lastMessage)}</span>
+                    <div class="preview-row">
+                        <span class="preview">${getPreviewText(contact.lastMessage)}</span>
+                        ${contact.unreadCount > 0 ? `<span class="unread-badge">${contact.unreadCount > 9 ? '9+' : contact.unreadCount}</span>` : ''}
+                    </div>
                 </div>
-                ${contact.unreadCount > 0 ? `<span class="unread-badge">${contact.unreadCount > 9 ? '9+' : contact.unreadCount}</span>` : ''}
             `;
 
             // Add click handler
@@ -1939,7 +2059,7 @@ async function loadContacts() {
             // Update header
             chatContactName.textContent = firstContact.name;
             chatContactStatus.textContent = firstContact.status;
-            chatContactStatus.style.color = firstContact.status === 'Active now' ? '#22c55e' : '#888';
+            chatContactStatus.style.color = firstContact.status === 'Active' ? '#22c55e' : '#888';
 
             // Update role in header
             const roleSpan = document.getElementById('chat-contact-role');
@@ -1988,7 +2108,7 @@ function switchContact(contactId, contactName, contactStatus) {
 
     // Update header
     chatContactName.textContent = contactName;
-    chatContactStatus.textContent = contactStatus || 'Active now';
+    chatContactStatus.textContent = contactStatus || 'Active';
 
     // Update role in header
     const activeItem = document.querySelector(`[data-contact-id="${contactId}"]`);
@@ -2002,7 +2122,7 @@ function switchContact(contactId, contactName, contactStatus) {
     }
 
     // Update status color
-    if (contactStatus === "Active now") {
+    if (contactStatus === "Active") {
         chatContactStatus.style.color = "#22c55e";
     } else {
         chatContactStatus.style.color = "#888";
@@ -2616,33 +2736,8 @@ function seekVoice(event, progressBar) {
  * Ensures that UTC strings from the server are converted to local browser time
  */
 function formatMessageTime(sentAt) {
-    if (!sentAt) return '';
-
-    let date;
-    if (sentAt instanceof Date) {
-        date = sentAt;
-    } else {
-        // Handle various string formats, ensuring UTC is recognized
-        let dateStr = String(sentAt).trim();
-
-        // If it's a standard ISO format but missing a timezone, assume UTC
-        if (dateStr.includes('T') && !dateStr.includes('Z') && !dateStr.includes('+')) {
-            dateStr += 'Z';
-        } else if (!dateStr.includes('T') && dateStr.includes(' ')) {
-            // Convert "YYYY-MM-DD HH:mm:ss" to "YYYY-MM-DDTHH:mm:ss"
-            dateStr = dateStr.replace(' ', 'T');
-            if (!dateStr.includes('Z') && !dateStr.includes('+')) {
-                dateStr += 'Z';
-            }
-        }
-
-        date = new Date(dateStr);
-    }
-
-    // Fallback for invalid dates
-    if (isNaN(date.getTime())) {
-        return '';
-    }
+    const date = parseTimestamp(sentAt);
+    if (!date) return '';
 
     return date.toLocaleTimeString([], {
         hour: '2-digit',
