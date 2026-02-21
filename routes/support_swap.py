@@ -220,7 +220,7 @@ def ss_match():
     try:
         # Fetch matches where user is the helper
         helper_response = supabase.table('support_matches').select(
-            '*, help_requests(title, description, location, users(username))'
+            '*, help_requests(title, description, location, scheduled_date, users(username))'
         ).eq('helper_id', user_id).order('created_at', desc=True).execute()
         
         # Fetch matches where user is the requester (from their help requests)
@@ -230,7 +230,7 @@ def ss_match():
         requester_matches = []
         if request_ids:
             req_response = supabase.table('support_matches').select(
-                '*, help_requests(title, description, location), users!support_matches_helper_id_fkey(username)'
+                '*, help_requests(title, description, location, scheduled_date), users!support_matches_helper_id_fkey(username)'
             ).in_('request_id', request_ids).order('created_at', desc=True).execute()
             requester_matches = req_response.data
         
@@ -247,7 +247,8 @@ def ss_match():
     return render_template('support_swap/ss_match.html', 
                          active_matches=active_matches, 
                          completed_matches=completed_matches,
-                         user_region=get_user_region(user_id))
+                         user_region=get_user_region(user_id),
+                         current_user_id=user_id)
 
 @support_swap_bp.route('/offer/<int:request_id>', methods=['POST'])
 def offer_help(request_id):
@@ -424,17 +425,15 @@ def cancel_match(match_id):
 
 @support_swap_bp.route('/verify/<int:match_id>')
 def verify_match(match_id):
-    """Verification page — shown when partner scans the QR code.
-    Only admin accounts can verify and auto-complete a match."""
+    """Verification page — shown when requester scans the QR code.
+    Only the original requester can verify and auto-complete a match."""
     user_id = session.get('user_id')
-    user_type = session.get('user_type')
-    is_admin = (user_id is not None and user_type == 'admin')
     
     supabase = get_supabase()
     
     try:
         match_data = supabase.table('support_matches').select(
-            '*, help_requests(title, description, location, duration_hours, users(username))'
+            '*, help_requests(title, description, location, duration_hours, user_id, users(username))'
         ).eq('id', match_id).execute()
         
         if not match_data.data:
@@ -447,15 +446,18 @@ def verify_match(match_id):
         helper = supabase.table('users').select('username').eq('user_id', match['helper_id']).execute()
         helper_name = helper.data[0]['username'] if helper.data else 'Unknown'
         
-        # Only admin can auto-complete the match
+        # Determine if scanner is the original requester
+        requester_id = match.get('help_requests', {}).get('user_id')
+        is_requester = (user_id is not None and user_id == requester_id)
+        
         auto_completed = False
         access_denied = False
         
-        if not is_admin:
-            # Non-admin user or not logged in — show access denied
+        if not is_requester:
+            # Not the requester — show access denied
             access_denied = True
         elif match['status'] in ['pending', 'accepted']:
-            # Admin scanned — auto-complete the match
+            # Requester scanned — auto-complete the match
             from datetime import datetime
             supabase.table('support_matches').update({
                 'status': 'completed',
@@ -503,39 +505,48 @@ def match_status(match_id):
 
 @support_swap_bp.route('/confirm/<int:match_id>', methods=['POST'])
 def confirm_match(match_id):
-    """Confirm completion from the verification page (admin only)."""
+    """Confirm completion from the verification page (requester only)."""
     user_id = session.get('user_id')
     if not user_id:
         flash("Please log in to confirm.", "warning")
         return redirect(url_for('auth.login'))
     
-    # Only admin can confirm via QR
-    if session.get('user_type') != 'admin':
-        flash("Only admin can verify support swap sessions.", "danger")
-        return redirect(url_for('support_swap.ss_match'))
-    
     supabase = get_supabase()
     
     try:
         from datetime import datetime
-        # Get match details before completing (need helper_id and duration)
+        # Get match details before completing (need helper_id, duration, and requester)
         match_data = supabase.table('support_matches').select(
-            '*, help_requests(duration_hours)'
+            '*, help_requests(duration_hours, user_id)'
         ).eq('id', match_id).execute()
+        
+        if not match_data.data:
+            flash('Match not found.', 'error')
+            return redirect(url_for('support_swap.ss_match'))
+        
+        match = match_data.data[0]
+        
+        # Only the original requester can confirm via QR
+        requester_id = match.get('help_requests', {}).get('user_id')
+        if user_id != requester_id:
+            flash("Only the original requester can verify this session.", "danger")
+            return redirect(url_for('support_swap.ss_match'))
         
         supabase.table('support_matches').update({
             'status': 'completed',
             'completed_at': datetime.now().isoformat()
         }).eq('id', match_id).execute()
         
-        # Award coins to senior helper (hours * 10)
-        if match_data.data:
-            match = match_data.data[0]
-            helper_data = fetch_one('users', 'user_id, user_type', user_id=match['helper_id'])
-            if helper_data and helper_data.get('user_type') == 'senior':
+        # Award coins to helper
+        helper_data = fetch_one('users', 'user_id, user_type', user_id=match['helper_id'])
+        if helper_data:
+            if helper_data.get('user_type') == 'senior':
                 duration = match.get('help_requests', {}).get('duration_hours', 1)
                 coins_earned = int(duration) * 10
                 add_coins(match['helper_id'], coins_earned)
+            elif helper_data.get('user_type') == 'youth':
+                # Youth: flat 10 coins per task
+                add_coins(match['helper_id'], 10)
         
         flash('Session verified and marked as complete! Thank you!', 'success')
     except Exception as e:

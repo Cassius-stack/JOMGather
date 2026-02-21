@@ -10,15 +10,16 @@
                 <div class="card shadow-sm border-top border-4 border-success">
                     <div class="card-body text-center py-4">
                         {% if access_denied %}
-                        <!-- Access Denied — non-admin user -->
+                        <!-- Access Denied — not the requester -->
                         <div class="mb-3">
                             <i class="bi bi-shield-lock-fill text-danger" style="font-size: 4rem;"></i>
                         </div>
                         <h3 class="text-danger mb-3">Access Denied</h3>
-                        <p class="text-muted">Only an <strong>admin account</strong> can scan and verify QR codes.</p>
+                        <p class="text-muted">Only the <strong>original requester</strong> can scan and verify this QR
+                            code.</p>
                         <div class="alert alert-warning mt-3">
                             <i class="bi bi-exclamation-triangle me-2"></i>
-                            Please ask the admin to scan this QR code to verify the session.
+                            Please ask the person who posted this help request to scan the QR code.
                         </div>
 
                         {% elif match.status == 'completed' %}
@@ -31,7 +32,8 @@
                         <p class="text-muted">The support swap session has been automatically marked as complete.</p>
                         <div class="alert alert-success mt-3">
                             <i class="bi bi-check2-all me-2"></i>
-                            <strong>QR Scan Successful!</strong> Both parties can now see this session as completed.
+                            <strong>Verification Successful!</strong> Both parties can now see this session as
+                            completed.
                         </div>
                         {% else %}
                         <h3 class="text-success mb-3">Session Already Verified</h3>
