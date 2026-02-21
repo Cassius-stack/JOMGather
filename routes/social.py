@@ -497,7 +497,7 @@ def get_contacts():
                         preview = f"{prefix}{content[:30]}"
                 
                 # Determine online status from last_seen
-                status = 'Active now' if is_online(user_data) else 'Offline'
+                status = 'Active' if is_online(user_data) else 'Offline'
                 
                 # Count unread messages from this friend
                 unread_count = 0
