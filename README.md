@@ -80,4 +80,4 @@ JOMGather/
 
 ## License
 
-This project is created for educational purposes as part of IT1225 Web Development Project.g
+This project is created for educational purposes as part of IT1225 Web Development Project.
