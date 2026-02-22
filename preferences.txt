@@ -1,3 +1,0 @@
-1. When creating new elements, draw from the design similar elements already existing in the app. Otherwise, clarify with the user on how it should look like.
-2. Always flesh out ideas fully with the user. If there are certain ideas that you are unsure of, ask follow-up questions to the user to clarify your understanding and gain a better understanding of the idea the user has in mind and how it should look like
-3. Ensure that any and all features added are senior friendly. This includes NOT making windows tiny. 

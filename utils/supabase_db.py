@@ -6,6 +6,7 @@ Provides connection and query utilities for Supabase (PostgreSQL)
 import os
 from dotenv import load_dotenv
 from supabase import create_client, Client
+from httpx import Timeout
 
 # Load environment variables from .env
 load_dotenv()
@@ -14,17 +15,42 @@ load_dotenv()
 SUPABASE_URL = os.getenv('SUPABASE_URL')
 SUPABASE_KEY = os.getenv('SUPABASE_ANON_KEY')
 
+# Timeout config: 15s to connect, 30s to read response
+_SUPABASE_TIMEOUT = Timeout(connect=15.0, read=30.0, write=30.0, pool=15.0)
+
 # Create Supabase client (singleton)
 _supabase_client: Client = None
 
 
 def get_supabase() -> Client:
-    """Get the Supabase client instance."""
+    """Get the Supabase client instance with timeout and auto-reconnect."""
     global _supabase_client
     if _supabase_client is None:
-        if not SUPABASE_URL or not SUPABASE_KEY:
-            raise ValueError("SUPABASE_URL and SUPABASE_ANON_KEY must be set in .env")
-        _supabase_client = create_client(SUPABASE_URL, SUPABASE_KEY)
+        _supabase_client = _create_client()
+    return _supabase_client
+
+
+def _create_client() -> Client:
+    """Create a new Supabase client with proper timeout configuration."""
+    if not SUPABASE_URL or not SUPABASE_KEY:
+        raise ValueError("SUPABASE_URL and SUPABASE_ANON_KEY must be set in .env")
+    
+    client = create_client(SUPABASE_URL, SUPABASE_KEY)
+    
+    # Apply timeout to the internal httpx client used by PostgREST
+    try:
+        if hasattr(client, 'postgrest') and hasattr(client.postgrest, 'session'):
+            client.postgrest.session.timeout = _SUPABASE_TIMEOUT
+    except Exception:
+        pass  # Some versions may not expose this — fail silently
+    
+    return client
+
+
+def reconnect_supabase() -> Client:
+    """Force-recreate the Supabase client (useful after connection errors)."""
+    global _supabase_client
+    _supabase_client = _create_client()
     return _supabase_client
 
 
@@ -36,7 +62,7 @@ import time
 from functools import wraps
 
 def retry_query(max_retries=3, delay=1):
-    """Decorator to retry Supabase queries on network errors."""
+    """Decorator to retry Supabase queries on network errors with auto-reconnect."""
     def decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
@@ -51,11 +77,14 @@ def retry_query(max_retries=3, delay=1):
                     retryable = any(kw in error_str for kw in [
                         "10035", "timeout", "transport", "read",
                         "connection", "reset", "502", "503", "504",
-                        "temporarily", "unavailable", "eof"
+                        "temporarily", "unavailable", "eof", "closed",
+                        "pool", "httpx"
                     ])
                     if retryable:
                         print(f"[Supabase] Retry {attempt+1}/{max_retries} due to error: {e}")
                         last_exception = e
+                        # Force-recreate client on connection issues
+                        reconnect_supabase()
                         time.sleep(delay * (attempt + 1))  # Exponential backoff
                     else:
                         raise e

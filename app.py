@@ -6,7 +6,7 @@ Main Flask Application Entry Point
 from dotenv import load_dotenv
 load_dotenv()  # Load .env file before anything else
 
-from flask import Flask, render_template
+from flask import Flask, render_template, render_template_string
 from flask_socketio import SocketIO
 from config import config
 
@@ -90,14 +90,13 @@ def create_app(config_name='default'):
                     # Don't break the app if tracking fails
                     print(f"Error updating last_seen: {e}")
 
-    # Context Processor for Notifications
+    # Context Processor for Notifications (CACHED for performance)
     @app.context_processor
     def inject_notifications():
         from flask import session
+        import time as _time
         
         # Default ICE servers for WebRTC NAT traversal
-        # ==========================================
-        # STUN servers (for simple NATs)
         ice_servers = [
             {'urls': 'stun:stun.l.google.com:19302'},
             {'urls': 'stun:stun1.l.google.com:19302'},
@@ -105,7 +104,6 @@ def create_app(config_name='default'):
             {'urls': 'stun:stun3.l.google.com:19302'},
             {'urls': 'stun:stun4.l.google.com:19302'},
         ]
-
         ice_servers.extend([
             {
                 'urls': 'turn:global.relay.metered.ca:3478',
@@ -118,19 +116,37 @@ def create_app(config_name='default'):
                 'credential': '2C9gDd/WzYF+j37q'
             }
         ])
-        # ==========================================
         
         if session.get('user_id'):
+            now = _time.time()
+            cache_ttl = 60  # seconds
+            last_fetch = session.get('_notif_cache_time', 0)
+            
+            # Use cached data if fresh enough
+            if (now - last_fetch) < cache_ttl and '_cached_notifs' in session:
+                return dict(
+                    notifications=session.get('_cached_notifs', []),
+                    unread_notifications_count=session.get('_cached_unread', 0),
+                    total_coins=session.get('_cached_coins', 0),
+                    ice_servers=ice_servers
+                )
+            
+            # Cache expired or first load — fetch from DB
             try:
                 from utils.supabase_db import get_supabase
                 supabase = get_supabase()
-                # Fetch recent unread notifications
-                response = supabase.table('notifications').select('*').eq('user_id', session.get('user_id')).order('created_at', desc=True).limit(10).execute()
+                response = supabase.table('notifications').select('*').eq('user_id', session.get('user_id')).order('created_at', desc=True).limit(20).execute()
                 notifications = response.data
                 unread_count = sum(1 for n in notifications if not n['is_read'])
-                # Fetch total_coins
+                
                 coin_res = supabase.table('coins').select('total_coins').eq('user_id', session.get('user_id')).execute()
                 total_coins = coin_res.data[0]['total_coins'] if coin_res.data else 0
+                
+                # Store in session cache
+                session['_cached_notifs'] = notifications
+                session['_cached_unread'] = unread_count
+                session['_cached_coins'] = total_coins
+                session['_notif_cache_time'] = now
                 
                 return dict(notifications=notifications, unread_notifications_count=unread_count, total_coins=total_coins, ice_servers=ice_servers)
             except Exception as e:
@@ -267,7 +283,7 @@ def create_app(config_name='default'):
         ]
         
         # Allow static (css/js/img), auth (login/register), and specific open routes
-        if request.path.startswith('/static') or request.path.startswith('/auth') or request.path == '/' or request.path == '/skeleton':
+        if request.path.startswith('/static') or request.path.startswith('/auth') or request.path == '/' or request.path == '/skeleton' or request.path == '/health':
             return
             
         # If user is trying to access a protected area and is NOT logged in
@@ -279,12 +295,126 @@ def create_app(config_name='default'):
                     # This prevents the "not found" or double-action issue
                     return redirect(url_for('auth.login'))
     
+    # Health check endpoint (for Render + monitoring)
+    @app.route('/health')
+    def health_check():
+        """Health check endpoint — verifies DB connectivity."""
+        try:
+            from utils.supabase_db import get_supabase
+            # Quick lightweight query to verify connection
+            get_supabase().table('users').select('user_id').limit(1).execute()
+            return {'status': 'healthy', 'database': 'connected'}, 200
+        except Exception as e:
+            return {'status': 'unhealthy', 'error': str(e)}, 503
+    
     # Skeleton template preview (for development only)
     @app.route('/skeleton')
     def skeleton():
         return render_template('skeleton.html')
     
+    # ============================================
+    # GLOBAL ERROR HANDLERS
+    # ============================================
+    
+    @app.errorhandler(500)
+    def internal_error(error):
+        """Friendly 500 error page with auto-retry."""
+        import traceback
+        traceback.print_exc()
+        return render_template_string(ERROR_500_TEMPLATE), 500
+    
+    @app.errorhandler(404)
+    def not_found_error(error):
+        """Friendly 404 error page."""
+        return render_template_string(ERROR_404_TEMPLATE), 404
+    
     return app
+
+
+# ============================================
+# ERROR PAGE TEMPLATES (inline to avoid missing template issues)
+# ============================================
+
+ERROR_500_TEMPLATE = """
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Something went wrong - MySavvyGranny</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #f8fafc; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+        .error-card { text-align: center; background: white; border-radius: 24px; padding: 48px 40px; max-width: 480px; box-shadow: 0 4px 24px rgba(0,0,0,0.06); }
+        .error-icon { font-size: 4rem; color: #1e3a5f; margin-bottom: 16px; }
+        h1 { color: #1e3a5f; font-size: 1.5rem; margin-bottom: 8px; }
+        p { color: #64748b; font-size: 0.95rem; line-height: 1.6; margin-bottom: 24px; }
+        .retry-btn { display: inline-flex; align-items: center; gap: 8px; background: linear-gradient(135deg, #1e3a5f, #2563eb); color: white; border: none; padding: 12px 32px; border-radius: 50px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; text-decoration: none; }
+        .retry-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(30,58,95,0.3); color: white; }
+        .home-link { display: block; margin-top: 16px; color: #64748b; text-decoration: none; font-size: 0.85rem; }
+        .home-link:hover { color: #1e3a5f; }
+        .countdown { font-size: 0.8rem; color: #94a3b8; margin-top: 16px; }
+    </style>
+</head>
+<body>
+    <div class="error-card">
+        <div class="error-icon"><i class="bi bi-cloud-lightning"></i></div>
+        <h1>Oops! Something went wrong</h1>
+        <p>Our servers hit a small bump. This usually resolves itself in a moment — please try again.</p>
+        <a href="javascript:location.reload()" class="retry-btn">
+            <i class="bi bi-arrow-clockwise"></i> Try Again
+        </a>
+        <a href="/" class="home-link"><i class="bi bi-house me-1"></i>Back to Home</a>
+        <p class="countdown">Auto-retrying in <span id="timer">5</span>s...</p>
+    </div>
+    <script>
+        let seconds = 5;
+        const timer = document.getElementById('timer');
+        const interval = setInterval(() => {
+            seconds--;
+            timer.textContent = seconds;
+            if (seconds <= 0) {
+                clearInterval(interval);
+                location.reload();
+            }
+        }, 1000);
+    </script>
+</body>
+</html>
+"""
+
+ERROR_404_TEMPLATE = """
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Page not found - MySavvyGranny</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #f8fafc; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+        .error-card { text-align: center; background: white; border-radius: 24px; padding: 48px 40px; max-width: 480px; box-shadow: 0 4px 24px rgba(0,0,0,0.06); }
+        .error-icon { font-size: 4rem; color: #1e3a5f; margin-bottom: 16px; }
+        h1 { color: #1e3a5f; font-size: 1.5rem; margin-bottom: 8px; }
+        p { color: #64748b; font-size: 0.95rem; line-height: 1.6; margin-bottom: 24px; }
+        .home-btn { display: inline-flex; align-items: center; gap: 8px; background: linear-gradient(135deg, #1e3a5f, #2563eb); color: white; border: none; padding: 12px 32px; border-radius: 50px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; text-decoration: none; }
+        .home-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(30,58,95,0.3); color: white; }
+    </style>
+</head>
+<body>
+    <div class="error-card">
+        <div class="error-icon"><i class="bi bi-compass"></i></div>
+        <h1>Page not found</h1>
+        <p>The page you're looking for doesn't exist or may have been removed.</p>
+        <a href="/" class="home-btn">
+            <i class="bi bi-house"></i> Go Home
+        </a>
+    </div>
+</body>
+</html>
+"""
 
 # Create the application instance
 app = create_app('development')
