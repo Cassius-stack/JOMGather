@@ -71,8 +71,13 @@ CREATE POLICY "SOL Submissions viewing" ON sol_submissions FOR SELECT USING (
 );
 CREATE POLICY "SOL Submission edit" ON sol_submissions FOR ALL USING (user_id = get_internal_uid());
 
--- COINS: Own only
+-- COINS: Own only (SELECT for users, service role for write operations)
 CREATE POLICY "Coin balance access" ON coins FOR SELECT USING (user_id = get_internal_uid());
+-- NOTE: INSERT/UPDATE are handled server-side via service role key (bypasses RLS).
+-- If using anon key only, uncomment the policies below:
+-- CREATE POLICY "Coin balance insert" ON coins FOR INSERT WITH CHECK (user_id = get_internal_uid());
+-- CREATE POLICY "Coin balance update" ON coins FOR UPDATE USING (user_id = get_internal_uid());
+
 
 -- NOTIFICATIONS: Own only
 CREATE POLICY "Notification access" ON notifications FOR ALL USING (user_id = get_internal_uid());
