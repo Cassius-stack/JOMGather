@@ -1575,3 +1575,59 @@ def debug_trigger_challenges():
         import traceback
         traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# ============================================
+# NOTIFICATION MANAGEMENT API
+# ============================================
+
+@social_bp.route('/api/notifications/read-all', methods=['POST'])
+@login_required
+def mark_all_notifications_read():
+    """Mark all notifications as read for current user."""
+    try:
+        supabase = get_supabase()
+        supabase.table('notifications').update({'is_read': True}).eq('user_id', session['user_id']).eq('is_read', False).execute()
+        # Invalidate cache
+        session.pop('_notif_cache_time', None)
+        session.pop('_cached_notifs', None)
+        session.pop('_cached_unread', None)
+        return jsonify({'success': True})
+    except Exception as e:
+        print(f"Error marking all read: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@social_bp.route('/api/notifications/<notif_id>', methods=['DELETE'])
+@login_required
+def delete_notification(notif_id):
+    """Delete a single notification."""
+    try:
+        supabase = get_supabase()
+        supabase.table('notifications').delete().eq('notification_id', notif_id).eq('user_id', session['user_id']).execute()
+        # Invalidate cache
+        session.pop('_notif_cache_time', None)
+        session.pop('_cached_notifs', None)
+        session.pop('_cached_unread', None)
+        return jsonify({'success': True})
+    except Exception as e:
+        print(f"Error deleting notification: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@social_bp.route('/api/notifications/clear-all', methods=['DELETE'])
+@login_required
+def clear_all_notifications():
+    """Delete ALL notifications for the current user."""
+    try:
+        supabase = get_supabase()
+        supabase.table('notifications').delete().eq('user_id', session['user_id']).execute()
+        # Invalidate cache
+        session.pop('_notif_cache_time', None)
+        session.pop('_cached_notifs', None)
+        session.pop('_cached_unread', None)
+        return jsonify({'success': True})
+    except Exception as e:
+        print(f"Error clearing notifications: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
