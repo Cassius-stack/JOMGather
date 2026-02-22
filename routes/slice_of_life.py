@@ -5,7 +5,7 @@ Supabase Integration: Uses sol_ tables in Cloud DB
 """
 
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify
-from utils.supabase_db import fetch_all, fetch_one, insert, update, upload_file, get_supabase
+from utils.supabase_db import fetch_all, fetch_one, insert, update, delete, upload_file, get_supabase
 from utils.deepseek_client import generate_memory_title
 from utils.auth_middleware import login_required
 from datetime import datetime, timedelta
@@ -35,29 +35,32 @@ def _get_profile_pic(user_id):
 @slice_of_life_bp.route('/')
 @login_required
 def index():
-    """Smart router: Go to waiting room if pending, else prompt."""
+    """Smart router: Prioritize active (reviewable) displays over pending ones."""
     current_uid = get_current_user_id()
     today = datetime.now().date().isoformat()
     
     # 0. Find today's prompt
     prompts = fetch_all('sol_prompts', active_date=today)
     if not prompts:
-        # If no prompt today, generate one immediately or go to prompt page to handle it
         return redirect(url_for('slice_of_life.prompt'))
     
     prompt_id = prompts[0]['prompt_id']
 
-    # 1. Check if user already has an active or completed display for TODAY'S prompt
-    # Users can only do one SOL per day.
+    # 1. Check if user has any displays for TODAY's prompt
     existing_today = fetch_all('sol_displays', prompt_id=prompt_id) or []
-    # Check if I am creator or partner in any of these
-    for disp in existing_today:
-        if disp['creator_id'] == current_uid or disp['partner_id'] == current_uid:
-            if disp['status'] == 'pending':
-                return redirect(url_for('slice_of_life.waiting_room'))
-            else:
-                # If completed, maybe they want to see the catalog or review their specific memory
-                return redirect(url_for('slice_of_life.review', display_id=disp['display_id']))
+    my_displays = [d for d in existing_today if d['creator_id'] == current_uid or d['partner_id'] == current_uid]
+    
+    if my_displays:
+        # Prioritize ACTIVE displays (ready for review) over pending ones
+        active = [d for d in my_displays if d['status'] != 'pending']
+        pending = [d for d in my_displays if d['status'] == 'pending']
+        
+        if active:
+            # Redirect to first active display for review
+            return redirect(url_for('slice_of_life.review', display_id=active[0]['display_id']))
+        elif pending:
+            # All are still pending — go to waiting room
+            return redirect(url_for('slice_of_life.waiting_room'))
 
     # If nothing found for today, proceed to prompt
     return redirect(url_for('slice_of_life.prompt'))
@@ -241,9 +244,9 @@ def send_invites():
             if recipient_id == sender_id:
                 continue
 
-            # 0. DEBOUNCING: Check for existing unread invite from this sender to this recipient for this prompt
-            existing_invites = fetch_all('sol_invites', sender_id=sender_id, recipient_id=recipient_id, prompt_id=prompt_id, status='pending')
-            if existing_invites:
+            # 0. DEBOUNCING: Check for ANY existing invite (pending or accepted) from this sender to this recipient for this prompt
+            all_existing = fetch_all('sol_invites', sender_id=sender_id, recipient_id=recipient_id, prompt_id=prompt_id) or []
+            if all_existing:
                 continue
 
             # 1. Create DISPLAY Record (One per pair)
@@ -350,12 +353,8 @@ def send_invites():
 @slice_of_life_bp.route('/waiting-room')
 @login_required
 def waiting_room():
-    """Step 4: Sender or Partner waits for response. Supports multiple pending slices."""
+    """Step 4: Sender or Partner waits for response. Shows BOTH pending and active (reviewable) slices."""
     current_uid = get_current_user_id()
-    
-    # Fetch ALL invites where I am involved (Sender or Recipient)
-    # We want invites that are 'pending' or 'accepted' (waiting for publish)
-    # Note: 'published' slices move to completion.
     
     # 1. Fetch where I am SENDER
     sent = fetch_all('sol_invites', sender_id=current_uid) or []
@@ -364,43 +363,50 @@ def waiting_room():
     
     all_invites = sent + received
     
-    # Filter to only show those that aren't 'published' yet
-    # We check the display status
+    # Show both pending AND active displays (not just pending)
     view_data = []
+    seen_display_ids = set()  # Avoid duplicates from sent+received overlap
     
     for invite in all_invites:
+        if invite['display_id'] in seen_display_ids:
+            continue
+        seen_display_ids.add(invite['display_id'])
+        
         display = fetch_one('sol_displays', display_id=invite['display_id'])
-        if display and display['status'] == 'pending':
-            is_me_sender = (invite['sender_id'] == current_uid)
-            partner_id = invite['recipient_id'] if is_me_sender else invite['sender_id']
+        if not display or display['status'] in ('published', 'deleted'):
+            continue  # Skip published/deleted displays
             
-            # Fetch partner info
-            partner = fetch_one('users', user_id=partner_id)
-            partner_name = partner['username'] if partner else f"User {partner_id}"
-            partner_pic = _get_profile_pic(partner_id)
-            
-            # Fetch query prompt text
-            prompt = fetch_one('sol_prompts', prompt_id=invite['prompt_id'])
-            
-            # Fetch My Submission for this display
-            my_subs = fetch_all('sol_submissions', display_id=invite['display_id'], user_id=current_uid) or []
-            my_sub = my_subs[0] if my_subs else None
-            
-            view_data.append({
-                'invite': invite,
-                'display': display,
-                'partner_name': partner_name,
-                'partner_pic': partner_pic,
-                'is_me_sender': is_me_sender,
-                'prompt_text': prompt['prompt_text'] if prompt else "Daily Prompt",
-                'my_submission': my_sub
-            })
+        is_me_sender = (invite['sender_id'] == current_uid)
+        partner_id = invite['recipient_id'] if is_me_sender else invite['sender_id']
+        
+        # Fetch partner info
+        partner = fetch_one('users', user_id=partner_id)
+        partner_name = partner['username'] if partner else f"User {partner_id}"
+        partner_pic = _get_profile_pic(partner_id)
+        
+        # Fetch query prompt text
+        prompt = fetch_one('sol_prompts', prompt_id=invite['prompt_id'])
+        
+        # Fetch My Submission for this display
+        my_subs = fetch_all('sol_submissions', display_id=invite['display_id'], user_id=current_uid) or []
+        my_sub = my_subs[0] if my_subs else None
+        
+        # Determine if this item is reviewable (active = partner responded)
+        is_reviewable = display['status'] != 'pending'
+        
+        view_data.append({
+            'invite': invite,
+            'display': display,
+            'partner_name': partner_name,
+            'partner_pic': partner_pic,
+            'is_me_sender': is_me_sender,
+            'prompt_text': prompt['prompt_text'] if prompt else "Daily Prompt",
+            'my_submission': my_sub,
+            'is_reviewable': is_reviewable
+        })
 
-    # Sort by created_at desc (newest first)
-    view_data.sort(key=lambda x: x['invite']['invite_id'], reverse=True)
-    
-    # If no pending items, but we landed here, maybe they just finished.
-    # We'll let the template handle the empty state with a "Start New" button.
+    # Sort: reviewable items first, then by invite_id desc
+    view_data.sort(key=lambda x: (not x['is_reviewable'], -x['invite']['invite_id']))
     
     return render_template('slice_of_life/waiting_room.html', items=view_data)
 
@@ -409,8 +415,16 @@ def waiting_room():
 @login_required
 def review(display_id):
     """Step 5: Review mode (and View mode for Catalog)."""
-    # Fetch all submissions for this display
-    submissions = fetch_all('sol_submissions', display_id=display_id) or []
+    # Fetch all submissions for this display (with dedup safety)
+    raw_submissions = fetch_all('sol_submissions', display_id=display_id) or []
+    
+    # DEDUP: Keep only one submission per user_id (first one wins)
+    seen_users = set()
+    submissions = []
+    for sub in raw_submissions:
+        if sub['user_id'] not in seen_users:
+            seen_users.add(sub['user_id'])
+            submissions.append(sub)
     display = fetch_one('sol_displays', display_id=display_id)
     
     if not display:
@@ -848,6 +862,11 @@ def receiver_respond(invite_id):
         sender['profile_picture'] = _get_profile_pic(invite['sender_id'])
 
     if request.method == 'POST':
+        # Re-check for duplicates right before insert (race condition guard)
+        recheck = fetch_one('sol_submissions', display_id=invite['display_id'], user_id=current_uid)
+        if recheck:
+            return redirect(url_for('slice_of_life.review', display_id=invite['display_id']))
+        
         story = request.form.get('story')
         image = request.files.get('image') # Get the file object
         
@@ -867,6 +886,14 @@ def receiver_respond(invite_id):
             'image_url': image_url,
             'thought': story
         })
+        
+        # Post-insert dedup: if race condition created duplicates, clean up
+        all_my_subs = fetch_all('sol_submissions', display_id=invite['display_id'], user_id=current_uid) or []
+        if len(all_my_subs) > 1:
+            # Keep only the first submission, delete the rest
+            for extra in all_my_subs[1:]:
+                delete('sol_submissions', submission_id=extra['submission_id'])
+            print(f"[SOL] Cleaned up {len(all_my_subs)-1} duplicate submission(s) for user {current_uid}")
         
         # Update Invite Status
         update('sol_invites', {
