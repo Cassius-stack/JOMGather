@@ -353,8 +353,13 @@ def send_invites():
 @slice_of_life_bp.route('/waiting-room')
 @login_required
 def waiting_room():
-    """Step 4: Sender or Partner waits for response. Shows BOTH pending and active (reviewable) slices."""
+    """Step 4: Shows today's pending and newly-active slices only. Completed/old ones are excluded."""
     current_uid = get_current_user_id()
+    today = datetime.now().date().isoformat()
+    
+    # Get today's prompt to filter by
+    todays_prompts = fetch_all('sol_prompts', active_date=today) or []
+    today_prompt_ids = {p['prompt_id'] for p in todays_prompts}
     
     # 1. Fetch where I am SENDER
     sent = fetch_all('sol_invites', sender_id=current_uid) or []
@@ -363,11 +368,15 @@ def waiting_room():
     
     all_invites = sent + received
     
-    # Show both pending AND active displays (not just pending)
+    # Only show today's pending + active displays
     view_data = []
-    seen_display_ids = set()  # Avoid duplicates from sent+received overlap
+    seen_display_ids = set()
     
     for invite in all_invites:
+        # Only show invites for today's prompt
+        if invite['prompt_id'] not in today_prompt_ids:
+            continue
+            
         if invite['display_id'] in seen_display_ids:
             continue
         seen_display_ids.add(invite['display_id'])
