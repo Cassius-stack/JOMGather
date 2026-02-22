@@ -46,12 +46,17 @@ def retry_query(max_retries=3, delay=1):
                     return func(*args, **kwargs)
                 except Exception as e:
                     import traceback
-                    # Check for socket errors or timeout
+                    # Check for transient network/socket errors
                     error_str = str(e).lower()
-                    if "10035" in error_str or "timeout" in error_str or "transport" in error_str:
+                    retryable = any(kw in error_str for kw in [
+                        "10035", "timeout", "transport", "read",
+                        "connection", "reset", "502", "503", "504",
+                        "temporarily", "unavailable", "eof"
+                    ])
+                    if retryable:
                         print(f"[Supabase] Retry {attempt+1}/{max_retries} due to error: {e}")
                         last_exception = e
-                        time.sleep(delay)
+                        time.sleep(delay * (attempt + 1))  # Exponential backoff
                     else:
                         raise e
             if last_exception:

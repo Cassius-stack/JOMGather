@@ -398,7 +398,12 @@ def get_contacts():
                 return query_func()
             except Exception as e:
                 error_str = str(e).lower()
-                if "10035" in error_str or "timeout" in error_str or "transport" in error_str or "read" in error_str:
+                retryable = any(kw in error_str for kw in [
+                    "10035", "timeout", "transport", "read",
+                    "connection", "reset", "502", "503", "504",
+                    "temporarily", "unavailable", "eof"
+                ])
+                if retryable:
                     print(f"[Contacts API] Retry {attempt+1}/{max_retries}: {e}")
                     time.sleep(0.5 * (attempt + 1))  # Exponential backoff
                     if attempt == max_retries - 1:
@@ -448,8 +453,11 @@ def get_contacts():
         # Fetch user details for these IDs
         result = []
         for friend_id in friends:
-            user_data = fetch_one('users', user_id=friend_id)
-            if user_data:
+            try:
+                user_data = fetch_one('users', user_id=friend_id)
+                if not user_data:
+                    continue
+                    
                 # Get messages for preview and sorting
                 last_msg = None
                 last_msg_time = None
@@ -516,6 +524,9 @@ def get_contacts():
                     'lastMessageTime': last_msg_time,
                     'unreadCount': unread_count
                 })
+            except Exception as e:
+                print(f"[Contacts] Skipping friend {friend_id} due to error: {e}")
+                continue
         
         # Sort by last message time (most recent first), new friends (no messages) at top
         result.sort(key=lambda x: x.get('lastMessageTime') or '9999-99-99', reverse=True)

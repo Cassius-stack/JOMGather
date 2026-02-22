@@ -1978,13 +1978,24 @@ async function loadMessages(contactId) {
 
 /**
  * Load contacts from API and render the contact list
+ * Includes automatic retry with exponential backoff for transient errors
  */
-async function loadContacts() {
+async function loadContacts(retryCount = 0) {
+    const MAX_RETRIES = 3;
+
     try {
         const response = await fetch(`/social/api/contacts?user=${CURRENT_USER_ID}`);
 
-        // Check if response is OK
+        // Check if response is OK — retry on server errors (5xx)
         if (!response.ok) {
+            const isServerError = response.status >= 500;
+            if (isServerError && retryCount < MAX_RETRIES) {
+                const delay = Math.pow(2, retryCount) * 1000; // 1s, 2s, 4s
+                console.warn(`[Chat] Contacts API returned ${response.status}, retrying in ${delay}ms (attempt ${retryCount + 1}/${MAX_RETRIES})`);
+                contactList.innerHTML = '<li style="padding: 20px; text-align: center; color: #888;">Retrying...</li>';
+                await new Promise(r => setTimeout(r, delay));
+                return loadContacts(retryCount + 1);
+            }
             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
 
@@ -2092,8 +2103,20 @@ async function loadContacts() {
         }
 
     } catch (error) {
+        // If we haven't exhausted retries yet, try again for network errors
+        if (retryCount < MAX_RETRIES && (error.name === 'TypeError' || error.message.includes('fetch'))) {
+            const delay = Math.pow(2, retryCount) * 1000;
+            console.warn(`[Chat] Network error loading contacts, retrying in ${delay}ms (attempt ${retryCount + 1}/${MAX_RETRIES})`);
+            contactList.innerHTML = '<li style="padding: 20px; text-align: center; color: #888;">Retrying...</li>';
+            await new Promise(r => setTimeout(r, delay));
+            return loadContacts(retryCount + 1);
+        }
+
         console.error('Error loading contacts:', error);
-        contactList.innerHTML = '<li style="padding: 20px; text-align: center; color: #f00;">Error loading contacts</li>';
+        contactList.innerHTML = `<li style="padding: 20px; text-align: center; color: #f00;">
+            Error loading contacts
+            <br><button onclick="loadContacts()" style="margin-top:8px; padding:4px 16px; border-radius:6px; border:1px solid #555; background:#333; color:#fff; cursor:pointer;">Retry</button>
+        </li>`;
     }
 }
 
