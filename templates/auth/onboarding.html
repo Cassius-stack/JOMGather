@@ -3,6 +3,184 @@
 {% block title %}Complete Your Profile - JOMGather{% endblock %}
 
 {% block content %}
+<style>
+    /* ── Photo widget ── */
+    .photo-wrapper {
+        position: relative;
+        width: 110px;
+        height: 110px;
+        margin: 0 auto 0.5rem;
+        cursor: pointer;
+    }
+
+    .photo-wrapper img,
+    .photo-placeholder {
+        width: 110px;
+        height: 110px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 4px solid #e0f2fe;
+        display: block;
+    }
+
+    .photo-placeholder {
+        background: #e0f2fe;
+        color: #1e3a5f;
+        font-size: 2.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .photo-overlay {
+        position: absolute;
+        inset: 0;
+        border-radius: 50%;
+        background: rgba(30, 58, 95, 0.55);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+        color: white;
+        font-size: 0.65rem;
+        font-weight: 600;
+        gap: 3px;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+    }
+
+    .photo-overlay i {
+        font-size: 1.25rem;
+    }
+
+    .photo-wrapper:hover .photo-overlay {
+        opacity: 1;
+    }
+
+    .photo-remove-btn {
+        position: absolute;
+        top: 3px;
+        right: 3px;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: #ef4444;
+        color: white;
+        border: 2px solid white;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.65rem;
+        cursor: pointer;
+        z-index: 10;
+        transition: background 0.15s;
+    }
+
+    .photo-remove-btn:hover {
+        background: #dc2626;
+    }
+
+    .photo-remove-btn.visible {
+        display: flex;
+    }
+
+    /* ── Crop modal ── */
+    #crop-modal {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.7);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+    }
+
+    #crop-modal.active {
+        display: flex;
+    }
+
+    .crop-card {
+        background: white;
+        border-radius: 24px;
+        padding: 2rem;
+        width: 100%;
+        max-width: 400px;
+        margin: 1rem;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+    }
+
+    .crop-preview-ring {
+        width: 180px;
+        height: 180px;
+        border-radius: 50%;
+        overflow: hidden;
+        border: 4px solid #1e3a5f;
+        margin: 0 auto 1.25rem;
+        background: #f8fafc;
+    }
+
+    .crop-preview-ring img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .crop-slider-wrap {
+        margin-bottom: 1rem;
+    }
+
+    .crop-slider-wrap label {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.82rem;
+        color: #64748b;
+        font-weight: 500;
+        margin-bottom: 0.3rem;
+    }
+
+    input[type="range"] {
+        width: 100%;
+        accent-color: #1e3a5f;
+    }
+
+    .crop-actions {
+        display: flex;
+        gap: 0.75rem;
+        margin-top: 1.25rem;
+    }
+
+    .crop-actions button {
+        flex: 1;
+        padding: 0.7rem;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        cursor: pointer;
+        border: none;
+        transition: background 0.2s;
+    }
+
+    .crop-cancel {
+        background: #f1f5f9;
+        color: #475569;
+    }
+
+    .crop-cancel:hover {
+        background: #e2e8f0;
+    }
+
+    .crop-apply {
+        background: #1e3a5f;
+        color: white;
+    }
+
+    .crop-apply:hover {
+        background: #162d4a;
+    }
+</style>
+
 <div
     style="background: linear-gradient(135deg, #e8f4fc 0%, #f1f5f9 100%); min-height: calc(100vh - 70px); display: flex; align-items: center; justify-content: center; padding: 2rem;">
     <div
@@ -31,76 +209,107 @@
             <!-- STEP 1: DEMOGRAPHICS (Step 2 of overall flow) -->
             <div id="step-1" style="display: block;">
                 <div style="display: flex; flex-direction: column; gap: 1rem;">
-                    <div>
-                        <label for="age"
-                            style="display: block; margin-bottom: 0.5rem; color: #334155; font-weight: 500;">Age</label>
-                        <input type="number" id="age" name="age" placeholder="Your age" min="1" max="120"
-                            style="width: 100%; padding: 0.75rem 1rem; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 1rem;">
+                    <div id="step-1" style="display: block;">
+
+                        <!-- Profile Photo -->
+                        <div style="text-align: center; margin-bottom: 1.75rem;">
+                            <p style="color: #334155; font-weight: 500; margin-bottom: 1rem;">Profile Photo <span
+                                    style="color:#94a3b8; font-weight:400;">(optional)</span></p>
+
+                            <div class="photo-wrapper" onclick="document.getElementById('photo-input').click()"
+                                title="Upload a photo">
+                                <div class="photo-placeholder" id="photo-placeholder">
+                                    <i class="bi bi-person-fill"></i>
+                                </div>
+                                <img id="profile-preview" src="" alt="Profile photo" style="display:none;">
+
+                                <div class="photo-overlay">
+                                    <i class="bi bi-camera-fill"></i>
+                                    Upload
+                                </div>
+
+                                <button class="photo-remove-btn" id="photo-remove-btn" title="Remove photo"
+                                    onclick="removePhoto(event)">
+                                    <i class="bi bi-x"></i>
+                                </button>
+                            </div>
+
+                            <p style="font-size: 0.78rem; color: #94a3b8; margin-top: 0.4rem;">JPG, PNG or GIF · Max 5
+                                MB</p>
+                            <input type="file" id="photo-input" accept="image/*" style="display:none;"
+                                onchange="handlePhotoSelect(event)">
+                        </div>
+                        <div>
+                            <label for="age"
+                                style="display: block; margin-bottom: 0.5rem; color: #334155; font-weight: 500;">Age</label>
+                            <input type="number" id="age" name="age" placeholder="Your age" min="1" max="120"
+                                style="width: 100%; padding: 0.75rem 1rem; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 1rem;">
+                        </div>
+                        <div>
+                            <label for="region"
+                                style="display: block; margin-bottom: 0.5rem; color: #334155; font-weight: 500;">Region</label>
+                            <select id="region" name="region"
+                                style="width: 100%; padding: 0.75rem 1rem; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 1rem; background: white;">
+                                <option value="" disabled selected>Select your region</option>
+                                <option value="North">North</option>
+                                <option value="South">South</option>
+                                <option value="East">East</option>
+                                <option value="West">West</option>
+                                <option value="Central">Central</option>
+                            </select>
+                        </div>
                     </div>
-                    <div>
-                        <label for="region"
-                            style="display: block; margin-bottom: 0.5rem; color: #334155; font-weight: 500;">Region</label>
-                        <select id="region" name="region"
-                            style="width: 100%; padding: 0.75rem 1rem; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 1rem; background: white;">
-                            <option value="" disabled selected>Select your region</option>
-                            <option value="North">North</option>
-                            <option value="South">South</option>
-                            <option value="East">East</option>
-                            <option value="West">West</option>
-                            <option value="Central">Central</option>
-                        </select>
+                    <div style="margin-top: 2rem; display: flex; justify-content: space-between;">
+                        <a href="{{ url_for('index') }}"
+                            style="padding: 0.75rem 1.5rem; background: none; color: #64748b; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 1rem; cursor: pointer; text-decoration: none;">
+                            Skip for now
+                        </a>
+                        <button type="button" onclick="nextStep(2)"
+                            style="padding: 0.75rem 2rem; background: #1e3a5f; color: white; border: none; border-radius: 12px; font-size: 1rem; font-weight: 600; cursor: pointer;">
+                            Next &rarr;
+                        </button>
                     </div>
                 </div>
-                <div style="margin-top: 2rem; display: flex; justify-content: space-between;">
-                    <a href="{{ url_for('index') }}"
-                        style="padding: 0.75rem 1.5rem; background: none; color: #64748b; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 1rem; cursor: pointer; text-decoration: none;">
-                        Skip for now
-                    </a>
-                    <button type="button" onclick="nextStep(2)"
-                        style="padding: 0.75rem 2rem; background: #1e3a5f; color: white; border: none; border-radius: 12px; font-size: 1rem; font-weight: 600; cursor: pointer;">
-                        Next &rarr;
-                    </button>
-                </div>
-            </div>
 
-            <!-- STEP 2: HOBBIES & SKILLS (Step 3 of overall flow) -->
-            <div id="step-2" style="display: none;">
-                <h3 style="color: #334155; margin-bottom: 1rem;">Your Hobbies</h3>
-                <p style="color: #64748b; margin-bottom: 1rem; font-size: 0.9rem;">Select hobbies you enjoy:</p>
-                <div id="hobbies-container" style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.5rem;">
-                    <!-- Hobby buttons generated by JS -->
-                </div>
+                <!-- STEP 2: HOBBIES & SKILLS (Step 3 of overall flow) -->
+                <div id="step-2" style="display: none;">
+                    <h3 style="color: #334155; margin-bottom: 1rem;">Your Hobbies</h3>
+                    <p style="color: #64748b; margin-bottom: 1rem; font-size: 0.9rem;">Select hobbies you enjoy:</p>
+                    <div id="hobbies-container"
+                        style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.5rem;">
+                        <!-- Hobby buttons generated by JS -->
+                    </div>
 
-                <h3 style="color: #334155; margin-bottom: 1rem; margin-top: 1.5rem;">Your Skills</h3>
-                <p style="color: #64748b; margin-bottom: 1rem; font-size: 0.9rem;">What skills can you share with
-                    others?</p>
-                <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
-                    <input type="text" id="skill-input" placeholder="Type a skill..."
-                        style="flex: 1; padding: 0.75rem 1rem; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 1rem;">
-                    <button type="button" onclick="addSkill()"
-                        style="padding: 0.75rem 1rem; background: #334155; color: white; border: none; border-radius: 12px; cursor: pointer;">
-                        Add
-                    </button>
-                </div>
-                <div id="skills-list"
-                    style="display: flex; flex-wrap: wrap; gap: 0.5rem; min-height: 40px; margin-bottom: 1rem;">
-                    <!-- Skills tags added by JS -->
-                </div>
-                <div id="skills-hidden-inputs">
-                    <!-- Hidden inputs for skills added by JS -->
-                </div>
+                    <h3 style="color: #334155; margin-bottom: 1rem; margin-top: 1.5rem;">Your Skills</h3>
+                    <p style="color: #64748b; margin-bottom: 1rem; font-size: 0.9rem;">What skills can you share with
+                        others?</p>
+                    <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+                        <input type="text" id="skill-input" placeholder="Type a skill..."
+                            style="flex: 1; padding: 0.75rem 1rem; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 1rem;">
+                        <button type="button" onclick="addSkill()"
+                            style="padding: 0.75rem 1rem; background: #334155; color: white; border: none; border-radius: 12px; cursor: pointer;">
+                            Add
+                        </button>
+                    </div>
+                    <div id="skills-list"
+                        style="display: flex; flex-wrap: wrap; gap: 0.5rem; min-height: 40px; margin-bottom: 1rem;">
+                        <!-- Skills tags added by JS -->
+                    </div>
+                    <div id="skills-hidden-inputs">
+                        <!-- Hidden inputs for skills added by JS -->
+                    </div>
 
-                <div style="margin-top: 2rem; display: flex; justify-content: space-between;">
-                    <button type="button" onclick="nextStep(1)"
-                        style="padding: 0.75rem 1.5rem; background: none; color: #64748b; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 1rem; cursor: pointer;">
-                        &larr; Back
-                    </button>
-                    <button type="submit"
-                        style="padding: 0.75rem 2rem; background: #22c55e; color: white; border: none; border-radius: 12px; font-size: 1rem; font-weight: 600; cursor: pointer;">
-                        Complete Registration ✓
-                    </button>
+                    <div style="margin-top: 2rem; display: flex; justify-content: space-between;">
+                        <button type="button" onclick="nextStep(1)"
+                            style="padding: 0.75rem 1.5rem; background: none; color: #64748b; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 1rem; cursor: pointer;">
+                            &larr; Back
+                        </button>
+                        <button type="submit"
+                            style="padding: 0.75rem 2rem; background: #22c55e; color: white; border: none; border-radius: 12px; font-size: 1rem; font-weight: 600; cursor: pointer;">
+                            Complete Registration ✓
+                        </button>
+                    </div>
                 </div>
-            </div>
         </form>
     </div>
 </div>
