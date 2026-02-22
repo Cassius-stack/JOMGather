@@ -1,10 +1,11 @@
 /* Ask A Grandfriend Page Styles */
 
-/* Reset Sidebar (prevent conflict with style.css) */
+/* Reset Sidebar (prevent conflict with style.css chat sidebar) */
 .sidebar {
     width: auto !important;
     background-color: transparent !important;
     display: block !important;
+    flex-direction: unset !important;
     padding-top: 0 !important;
     position: relative;
     height: auto !important;
