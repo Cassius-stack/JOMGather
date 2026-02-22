@@ -1,0 +1,520 @@
+{% extends "base.html" %}
+{% block title %}AskAGrandfriend Profile - JomGather{% endblock %}
+
+{% block head %}
+<style>
+    body {
+        background-color: #f8f9fa;
+        font-family: 'Inter', sans-serif;
+    }
+
+    .back-link {
+        color: #6c5dd3;
+        text-decoration: none;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: color 0.2s;
+    }
+
+    .back-link:hover {
+        color: #4a3eb1;
+    }
+
+    /* Profile Header */
+    .profile-header-card {
+        background: #fff;
+        border-radius: 20px;
+        padding: 40px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        text-align: center;
+        margin-bottom: 30px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .profile-bg-shape {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 120px;
+        background: linear-gradient(135deg, #6c5dd3, #9b8cf8);
+        z-index: 1;
+    }
+
+    .profile-content-wrapper {
+        position: relative;
+        z-index: 2;
+    }
+
+    .profile-avatar-large {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        border: 4px solid #fff;
+        object-fit: cover;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        margin-top: 50px;
+    }
+
+    .profile-name {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #2c3e50;
+        margin-top: 15px;
+        margin-bottom: 5px;
+    }
+
+    .profile-role-badge {
+        display: inline-block;
+        padding: 5px 15px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        background: #eef2ff;
+        color: #6c5dd3;
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+
+    .stat-card {
+        background: #fff;
+        border-radius: 20px;
+        padding: 25px;
+        text-align: center;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        border-top: 4px solid transparent;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    }
+
+    .stat-card.coins {
+        border-top-color: #ffd700;
+    }
+
+    .stat-card.posts {
+        border-top-color: #6c5dd3;
+    }
+
+    .stat-card.replies {
+        border-top-color: #4CAF50;
+    }
+
+    .stat-card.likes {
+        border-top-color: #ff6b6b;
+    }
+
+    .stat-icon {
+        font-size: 2.5rem;
+        margin-bottom: 10px;
+    }
+
+    .stat-card.coins .stat-icon {
+        color: #ffd700;
+    }
+
+    .stat-card.posts .stat-icon {
+        color: #6c5dd3;
+    }
+
+    .stat-card.replies .stat-icon {
+        color: #4CAF50;
+    }
+
+    .stat-card.likes .stat-icon {
+        color: #ff6b6b;
+    }
+
+    .stat-value {
+        font-size: 2.5rem;
+        font-weight: 800;
+        color: #2c3e50;
+        line-height: 1;
+        margin-bottom: 5px;
+    }
+
+    .stat-label {
+        font-size: 0.95rem;
+        color: #7f8c8d;
+        font-weight: 500;
+    }
+
+    /* Activity Sections */
+    .activity-section {
+        background: #fff;
+        border-radius: 20px;
+        padding: 30px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        margin-bottom: 30px;
+    }
+
+    .activity-section h3 {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: #2c3e50;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .activity-item {
+        padding: 15px;
+        border: 1px solid #10101011;
+        border-radius: 12px;
+        margin-bottom: 15px;
+        transition: background 0.2s;
+        text-decoration: none;
+        display: block;
+        color: inherit;
+    }
+
+    .activity-item:hover {
+        background: #f8f9fa;
+        color: inherit;
+    }
+
+    .activity-title {
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 5px;
+    }
+
+    .activity-meta {
+        font-size: 0.85rem;
+        color: #7f8c8d;
+        display: flex;
+        gap: 15px;
+    }
+
+    /* Ask A Grandfriend Rank Progression System */
+    .rank-tier-2 .profile-avatar-large {
+        border: 4px solid #cd7f32;
+        box-shadow: 0 0 10px rgba(205, 127, 50, 0.5);
+    }
+
+    .rank-tier-2 .profile-name {
+        color: #b87333;
+        font-weight: 800;
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+    }
+
+    .rank-tier-3 .profile-avatar-large {
+        border: 4px solid #c0c0c0;
+        box-shadow: 0 0 15px rgba(192, 192, 192, 0.6);
+    }
+
+    .rank-tier-3 .profile-name {
+        text-shadow: 0 0 10px rgba(192, 192, 192, 0.8);
+        transition: text-shadow 0.3s;
+    }
+
+    .rank-tier-4 .profile-avatar-large {
+        border: 4px solid #ffd700;
+        box-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
+    }
+
+    /* Tier 5: Wisdom Keeper */
+    .rank-tier-5 .profile-avatar-large {
+        border: 5px solid transparent;
+        background-image: linear-gradient(white, white), linear-gradient(135deg, #0b132b 0%, #1c2541 33%, #7a28cb 66%, #0b132b 100%);
+        background-origin: border-box;
+        background-clip: padding-box, border-box;
+        background-size: 100% 100%, 300% 300%;
+        animation: auroraGlow 5s ease-in-out infinite alternate;
+        box-shadow: 0 0 20px rgba(122, 40, 203, 0.6);
+    }
+
+    .rank-tier-5 .profile-name {
+        color: #fff;
+        text-shadow: 0 0 5px #fff, 0 0 10px #20a4f3, 0 0 20px #20a4f3, 0 0 30px #0b132b;
+        animation: sapphirePulse 3s infinite alternate;
+        font-weight: 800;
+        letter-spacing: 0.5px;
+    }
+
+    .rank-tier-5 {
+        position: relative;
+        overflow: hidden;
+    }
+
+    .rank-tier-5::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 100px;
+        background: linear-gradient(180deg, rgba(32, 164, 243, 0.2), transparent);
+        animation: northernLights 8s linear infinite;
+        z-index: 0;
+        pointer-events: none;
+        filter: blur(10px);
+    }
+
+    @keyframes auroraGlow {
+        0% {
+            background-position: center, 0% 0%;
+        }
+
+        100% {
+            background-position: center, 100% 100%;
+        }
+    }
+
+    @keyframes sapphirePulse {
+        0% {
+            text-shadow: 0 0 2px #fff, 0 0 5px #20a4f3, 0 0 10px #7a28cb;
+        }
+
+        100% {
+            text-shadow: 0 0 5px #fff, 0 0 15px #00ffff, 0 0 25px #0000ff;
+        }
+    }
+
+    @keyframes northernLights {
+        0% {
+            transform: translateX(10px) scale(1.05);
+        }
+
+        50% {
+            transform: translateX(-10px) scale(1);
+        }
+
+        100% {
+            transform: translateX(10px) scale(1.05);
+        }
+    }
+
+    /* Tier 6: Legendary Bridge-Builder */
+    .rank-tier-6 .profile-avatar-large {
+        border: 5px solid transparent;
+        background-image: linear-gradient(white, white),
+            linear-gradient(135deg, transparent 40%, rgba(255, 255, 255, 0.8) 50%, transparent 60%),
+            linear-gradient(to right, #ffcf00, #ff00ff, #00ffff, #ffcf00);
+        background-origin: padding-box, border-box, border-box;
+        background-clip: padding-box, border-box, border-box;
+        background-size: 100% 100%, 200% 200%, 200% 100%;
+        animation: energyBeam 2s linear infinite, liquidFlow 4s linear infinite;
+        box-shadow: 0 0 30px #00ffff, 0 0 45px #ff00ff;
+    }
+
+    .rank-tier-6 .profile-name {
+        background: linear-gradient(270deg, #ffcf00, #ff00ff, #00ffff, #ffcf00);
+        background-size: 300% 300%;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        animation: liquidFlow 4s ease infinite;
+        font-weight: 900;
+        filter: drop-shadow(0px 3px 3px rgba(0, 0, 0, 0.6));
+    }
+
+    .rank-tier-6.profile-content-wrapper {
+        border: 3px solid transparent;
+        background-image: linear-gradient(white, white),
+            linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3, #ff0000);
+        background-origin: padding-box, border-box;
+        background-clip: padding-box, border-box;
+        background-size: 100% 100%, 200% 100%;
+        animation: liquidFlow 4s linear infinite;
+        box-shadow: 0 0 25px rgba(255, 0, 255, 0.4);
+    }
+
+    @keyframes energyBeam {
+        0% {
+            background-position: center, 200% 0%, 0% 0%;
+        }
+
+        100% {
+            background-position: center, -100% 200%, 0% 0%;
+        }
+    }
+
+    @keyframes liquidFlow {
+        0% {
+            background-position: 0% 50%;
+        }
+
+        50% {
+            background-position: 100% 50%;
+        }
+
+        100% {
+            background-position: 0% 50%;
+        }
+    }
+
+    @keyframes textGradient {
+        0% {
+            background-position: 0% 50%;
+        }
+
+        50% {
+            background-position: 100% 50%;
+        }
+
+        100% {
+            background-position: 0% 50%;
+        }
+    }
+
+    /* Rank Badges */
+    .rank-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 0.85rem;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-weight: 600;
+        margin-top: 10px;
+        margin-bottom: 5px;
+    }
+
+    .rank-badge-tier-1 {
+        background: #f1f3f5;
+        color: #495057;
+    }
+
+    .rank-badge-tier-2 {
+        background: rgba(205, 127, 50, 0.15);
+        color: #cd7f32;
+        border: 1px solid rgba(205, 127, 50, 0.3);
+    }
+
+    .rank-badge-tier-3 {
+        background: rgba(192, 192, 192, 0.15);
+        color: #6c757d;
+        border: 1px solid rgba(192, 192, 192, 0.3);
+    }
+
+    .rank-badge-tier-4 {
+        background: rgba(255, 215, 0, 0.15);
+        color: #d4af37;
+        border: 1px solid rgba(255, 215, 0, 0.3);
+    }
+
+    .rank-badge-tier-5 {
+        background: rgba(0, 198, 255, 0.15);
+        color: #0072ff;
+        border: 1px solid rgba(0, 198, 255, 0.3);
+    }
+
+    .rank-badge-tier-6 {
+        background: linear-gradient(135deg, rgba(255, 0, 204, 0.15), rgba(51, 51, 153, 0.15));
+        color: #ff00cc;
+        border: 1px solid rgba(255, 0, 204, 0.3);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Back Link -->
+    <a href="{{ url_for('social.ask_grandfriend') }}" class="back-link mb-4">
+        <i class="bi bi-chevron-left"></i> Back to Forum
+    </a>
+
+    <!-- Profile Header -->
+    <div class="profile-header-card">
+        <div class="profile-bg-shape"></div>
+        <div class="profile-content-wrapper {{ profile_user.rank.css_class }}">
+            <img src="{{ profile_user.profile_picture or 'https://i.pravatar.cc/150?u=' ~ profile_user.user_id }}"
+                alt="Profile" class="profile-avatar-large">
+            <h1 class="profile-name">{{ profile_user.username }}</h1>
+
+            <div class="rank-badge rank-badge-tier-{{ profile_user.rank.tier }}">
+                {{ profile_user.rank.name }}
+            </div>
+            <br>
+            <div class="profile-role-badge mt-2">
+                {% if profile_user.user_type == 'senior' %}
+                <i class="bi bi-person-heart me-1"></i> Grandparent
+                {% else %}
+                <i class="bi bi-backpack me-1"></i> Student
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="stats-grid">
+        <div class="stat-card coins">
+            <div class="stat-icon"><i class="bi bi-coin"></i></div>
+            <div class="stat-value">{{ stats.coins }}</div>
+            <div class="stat-label">Coins Earned</div>
+        </div>
+        <div class="stat-card posts">
+            <div class="stat-icon"><i class="bi bi-file-earmark-text"></i></div>
+            <div class="stat-value">{{ stats.posts }}</div>
+            <div class="stat-label">Questions Asked</div>
+        </div>
+        <div class="stat-card replies">
+            <div class="stat-icon"><i class="bi bi-chat-dots"></i></div>
+            <div class="stat-value">{{ stats.replies }}</div>
+            <div class="stat-label">Replies Posted</div>
+        </div>
+        <div class="stat-card likes">
+            <div class="stat-icon"><i class="bi bi-heart-fill"></i></div>
+            <div class="stat-value">{{ stats.likes }}</div>
+            <div class="stat-label">Likes Received</div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Recent Questions -->
+        <div class="col-md-6">
+            <div class="activity-section h-100">
+                <h3><i class="bi bi-journal-text text-primary"></i> Recent Questions</h3>
+                {% if recent_questions %}
+                {% for q in recent_questions %}
+                <a href="{{ url_for('social.ask_grandfriend') }}#question-{{ q.id }}" class="activity-item">
+                    <div class="activity-title">{{ q.title }}</div>
+                    <div class="activity-meta">
+                        <span><i class="bi bi-calendar3"></i> {{ q.created_at[:10] if q.created_at else 'Recently'
+                            }}</span>
+                        <span><i class="bi bi-heart-fill text-danger"></i> {{ q.likes or 0 }}</span>
+                    </div>
+                </a>
+                {% endfor %}
+                {% else %}
+                <div class="text-muted text-center py-4">No questions asked yet.</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Recent Replies -->
+        <div class="col-md-6">
+            <div class="activity-section h-100">
+                <h3><i class="bi bi-reply-all text-success"></i> Recent Replies</h3>
+                {% if recent_replies %}
+                {% for r in recent_replies %}
+                <a href="{{ url_for('social.ask_grandfriend') }}" class="activity-item">
+                    <div class="activity-title">{{ r.content[:60] }}{% if r.content|length > 60 %}...{% endif %}</div>
+                    <div class="activity-meta">
+                        <span><i class="bi bi-calendar3"></i> {{ r.created_at[:10] if r.created_at else 'Recently'
+                            }}</span>
+                        <span><i class="bi bi-coin text-warning"></i> {{ r.coins_awarded or 0 }} earned</span>
+                    </div>
+                </a>
+                {% endfor %}
+                {% else %}
+                <div class="text-muted text-center py-4">No replies posted yet.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -288,7 +288,22 @@
                         <h1 class="hero-title">Cyber Challenge</h1>
                         <p class="hero-desc">Test your digital savvy in this intergenerational cybersecurity quiz!</p>
                         <div class="d-flex align-items-center gap-3">
-                            <a href="{{ url_for('social.social_hub') }}" class="btn btn-custom-primary">Play
+                            <a href="{{ url_for('social.social_hub') }}" class="btn btn-custom-primary">Join
+                                Now</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Slide 3: Support Swap -->
+            <div class="carousel-item">
+                <div class="hero-slide"
+                    style="background-image: url('{{ url_for('static', filename='images/activities/SkillsSwap.png') }}'), url('https://placehold.co/1200x500?text=Support+Swap');">
+                    <div class="hero-overlay">
+                        <h1 class="hero-title">Support Swap</h1>
+                        <p class="hero-desc">Teach what you know, learn what you love! Exchange skills across
+                            generations.</p>
+                        <div class="d-flex align-items-center gap-3">
+                            <a href="{{ url_for('support_swap.ss_dashboard') }}" class="btn btn-custom-primary">Join
                                 Now</a>
                         </div>
                     </div>
@@ -404,14 +419,14 @@
             </div>
         </div>
 
-        <!-- Medium Item: Skills Swap -->
+        <!-- Medium Item: Support Swap -->
         <div class="bento-item-medium activity-card-wrapper">
             <div class="activity-card">
                 <img src="{{ url_for('static', filename='images/activities/SkillsSwap.png') }}"
-                    onerror="this.src='https://placehold.co/400x200?text=Skills+Swap'" class="activity-card-img"
-                    alt="Skills Swap Marketplace">
+                    onerror="this.src='https://placehold.co/400x200?text=Support+Swap'" class="activity-card-img"
+                    alt="Support Swap">
                 <div class="activity-card-overlay">
-                    <h4 class="activity-name">Skills Swap</h4>
+                    <h4 class="activity-name">Support Swap</h4>
                     <p class="activity-subtitle">Teach a skill, learn a skill. Intergenerational exchange.</p>
                 </div>
             </div>
@@ -425,7 +440,7 @@
                 </div>
                 <div class="hover-popup-content">
                     <div class="hover-popup-brand"><span>🌟 JomGather</span></div>
-                    <h4 class="hover-popup-title">Skills Swap Marketplace</h4>
+                    <h4 class="hover-popup-title">Support Swap</h4>
                     <p class="hover-popup-desc">Teach what you know, learn what you love! Exchange skills across
                         generations.</p>
                     <div class="hover-popup-actions">
@@ -671,11 +686,11 @@
                     </div>
                 </div>
             </div>
-            <!-- Skills Swap -->
+            <!-- Support Swap -->
             <div class="scroll-card activity-card-wrapper">
                 <img src="{{ url_for('static', filename='images/activities/SkillsSwap.png') }}"
-                    onerror="this.src='https://placehold.co/400x300?text=Skills+Swap'" alt="Skills Swap">
-                <div class="p-2 fw-bold text-center">Skills Swap</div>
+                    onerror="this.src='https://placehold.co/400x300?text=Support+Swap'" alt="Support Swap">
+                <div class="p-2 fw-bold text-center">Support Swap</div>
                 <div class="hover-popup">
                     <div class="video-wrapper">
                         <video class="hover-popup-video" muted loop>
@@ -687,7 +702,7 @@
                     </div>
                     <div class="hover-popup-content">
                         <div class="hover-popup-brand"><span>🌟 JomGather</span></div>
-                        <h4 class="hover-popup-title">Skills Swap</h4>
+                        <h4 class="hover-popup-title">Support Swap</h4>
                         <p class="hover-popup-desc">Teach what you know, learn what you love across generations!</p>
                         <div class="hover-popup-actions">
                             <a href="{{ url_for('support_swap.ss_dashboard') }}" class="btn-play-now"><i
@@ -852,11 +867,11 @@
             tags: 'ask grandfriend wisdom advice forum'
         },
         {
-            name: 'Skills Swap Marketplace',
+            name: 'Support Swap',
             desc: 'Teach what you know, learn what you love! Exchange skills across generations.',
             img: "{{ url_for('static', filename='images/activities/SkillsSwap.png') }}",
             link: "{{ url_for('support_swap.ss_dashboard') }}",
-            tags: 'skills swap marketplace teach learn exchange'
+            tags: 'support swap teach learn exchange'
         },
         {
             name: 'BOOMERang',
