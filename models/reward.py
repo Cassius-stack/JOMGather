@@ -2,34 +2,42 @@
 Reward model - Coins, Items
 Uses Supabase for data storage
 """
-from utils.supabase_db import get_supabase, fetch_one
+from utils.supabase_db import get_supabase, get_supabase_admin, fetch_one
 
 
 def get_user_coins(user_id):
-    """Get user's current coin balance from Supabase."""
+    """Get user's current coin balance from Supabase.
+    Uses admin client to bypass RLS so any user's balance can be read server-side.
+    """
     if not user_id:
         return 0
-    result = fetch_one('coins', user_id=user_id)
-    return result['total_coins'] if result else 0
+    supabase = get_supabase_admin()
+    result = supabase.table('coins').select('total_coins').eq('user_id', user_id).limit(1).execute()
+    return result.data[0]['total_coins'] if result.data else 0
 
 
 def add_coins(user_id, amount):
-    """Add coins to user's balance."""
+    """Add coins to user's balance.
+    Uses the admin client (service role key) to bypass RLS and update any user's coins.
+    """
     if not user_id or amount <= 0:
         return False
     
-    supabase = get_supabase()
-    # Check if user has coins record
-    existing = fetch_one('coins', user_id=user_id)
+    # Use admin client to bypass RLS — server is awarding coins to any user
+    supabase = get_supabase_admin()
     
-    if existing:
+    # Check if user has coins record
+    existing = supabase.table('coins').select('total_coins').eq('user_id', user_id).limit(1).execute()
+    
+    if existing.data:
         # Update existing record
-        new_total = existing['total_coins'] + amount
+        new_total = existing.data[0]['total_coins'] + amount
         supabase.table('coins').update({'total_coins': new_total}).eq('user_id', user_id).execute()
     else:
         # Create new record
         supabase.table('coins').insert({'user_id': user_id, 'total_coins': amount}).execute()
     
+    print(f"[Coins] Awarded {amount} coins to user {user_id}")
     return True
 
 
@@ -38,11 +46,12 @@ def remove_coins(user_id, amount):
     if not user_id or amount <= 0:
         return False
     
-    existing = fetch_one('coins', user_id=user_id)
+    # Use admin client to bypass RLS
+    supabase = get_supabase_admin()
+    existing = supabase.table('coins').select('total_coins').eq('user_id', user_id).limit(1).execute()
     
-    if existing and existing['total_coins'] >= amount:
-        supabase = get_supabase()
-        new_total = existing['total_coins'] - amount
+    if existing.data and existing.data[0]['total_coins'] >= amount:
+        new_total = existing.data[0]['total_coins'] - amount
         supabase.table('coins').update({'total_coins': new_total}).eq('user_id', user_id).execute()
         return True
     
