@@ -627,6 +627,35 @@ def join_group(group_id):
     """Join a social group."""
     return redirect(url_for('social.group_detail', group_id=group_id))
 
+@social_bp.route('/api/test/set_coins', methods=['POST'])
+def set_test_coins():
+    """Testing route to manually set the current user's coins."""
+    current_user_id = get_current_user_id()
+    if not current_user_id:
+        return redirect(url_for('auth.login'))
+        
+    try:
+        new_coins = int(request.form.get('testCoins', 0))
+        supabase = get_supabase()
+        
+        # We need to find or create a dummy reply to attribute these coins to
+        res = supabase.table('replies').select('reply_id').eq('user_id', current_user_id).limit(1).execute()
+        if res.data:
+            rid = res.data[0]['reply_id']
+            # Zero out any other replies to ensure exact amount
+            supabase.table('replies').update({'coins_awarded': 0}).eq('user_id', current_user_id).execute()
+            # Set the exact amount on one reply
+            supabase.table('replies').update({'coins_awarded': new_coins}).eq('reply_id', rid).execute()
+        else:
+             # Just a fallback if they have no replies (in a real scenario we might need to insert a dummy row)
+             print("No reply found to attach coins to.")
+             flash("You must post at least 1 reply before you can test coins!", "warning")
+
+    except Exception as e:
+        print(f"Error setting test coins: {e}")
+        
+    return redirect(url_for('social.ask_grandfriend'))
+
 def get_user_rank(coins):
     """Determine the user's AskAGrandfriend rank based on earned forum coins."""
     coins = coins or 0
@@ -634,9 +663,9 @@ def get_user_rank(coins):
         return {'tier': 6, 'name': 'Legendary Bridge-Builder', 'css_class': 'rank-tier-6'}
     elif coins >= 200:
         return {'tier': 5, 'name': 'Wisdom Keeper', 'css_class': 'rank-tier-5'}
-    elif coins >= 100:
+    elif coins >= 80:
         return {'tier': 4, 'name': 'Trusted Guide', 'css_class': 'rank-tier-4'}
-    elif coins >= 40:
+    elif coins >= 30:
         return {'tier': 3, 'name': 'Kindred Spirit', 'css_class': 'rank-tier-3'}
     elif coins >= 20:
         return {'tier': 2, 'name': 'The Icebreaker', 'css_class': 'rank-tier-2'}
@@ -1215,12 +1244,55 @@ def agf_profile(user_id):
 
 @social_bp.route('/ask-grandfriend/delete/<question_id>', methods=['POST'])
 def delete_question_route(question_id):
-    """Delete a question."""
+    """Delete a question (Only OP). Uses service role key to bypass RLS."""
+    user_id = get_current_user_id()
+    if not user_id:
+        return redirect(url_for('auth.login'))
+        
     try:
-        supabase = get_supabase()
-        supabase.table('questions').delete().eq('id', question_id).execute()
+        from supabase import create_client
+        
+        # Use Service Role Key to bypass RLS for delete operations
+        sb_url = os.environ.get("SUPABASE_URL")
+        service_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
+        
+        if service_key:
+            admin_supabase = create_client(sb_url, service_key)
+        else:
+            print("DELETE DEBUG: WARNING - SUPABASE_SERVICE_ROLE_KEY not found. RLS might block delete.")
+            admin_supabase = get_supabase()
+        
+        # Verify ownership
+        q_res = admin_supabase.table('questions').select('user_id').eq('id', question_id).execute()
+        if not q_res.data:
+            from flask import flash
+            flash("Question not found.", "error")
+            return redirect(url_for('social.ask_grandfriend'))
+            
+        question = q_res.data[0]
+        if str(question.get('user_id')) != str(user_id):
+            from flask import flash
+            flash("Unauthorized. Only the author can delete this question.", "error")
+            return redirect(url_for('social.ask_grandfriend'))
+            
+        # Delete related replies first (manual cascade)
+        try:
+            admin_supabase.table('replies').delete().eq('question_id', question_id).execute()
+        except Exception as re:
+            print(f"Error cascading delete replies: {re}")
+            
+        # Delete the question
+        admin_supabase.table('questions').delete().eq('id', question_id).execute()
+        
+        from flask import flash
+        flash("Question deleted successfully.", "success")
+        
     except Exception as e:
         print(f"Error deleting question: {e}")
+        traceback.print_exc()
+        from flask import flash
+        flash("An error occurred while deleting the question.", "error")
+        
     return redirect(url_for('social.ask_grandfriend'))
 
 

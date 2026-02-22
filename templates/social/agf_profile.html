@@ -212,90 +212,73 @@
     }
 
     .rank-tier-3 .profile-avatar-large {
-        border: 4px solid #c0c0c0;
-        box-shadow: 0 0 15px rgba(192, 192, 192, 0.6);
+        padding: 5px;
+        background: radial-gradient(circle at 30% 30%, #f8f9fa 0%, #bbdefb 30%, #e1bee7 70%, #f8f9fa 100%);
+        box-shadow: 0 5px 15px rgba(187, 222, 251, 0.4);
     }
 
     .rank-tier-3 .profile-name {
-        text-shadow: 0 0 10px rgba(192, 192, 192, 0.8);
-        transition: text-shadow 0.3s;
-    }
-
-    .rank-tier-4 .profile-avatar-large {
-        border: 4px solid #ffd700;
-        box-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
-    }
-
-    /* Tier 5: Wisdom Keeper */
-    .rank-tier-5 .profile-avatar-large {
-        border: 5px solid transparent;
-        background-image: linear-gradient(white, white), linear-gradient(135deg, #0b132b 0%, #1c2541 33%, #7a28cb 66%, #0b132b 100%);
-        background-origin: border-box;
-        background-clip: padding-box, border-box;
-        background-size: 100% 100%, 300% 300%;
-        animation: auroraGlow 5s ease-in-out infinite alternate;
-        box-shadow: 0 0 20px rgba(122, 40, 203, 0.6);
-    }
-
-    .rank-tier-5 .profile-name {
-        color: #fff;
-        text-shadow: 0 0 5px #fff, 0 0 10px #20a4f3, 0 0 20px #20a4f3, 0 0 30px #0b132b;
-        animation: sapphirePulse 3s infinite alternate;
+        color: #1a202c !important;
+        /* Extremely dark slate/black for maximum readability */
+        text-shadow: 0 0 3px #bbdefb, 0 0 5px #bbdefb;
         font-weight: 800;
         letter-spacing: 0.5px;
     }
 
-    .rank-tier-5 {
-        position: relative;
-        overflow: hidden;
-    }
-
-    .rank-tier-5::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 100px;
-        background: linear-gradient(180deg, rgba(32, 164, 243, 0.2), transparent);
-        animation: northernLights 8s linear infinite;
-        z-index: 0;
-        pointer-events: none;
-        filter: blur(10px);
-    }
-
-    @keyframes auroraGlow {
+    @keyframes pulseGoldHaloProfile {
         0% {
-            background-position: center, 0% 0%;
-        }
-
-        100% {
-            background-position: center, 100% 100%;
-        }
-    }
-
-    @keyframes sapphirePulse {
-        0% {
-            text-shadow: 0 0 2px #fff, 0 0 5px #20a4f3, 0 0 10px #7a28cb;
-        }
-
-        100% {
-            text-shadow: 0 0 5px #fff, 0 0 15px #00ffff, 0 0 25px #0000ff;
-        }
-    }
-
-    @keyframes northernLights {
-        0% {
-            transform: translateX(10px) scale(1.05);
+            box-shadow: 0 0 5px rgba(255, 215, 0, 0.4);
+            border-color: rgba(212, 175, 55, 0.8);
         }
 
         50% {
-            transform: translateX(-10px) scale(1);
+            box-shadow: 0 0 25px rgba(255, 215, 0, 0.9), 0 0 40px rgba(212, 175, 55, 0.5);
+            border-color: rgba(255, 215, 0, 1);
         }
 
         100% {
-            transform: translateX(10px) scale(1.05);
+            box-shadow: 0 0 5px rgba(255, 215, 0, 0.4);
+            border-color: rgba(212, 175, 55, 0.8);
         }
+    }
+
+    .rank-tier-4 .profile-avatar-large {
+        border: 4px solid #d4af37;
+        animation: pulseGoldHaloProfile 4s infinite ease-in-out;
+    }
+
+    .rank-tier-4 .profile-name {
+        color: #d4af37;
+        font-weight: 800;
+    }
+
+    /* Tier 5: Wisdom Keeper */
+    @property --aurora-angle-profile {
+        syntax: '<angle>';
+        initial-value: 0deg;
+        inherits: false;
+    }
+
+    @keyframes spinAuroraProfile {
+        to {
+            --aurora-angle-profile: 360deg;
+        }
+    }
+
+    .rank-tier-5 .profile-avatar-large {
+        border: 5px solid transparent;
+        background-image: linear-gradient(white, white), conic-gradient(from var(--aurora-angle-profile), #0b132b, #7a28cb, #e53935, #7a28cb, #0b132b);
+        background-origin: border-box;
+        background-clip: padding-box, border-box;
+        animation: spinAuroraProfile 4s linear infinite;
+        box-shadow: 0 0 20px rgba(122, 40, 203, 0.5);
+    }
+
+    .rank-tier-5 .profile-name {
+        color: #0f52ba;
+        text-shadow: 0 0 5px #ffffff, 0 0 10px #ffffff;
+        font-weight: 800;
+        letter-spacing: 0.5px;
     }
 
     /* Tier 6: Legendary Bridge-Builder */
@@ -315,6 +298,7 @@
         background: linear-gradient(270deg, #ffcf00, #ff00ff, #00ffff, #ffcf00);
         background-size: 300% 300%;
         -webkit-background-clip: text;
+        background-clip: text;
         -webkit-text-fill-color: transparent;
         animation: liquidFlow 4s ease infinite;
         font-weight: 900;
@@ -417,15 +401,60 @@
         color: #ff00cc;
         border: 1px solid rgba(255, 0, 204, 0.3);
     }
+
+    /* Disable rank effects when .disable-rank-fx is present */
+    /* 1. Reset Avatars */
+    body.disable-rank-fx .profile-avatar-large {
+        animation: none !important;
+        background-image: none !important;
+        background: #f8f9fa !important;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1) !important;
+        border: 4px solid #fff !important;
+        /* Standard border */
+        padding: 0 !important;
+    }
+
+    /* 2. Reset Text Elements (Names) */
+    body.disable-rank-fx .profile-name {
+        text-shadow: none !important;
+        background: none !important;
+        background-image: none !important;
+        -webkit-background-clip: border-box !important;
+        background-clip: border-box !important;
+        -webkit-text-fill-color: currentcolor !important;
+        color: #2c3e50 !important;
+        /* Set a default safe dark color */
+        animation: none !important;
+        filter: none !important;
+    }
+
+    /* 3. Reset Profile Backgrounds */
+    body.disable-rank-fx .profile-content-wrapper {
+        animation: none !important;
+        background-image: none !important;
+        background: white !important;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1) !important;
+        border: none !important;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="container py-4">
-    <!-- Back Link -->
-    <a href="{{ url_for('social.ask_grandfriend') }}" class="back-link mb-4">
-        <i class="bi bi-chevron-left"></i> Back to Forum
-    </a>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <!-- Back Link -->
+        <a href="{{ url_for('social.ask_grandfriend') }}" class="back-link">
+            <i class="bi bi-chevron-left"></i> Back to Forum
+        </a>
+
+        <!-- Toggle Visual Effects -->
+        <div class="form-check form-switch d-flex align-items-center" style="margin: 0;">
+            <input class="form-check-input" type="checkbox" id="toggleRankFX" checked
+                style="cursor: pointer; width: 3em; height: 1.5em; margin-right: 8px;">
+            <label class="form-check-label small fw-bold text-muted" for="toggleRankFX"
+                style="cursor: pointer; white-space: nowrap; margin-top: 2px;">Visuals</label>
+        </div>
+    </div>
 
     <!-- Profile Header -->
     <div class="profile-header-card">
@@ -517,4 +546,33 @@
         </div>
     </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const fxToggle = document.getElementById('toggleRankFX');
+        if (!fxToggle) return;
+
+        const bodyEl = document.body;
+
+        // Check local storage for preference, default is true (effects on)
+        const fxPref = localStorage.getItem('agf_fx_enabled');
+        if (fxPref === 'false') {
+            fxToggle.checked = false;
+            bodyEl.classList.add('disable-rank-fx');
+        } else {
+            fxToggle.checked = true;
+            bodyEl.classList.remove('disable-rank-fx');
+        }
+
+        fxToggle.addEventListener('change', function () {
+            if (this.checked) {
+                bodyEl.classList.remove('disable-rank-fx');
+                localStorage.setItem('agf_fx_enabled', 'true');
+            } else {
+                bodyEl.classList.add('disable-rank-fx');
+                localStorage.setItem('agf_fx_enabled', 'false');
+            }
+        });
+    });
+</script>
 {% endblock %}
