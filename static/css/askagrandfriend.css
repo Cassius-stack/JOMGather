@@ -1,15 +1,12 @@
 /* Ask A Grandfriend Page Styles */
 
-/* Reset Sidebar (prevent conflict with style.css chat sidebar) */
-.sidebar {
-    width: auto !important;
-    background-color: transparent !important;
-    display: block !important;
-    flex-direction: unset !important;
-    padding-top: 0 !important;
+/* Reset Sidebar Style for this page */
+.agf-sidebar {
+    background-color: transparent;
+    padding-top: 0;
     position: relative;
-    height: auto !important;
-    border-right: none !important;
+    height: auto;
+    border-right: none;
 }
 
 .page-header {
@@ -312,7 +309,7 @@
 
 /* Responsive */
 @media (max-width: 768px) {
-    .sidebar {
+    .agf-sidebar {
         margin-bottom: 2rem;
     }
 

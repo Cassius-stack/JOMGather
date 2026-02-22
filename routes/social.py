@@ -755,32 +755,15 @@ def join_group(group_id):
 
 @social_bp.route('/api/test/set_coins', methods=['POST'])
 def set_test_coins():
-    """Testing route to manually set the current user's coins."""
+    """Testing route to manually override the current user's coin count for rank testing."""
     current_user_id = get_current_user_id()
     if not current_user_id:
         return redirect(url_for('auth.login'))
-        
-    try:
-        new_coins = int(request.form.get('testCoins', 0))
-        supabase = get_supabase()
-        
-        # We need to find or create a dummy reply to attribute these coins to
-        res = supabase.table('replies').select('reply_id').eq('user_id', current_user_id).limit(1).execute()
-        if res.data:
-            rid = res.data[0]['reply_id']
-            # Zero out any other replies to ensure exact amount
-            supabase.table('replies').update({'coins_awarded': 0}).eq('user_id', current_user_id).execute()
-            # Set the exact amount on one reply
-            supabase.table('replies').update({'coins_awarded': new_coins}).eq('reply_id', rid).execute()
-        else:
-             # Just a fallback if they have no replies (in a real scenario we might need to insert a dummy row)
-             print("No reply found to attach coins to.")
-             flash("You must post at least 1 reply before you can test coins!", "warning")
-
-    except Exception as e:
-        print(f"Error setting test coins: {e}")
-        
+    
+    new_coins = request.form.get('testCoins', 0, type=int)
+    session['agf_test_coins'] = new_coins
     return redirect(url_for('social.ask_grandfriend'))
+
 
 def get_user_rank(coins):
     """Determine the user's AskAGrandfriend rank based on earned forum coins."""
@@ -845,6 +828,12 @@ def ask_grandfriend():
             if uid:
                 # Add coins awarded from replies
                 user_coins[uid] = user_coins.get(uid, 0) + (r.get('coins_awarded') or 0)
+        
+        # Apply test coin override for the current user (if set via Test Coins input)
+        test_coins_override = session.get('agf_test_coins')
+        current_uid = get_current_user_id()
+        if test_coins_override is not None and current_uid:
+            user_coins[current_uid] = test_coins_override
                 
         # Inject ranks into all replies
         for r in all_raw_replies:
@@ -948,6 +937,7 @@ def ask_grandfriend():
         print(f"DEBUG LIKE: liked_question_ids={liked_question_ids}")
 
     user_type = session.get('user_type', 'youth')
+    test_coins = session.get('agf_test_coins', 0)
     return render_template('social/ask_grandfriend.html', 
                            questions=questions, 
                            current_user_id=current_user_id, 
@@ -957,7 +947,8 @@ def ask_grandfriend():
                            liked_question_ids=liked_question_ids,
                            current_sort=sort_by,
                            current_order=order,
-                           current_unanswered=unanswered_only)
+                           current_unanswered=unanswered_only,
+                           test_coins=test_coins)
 
 @social_bp.route('/ask-grandfriend/post', methods=['GET', 'POST'])
 def post_question():
@@ -1336,6 +1327,11 @@ def agf_profile(user_id):
         user_replies = r_res.data if r_res.data else []
         stats['replies'] = len(user_replies)
         stats['coins'] = sum(r.get('coins_awarded') or 0 for r in user_replies)
+        
+        # Apply test coin override if viewing own profile
+        test_coins_override = session.get('agf_test_coins')
+        if test_coins_override is not None and str(user_id) == str(current_user_id):
+            stats['coins'] = test_coins_override
         
         # Inject Rank
         profile_user['rank'] = get_user_rank(stats['coins'])

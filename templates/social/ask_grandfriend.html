@@ -803,6 +803,13 @@
         border: 1px solid rgba(0, 0, 0, 0.1) !important;
         /* Proper fallback border */
     }
+
+    /* 4. Reset Rank Badges */
+    body.disable-rank-fx .rank-badge {
+        background: #f1f3f5 !important;
+        color: #495057 !important;
+        border: 1px solid #dee2e6 !important;
+    }
 </style>
 {% endblock %}
 
@@ -818,6 +825,22 @@
         <h1 class="page-title">AskAGrandfriend</h1>
 
         <div class="header-actions" style="display: flex; align-items: center; gap: 15px;">
+            <!-- TEST COIN INPUT TOOL -->
+            <form action="{{ url_for('social.set_test_coins') }}" method="POST" class="d-flex align-items-center"
+                style="background: rgba(255,255,255,0.8); padding: 5px 10px; border-radius: 8px; border: 1px solid #ccc;">
+                <label for="testCoins" class="me-2 small fw-bold text-muted mb-0">Test Coins:</label>
+                <input type="number" id="testCoins" name="testCoins" class="form-control form-control-sm"
+                    style="width: 70px;" value="{{ test_coins or 0 }}" min="0" required>
+                <button type="submit" class="btn btn-sm btn-primary ms-2 py-0 px-2">Set</button>
+            </form>
+
+            <!-- Toggle Visual Effects -->
+            <div class="form-check form-switch d-flex align-items-center" style="margin: 0;">
+                <input class="form-check-input" type="checkbox" id="toggleRankFX" checked
+                    style="cursor: pointer; width: 3em; height: 1.5em; margin-right: 8px;">
+                <label class="form-check-label small fw-bold text-muted" for="toggleRankFX"
+                    style="cursor: pointer; white-space: nowrap; margin-top: 2px;">Visuals</label>
+            </div>
 
             <a href="{{ url_for('social.agf_profile', user_id=current_user_id) }}" title="View My AGF Profile">
                 <img src="https://i.pravatar.cc/45?img=12" alt="Profile" class="profile-avatar">
@@ -833,7 +856,7 @@
 
     <div class="row">
         <!-- Sidebar -->
-        <div class="col-lg-3 col-md-4 sidebar">
+        <div class="col-lg-3 col-md-4 agf-sidebar">
             <!-- View By -->
             <div class="sidebar-card">
                 <div class="sidebar-title">
@@ -1974,5 +1997,33 @@
         const el = document.getElementById(id);
         if (el) el.remove();
     }
+    // --- Visual Effects Toggle Logic ---
+    document.addEventListener('DOMContentLoaded', function () {
+        const fxToggle = document.getElementById('toggleRankFX');
+        if (!fxToggle) return;
+
+        const bodyEl = document.body;
+
+        // Check local storage for preference, default is true (effects on)
+        const fxPref = localStorage.getItem('agf_fx_enabled');
+        if (fxPref === 'false') {
+            fxToggle.checked = false;
+            bodyEl.classList.add('disable-rank-fx');
+        } else {
+            fxToggle.checked = true;
+            bodyEl.classList.remove('disable-rank-fx');
+        }
+
+        fxToggle.addEventListener('change', function () {
+            if (this.checked) {
+                bodyEl.classList.remove('disable-rank-fx');
+                localStorage.setItem('agf_fx_enabled', 'true');
+            } else {
+                bodyEl.classList.add('disable-rank-fx');
+                localStorage.setItem('agf_fx_enabled', 'false');
+            }
+        });
+    });
+    // --- End Visual Effects Toggle Logic ---
 </script>
 {% endblock %}
