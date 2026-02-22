@@ -627,16 +627,53 @@ def join_group(group_id):
     """Join a social group."""
     return redirect(url_for('social.group_detail', group_id=group_id))
 
+def get_user_rank(coins):
+    """Determine the user's AskAGrandfriend rank based on earned forum coins."""
+    coins = coins or 0
+    if coins >= 400:
+        return {'tier': 6, 'name': 'Legendary Bridge-Builder', 'css_class': 'rank-tier-6'}
+    elif coins >= 200:
+        return {'tier': 5, 'name': 'Wisdom Keeper', 'css_class': 'rank-tier-5'}
+    elif coins >= 100:
+        return {'tier': 4, 'name': 'Trusted Guide', 'css_class': 'rank-tier-4'}
+    elif coins >= 40:
+        return {'tier': 3, 'name': 'Kindred Spirit', 'css_class': 'rank-tier-3'}
+    elif coins >= 20:
+        return {'tier': 2, 'name': 'The Icebreaker', 'css_class': 'rank-tier-2'}
+    else:
+        return {'tier': 1, 'name': 'Friendly Neighbor', 'css_class': 'rank-tier-1'}
+
+
 @social_bp.route('/ask-grandfriend')
 def ask_grandfriend():
     """AskAGrandfriend forum."""
     questions = []
     all_raw_replies = []
+    sort_by = request.args.get('sort', 'date')
+    order = request.args.get('order', 'desc')
+    unanswered_only = request.args.get('unanswered', 'false').lower() == 'true'
+    is_desc = (order == 'desc')
+
     try:
         supabase = get_supabase()
-        # Fetch Questions
-        q_res = supabase.table('questions').select('*').order('created_at', desc=True).execute()
+        
+        # Build query based on sort preference
+        query = supabase.table('questions').select('*')
+        if sort_by == 'likes':
+            query = query.order('likes', desc=is_desc).order('created_at', desc=True)
+        else:
+            query = query.order('created_at', desc=is_desc)
+            
+        try:
+            q_res = query.execute()
+        except Exception:
+            # Fallback: likes column may not exist yet
+            q_res = supabase.table('questions').select('*').order('created_at', desc=is_desc).execute()
         questions = q_res.data if q_res.data else []
+        # Ensure every question has a likes count
+        for q in questions:
+            if q.get('likes') is None:
+                q['likes'] = 0
         
         # Fetch Replies
         r_res = supabase.table('replies').select('*').order('created_at').execute() 
@@ -645,6 +682,19 @@ def ask_grandfriend():
         # Organize Nesting
         reply_map = {r['reply_id']: r for r in all_raw_replies}
         for r in all_raw_replies: r['sub_replies'] = [] # Init
+        
+        # Calculate forum coins for all users to determine ranks efficiently
+        user_coins = {}
+        for r in all_raw_replies:
+            uid = r.get('user_id')
+            if uid:
+                # Add coins awarded from replies
+                user_coins[uid] = user_coins.get(uid, 0) + (r.get('coins_awarded') or 0)
+                
+        # Inject ranks into all replies
+        for r in all_raw_replies:
+            ruid = r.get('user_id')
+            r['rank'] = get_user_rank(user_coins.get(ruid, 0))
         
         top_level_replies = []
         for r in all_raw_replies:
@@ -656,6 +706,10 @@ def ask_grandfriend():
         
         # Attach to questions (Top Level Only)
         for q in questions:
+            # Inject rank into question
+            quid = q.get('user_id')
+            q['rank'] = get_user_rank(user_coins.get(quid, 0))
+            
             q['replies'] = [r for r in top_level_replies if r['question_id'] == q['id']]
             # Sort by coins desc
             q['replies'].sort(key=lambda x: x.get('coins_awarded', 0), reverse=True)
@@ -666,6 +720,10 @@ def ask_grandfriend():
             for r in q['replies']:
                 total_count += 1 + len(r['sub_replies'])
             q['replies_count'] = total_count
+            
+        # Filter unanswered if requested
+        if unanswered_only:
+            questions = [q for q in questions if q['replies_count'] == 0]
             
     except Exception as e:
         print(f"Error fetching data: {e}")
@@ -697,7 +755,7 @@ def ask_grandfriend():
         if user_ids_set:
             # Fetch user profiles
             user_ids_list = list(user_ids_set)
-            users_res = supabase.table('users').select('user_id, username, profile_picture').in_('user_id', user_ids_list).execute()
+            users_res = supabase.table('users').select('user_id, username').in_('user_id', user_ids_list).execute()
             users_data = {u['user_id']: u for u in (users_res.data or [])}
             
             # Fetch friendships involving current user
@@ -722,8 +780,29 @@ def ask_grandfriend():
     except Exception as e:
         print(f"Error building history: {e}")
         
+    # Determine which questions the current user has liked (from liked_by arrays)
+    liked_question_ids = set()
+    if current_user_id:
+        uid_str = str(current_user_id)
+        for q in questions:
+            liked_by = q.get('liked_by') or []
+            if liked_by:
+                print(f"DEBUG LIKE: q.id={q['id']} liked_by={liked_by} type={type(liked_by)} current_user_id={current_user_id} type={type(current_user_id)}")
+            if current_user_id in liked_by or uid_str in [str(x) for x in liked_by]:
+                liked_question_ids.add(q['id'])
+        print(f"DEBUG LIKE: liked_question_ids={liked_question_ids}")
+
     user_type = session.get('user_type', 'youth')
-    return render_template('social/ask_grandfriend.html', questions=questions, current_user_id=current_user_id, current_username=current_username, history_users=history_users, user_type=user_type)
+    return render_template('social/ask_grandfriend.html', 
+                           questions=questions, 
+                           current_user_id=current_user_id, 
+                           current_username=current_username, 
+                           history_users=history_users, 
+                           user_type=user_type, 
+                           liked_question_ids=liked_question_ids,
+                           current_sort=sort_by,
+                           current_order=order,
+                           current_unanswered=unanswered_only)
 
 @social_bp.route('/ask-grandfriend/post', methods=['GET', 'POST'])
 def post_question():
@@ -1062,6 +1141,78 @@ def delete_reply_route(reply_id):
     return redirect(url_for('social.ask_grandfriend'))
 
 
+@social_bp.route('/ask-grandfriend/profile/<int:user_id>')
+def agf_profile(user_id):
+    """AskAGrandfriend specific profile page showing forum stats."""
+    current_user_id = get_current_user_id()
+    if not current_user_id:
+        from flask import flash
+        flash("Please log in to view profiles.", "warning")
+        return redirect(url_for('auth.login'))
+
+    try:
+        supabase = get_supabase()
+        
+        # 1. Fetch User Data
+        u_res = supabase.table('users').select('user_id, username, profile_picture, user_type').eq('user_id', user_id).execute()
+        if not u_res.data:
+            from flask import flash
+            flash("User not found.", "error")
+            return redirect(url_for('social.ask_grandfriend'))
+        
+        profile_user = u_res.data[0]
+        
+        # 2. Calculate Stats
+        stats = {
+            'posts': 0,
+            'replies': 0,
+            'likes': 0,
+            'coins': 0
+        }
+        
+        # Fetch their questions
+        q_res = supabase.table('questions').select('id, title, created_at, likes').eq('user_id', user_id).order('created_at', desc=True).execute()
+        user_questions = q_res.data if q_res.data else []
+        stats['posts'] = len(user_questions)
+        stats['likes'] = sum(q.get('likes') or 0 for q in user_questions)
+        
+        # Fetch their replies
+        r_res = supabase.table('replies').select('reply_id, content, created_at, coins_awarded').eq('user_id', user_id).order('created_at', desc=True).execute()
+        user_replies = r_res.data if r_res.data else []
+        stats['replies'] = len(user_replies)
+        stats['coins'] = sum(r.get('coins_awarded') or 0 for r in user_replies)
+        
+        # Inject Rank
+        profile_user['rank'] = get_user_rank(stats['coins'])
+        
+        # 3. Check Friendship Status
+        friendship_status = 'none'
+        if current_user_id != user_id:
+            sent = supabase.table('friendships').select('status').eq('user_id_1', current_user_id).eq('user_id_2', user_id).execute()
+            if sent.data:
+                friendship_status = sent.data[0]['status'] # 'pending' or 'accepted'
+            else:
+                rec = supabase.table('friendships').select('status').eq('user_id_1', user_id).eq('user_id_2', current_user_id).execute()
+                if rec.data:
+                    friendship_status = 'received' if rec.data[0]['status'] == 'pending' else 'accepted'
+                    
+        return render_template('social/agf_profile.html', 
+                               profile_user=profile_user, 
+                               stats=stats, 
+                               recent_questions=user_questions[:5],
+                               recent_replies=user_replies[:5],
+                               friendship_status=friendship_status,
+                               current_user_id=current_user_id)
+                               
+    except Exception as e:
+        print(f"Error fetching AGF profile: {e}")
+        import traceback
+        traceback.print_exc()
+        from flask import flash
+        flash("An error occurred loading the profile.", "error")
+        return redirect(url_for('social.ask_grandfriend'))
+
+
 @social_bp.route('/ask-grandfriend/delete/<question_id>', methods=['POST'])
 def delete_question_route(question_id):
     """Delete a question."""
@@ -1071,6 +1222,81 @@ def delete_question_route(question_id):
     except Exception as e:
         print(f"Error deleting question: {e}")
     return redirect(url_for('social.ask_grandfriend'))
+
+
+@social_bp.route('/api/like-question', methods=['POST'])
+def like_question():
+    """Toggle like on a question. Uses liked_by JSONB array on questions table. Bypasses RLS."""
+    user_id = get_current_user_id()
+    if not user_id:
+        return jsonify({'error': 'Not logged in'}), 401
+
+    data = request.get_json()
+    question_id = data.get('question_id')
+    if not question_id:
+        return jsonify({'error': 'Missing question_id'}), 400
+
+    try:
+        from supabase import create_client
+        import os
+        
+        # Use Service Role Key to bypass RLS for this specific update
+        url = os.environ.get("SUPABASE_URL")
+        service_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
+        
+        if service_key:
+            admin_supabase = create_client(url, service_key)
+        else:
+            # Fallback to standard client if no service key, though RLS might block
+            print("LIKE DEBUG: WARNING - SUPABASE_SERVICE_ROLE_KEY not found. RLS might block this update.")
+            admin_supabase = get_supabase()
+
+        # Fetch the question's current state
+        q = admin_supabase.table('questions').select('*').eq('id', question_id).execute()
+        if not q.data:
+            return jsonify({'error': 'Question not found'}), 404
+
+        question = q.data[0]
+        liked_by = question.get('liked_by') or []
+        print(f"LIKE DEBUG [BEFORE]: question_id={question_id}, user_id={user_id}({type(user_id).__name__}), liked_by={liked_by}, likes={question.get('likes')}")
+        
+        # Check if 'liked_by' key exists in the response at all
+        if 'liked_by' not in question:
+            print(f"LIKE DEBUG: WARNING - 'liked_by' column NOT in question data! Available keys: {list(question.keys())}")
+            current_likes = question.get('likes') or 0
+            new_likes = current_likes + 1
+            admin_supabase.table('questions').update({'likes': new_likes}).eq('id', question_id).execute()
+            return jsonify({'liked': True, 'likes': new_likes})
+
+        # Normalize: compare as strings to handle int/str mismatch
+        uid_str = str(user_id)
+        liked_by_str = [str(x) for x in liked_by]
+
+        if uid_str in liked_by_str:
+            # Unlike: remove user from liked_by
+            liked_by = [x for x in liked_by if str(x) != uid_str]
+            new_likes = len(liked_by)
+            update_result = admin_supabase.table('questions').update({'likes': new_likes, 'liked_by': liked_by}).eq('id', question_id).execute()
+            print(f"LIKE DEBUG [UNLIKE]: updated to liked_by={liked_by}, likes={new_likes}, result={update_result.data}")
+            return jsonify({'liked': False, 'likes': new_likes})
+        else:
+            # Like: add user to liked_by
+            liked_by.append(user_id)
+            new_likes = len(liked_by)
+            update_result = admin_supabase.table('questions').update({'likes': new_likes, 'liked_by': liked_by}).eq('id', question_id).execute()
+            print(f"LIKE DEBUG [LIKE]: updated to liked_by={liked_by}, likes={new_likes}, result={update_result.data}")
+            
+            # Verify: re-read from DB
+            verify = admin_supabase.table('questions').select('likes, liked_by').eq('id', question_id).execute()
+            print(f"LIKE DEBUG [VERIFY]: DB now has: {verify.data}")
+            
+            return jsonify({'liked': True, 'likes': new_likes})
+
+    except Exception as e:
+        print(f"Like error: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
 
 
 @social_bp.route('/api/cyber-challenge/<challenge_id>')
@@ -1171,7 +1397,10 @@ def chatbot_query():
         answer = generate_rag_response(query, context_list)
         print(f"DEBUG: Answer generated: {answer[:50]}...")
         
-        return jsonify({'answer': answer})
+        # Ensure answer is a string and strip weird chars
+        safe_answer = str(answer).strip()
+        print(f"DEBUG: Safe Answer: {repr(safe_answer)}")
+        return jsonify({'answer': safe_answer})
         
     except Exception as e:
         print(f"Chatbot Error: {e}")
