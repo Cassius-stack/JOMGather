@@ -2,7 +2,7 @@
 Reward model - Coins, Items
 Uses Supabase for data storage
 """
-from utils.supabase_db import get_supabase, fetch_one
+from utils.supabase_db import get_supabase, fetch_one, retry_query
 
 
 def get_user_coins(user_id):
@@ -91,6 +91,7 @@ def redeem_reward(user_id, reward_id, reward_name, reward_image, price):
     return True, code
 
 
+@retry_query()
 def get_user_rewards(user_id):
     """Get all rewards redeemed by a user, sorted: available first, then redeemed."""
     if not user_id:
@@ -102,6 +103,7 @@ def get_user_rewards(user_id):
     return result.data if result.data else []
 
 
+@retry_query()
 def mark_reward_redeemed(reward_record_id, user_id):
     """Mark a redeemed reward as used."""
     supabase = get_supabase()
@@ -109,6 +111,7 @@ def mark_reward_redeemed(reward_record_id, user_id):
     return True
 
 
+@retry_query()
 def get_user_redeemed_reward_ids(user_id):
     """Get list of reward IDs that user has already redeemed (for showing 'Redeemed' button)."""
     if not user_id:

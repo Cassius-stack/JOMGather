@@ -27,20 +27,26 @@ REWARDS = [
 @rewards_bp.route('/')
 def redeem():
     """View redeem page."""
-    user_id = session.get('user_id')
-    user_coins = get_user_coins(user_id)
-    
-    # Get list of already redeemed reward IDs
-    redeemed_ids = get_user_redeemed_reward_ids(user_id)
-    
-    # Add 'redeemed' flag to each reward
-    rewards_with_status = []
-    for reward in REWARDS:
-        reward_copy = reward.copy()
-        reward_copy['already_redeemed'] = reward['id'] in redeemed_ids
-        rewards_with_status.append(reward_copy)
-    
-    return render_template('rewards/redeem.html', coins=user_coins, rewards=rewards_with_status)
+    try:
+        user_id = session.get('user_id')
+        user_coins = get_user_coins(user_id)
+        
+        # Get list of already redeemed reward IDs
+        redeemed_ids = get_user_redeemed_reward_ids(user_id)
+        
+        # Add 'redeemed' flag to each reward
+        rewards_with_status = []
+        for reward in REWARDS:
+            reward_copy = reward.copy()
+            reward_copy['already_redeemed'] = reward['id'] in redeemed_ids
+            rewards_with_status.append(reward_copy)
+        
+        return render_template('rewards/redeem.html', coins=user_coins, rewards=rewards_with_status)
+    except Exception as e:
+        print(f"[Rewards] Error loading redeem page: {e}")
+        # Fallback: show page with 0 coins and no redeemed flags
+        rewards_with_status = [dict(r, already_redeemed=False) for r in REWARDS]
+        return render_template('rewards/redeem.html', coins=0, rewards=rewards_with_status)
 
 
 @rewards_bp.route('/redeem', methods=['POST'])
@@ -68,46 +74,54 @@ def redeem_item():
     if not reward:
         return jsonify({'success': False, 'error': 'This reward is no longer available'}), 404
     
-    # Check if user has enough coins
-    user_coins = get_user_coins(user_id)
-    if user_coins < reward['price']:
-        return jsonify({'success': False, 'error': f'Not enough coins. You need {reward["price"]} coins but only have {user_coins}'}), 400
-    
-    # Check if already redeemed
-    redeemed_ids = get_user_redeemed_reward_ids(user_id)
-    if reward_id in redeemed_ids:
-        return jsonify({'success': False, 'error': 'You have already redeemed this reward'}), 400
-    
-    # Attempt to redeem
-    success, result = redeem_reward(
-        user_id=user_id,
-        reward_id=reward_id,
-        reward_name=reward['name'],
-        reward_image=reward['image'],
-        price=reward['price']
-    )
-    
-    if success:
-        new_balance = get_user_coins(user_id)
-        return jsonify({
-            'success': True, 
-            'code': result,
-            'new_balance': new_balance,
-            'message': f'Successfully redeemed {reward["name"]}!'
-        })
-    else:
-        return jsonify({'success': False, 'error': result}), 400
+    try:
+        # Check if user has enough coins
+        user_coins = get_user_coins(user_id)
+        if user_coins < reward['price']:
+            return jsonify({'success': False, 'error': f'Not enough coins. You need {reward["price"]} coins but only have {user_coins}'}), 400
+        
+        # Check if already redeemed
+        redeemed_ids = get_user_redeemed_reward_ids(user_id)
+        if reward_id in redeemed_ids:
+            return jsonify({'success': False, 'error': 'You have already redeemed this reward'}), 400
+        
+        # Attempt to redeem
+        success, result = redeem_reward(
+            user_id=user_id,
+            reward_id=reward_id,
+            reward_name=reward['name'],
+            reward_image=reward['image'],
+            price=reward['price']
+        )
+        
+        if success:
+            new_balance = get_user_coins(user_id)
+            return jsonify({
+                'success': True, 
+                'code': result,
+                'new_balance': new_balance,
+                'message': f'Successfully redeemed {reward["name"]}!'
+            })
+        else:
+            return jsonify({'success': False, 'error': result}), 400
+    except Exception as e:
+        print(f"[Rewards] Error redeeming reward: {e}")
+        return jsonify({'success': False, 'error': 'Something went wrong. Please try again.'}), 500
 
 
 
 @rewards_bp.route('/my')
 def my_rewards():
     """View user's redeemed rewards."""
-    user_id = session.get('user_id')
-    user_rewards = get_user_rewards(user_id)
-    user_coins = get_user_coins(user_id)
-    
-    return render_template('rewards/my_rewards.html', rewards=user_rewards, coins=user_coins)
+    try:
+        user_id = session.get('user_id')
+        user_rewards = get_user_rewards(user_id)
+        user_coins = get_user_coins(user_id)
+        
+        return render_template('rewards/my_rewards.html', rewards=user_rewards, coins=user_coins)
+    except Exception as e:
+        print(f"[Rewards] Error loading my rewards: {e}")
+        return render_template('rewards/my_rewards.html', rewards=[], coins=0)
 
 
 @rewards_bp.route('/mark-redeemed', methods=['POST'])
@@ -123,5 +137,9 @@ def mark_redeemed():
     if not record_id:
         return jsonify({'success': False, 'error': 'Missing record_id'}), 400
     
-    mark_reward_redeemed(record_id, user_id)
-    return jsonify({'success': True})
+    try:
+        mark_reward_redeemed(record_id, user_id)
+        return jsonify({'success': True})
+    except Exception as e:
+        print(f"[Rewards] Error marking reward redeemed: {e}")
+        return jsonify({'success': False, 'error': 'Something went wrong. Please try again.'}), 500
