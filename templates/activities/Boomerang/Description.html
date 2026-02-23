@@ -58,10 +58,6 @@
         margin: 0;
     }
 
-    .welcome-emoji {
-        font-size: 3rem;
-        margin-bottom: 10px;
-    }
 
     /* Tabs - Blue Theme */
     .tab-container {
@@ -639,11 +635,11 @@
                             <div class="checkbox-group">
                                 <div class="checkbox-item">
                                     <input type="checkbox" id="noVideo" name="no_video">
-                                    <label for="noVideo">🙈 Voice only (hide my video)</label>
+                                    <label for="noVideo">Voice only (hide my video)</label>
                                 </div>
                                 <div class="checkbox-item">
                                     <input type="checkbox" id="noAudio" name="no_audio">
-                                    <label for="noAudio">🔇 Mute my microphone at start</label>
+                                    <label for="noAudio">Mute my microphone at start</label>
                                 </div>
                             </div>
                         </div>
@@ -685,7 +681,7 @@
                         <!-- Dynamic Recent Chats -->
                         {% if recent_chats %}
                         <div class="history-section">
-                            <div class="history-date">📅 Recent</div>
+                            <div class="history-date">Recent</div>
                             {% for chat in recent_chats %}
                             <div class="history-item">
                                 <div class="history-info">
@@ -710,7 +706,7 @@
                                 style="color: #3B5BDB; text-decoration: none; font-weight: 600;">View All History</a>
                         </div>
                         {% else %}
-                        <div class="no-history">No recent chats. Start one now! 🌸</div>
+                        <div class="no-history">No recent chats. Start one now!</div>
                         {% endif %}
                     </div>
                 </div>
@@ -721,7 +717,7 @@
         <div id="friends" class="tab-content">
             <h2><i class="bi bi-heart-fill" style="color: #e74c3c;"></i> Boomerang Friends</h2>
             <p class="subtitle">These are the wonderful people you've met on Boomerang.
-                Call them anytime! 💬</p>
+                Call them anytime!</p>
 
             <div class="friends-list">
                 {% if friends %}

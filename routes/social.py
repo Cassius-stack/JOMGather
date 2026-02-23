@@ -1364,6 +1364,60 @@ def agf_profile(user_id):
         return redirect(url_for('social.ask_grandfriend'))
 
 
+@social_bp.route('/ask-grandfriend/ranks')
+def agf_ranks():
+    """Rank progression page showing all tiers and the user's current rank."""
+    current_user_id = get_current_user_id()
+    if not current_user_id:
+        return redirect(url_for('auth.login'))
+
+    # Calculate user's coins (with test coin override)
+    test_coins = session.get('agf_test_coins')
+    if test_coins is not None:
+        total_coins = test_coins
+    else:
+        try:
+            replies_resp = supabase.table('replies').select('coins_awarded').eq('user_id', current_user_id).execute()
+            total_coins = sum(r.get('coins_awarded', 0) for r in (replies_resp.data or []))
+        except:
+            total_coins = 0
+
+    current_rank = get_user_rank(total_coins)
+
+    # Get user profile picture
+    try:
+        user_resp = supabase.table('users').select('profile_picture').eq('id', current_user_id).single().execute()
+        profile_picture = user_resp.data.get('profile_picture') if user_resp.data else None
+    except:
+        profile_picture = None
+
+    if not profile_picture:
+        profile_picture = f'https://i.pravatar.cc/120?u={current_user_id}'
+
+    # Define all rank tiers with descriptions
+    rank_tiers = [
+        {'tier': 1, 'name': 'Friendly Neighbor', 'css_class': 'rank-tier-1', 'coins': 0,
+         'description': 'Just getting started — say hello!'},
+        {'tier': 2, 'name': 'The Icebreaker', 'css_class': 'rank-tier-2', 'coins': 20,
+         'description': 'Breaking the ice with helpful replies'},
+        {'tier': 3, 'name': 'Kindred Spirit', 'css_class': 'rank-tier-3', 'coins': 30,
+         'description': 'Building genuine connections'},
+        {'tier': 4, 'name': 'Trusted Guide', 'css_class': 'rank-tier-4', 'coins': 80,
+         'description': 'A reliable source of wisdom'},
+        {'tier': 5, 'name': 'Wisdom Keeper', 'css_class': 'rank-tier-5', 'coins': 200,
+         'description': 'Sharing deep knowledge & experience'},
+        {'tier': 6, 'name': 'Legendary Bridge-Builder', 'css_class': 'rank-tier-6', 'coins': 400,
+         'description': 'A true bridge between generations'},
+    ]
+
+    return render_template('social/agf_ranks.html',
+                           current_rank=current_rank,
+                           total_coins=total_coins,
+                           rank_tiers=rank_tiers,
+                           profile_picture=profile_picture,
+                           current_user_id=current_user_id)
+
+
 @social_bp.route('/ask-grandfriend/delete/<question_id>', methods=['POST'])
 def delete_question_route(question_id):
     """Delete a question (Only OP). Uses service role key to bypass RLS."""
