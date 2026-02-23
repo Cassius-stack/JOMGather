@@ -865,6 +865,8 @@
                 <div class="toggle-btn-group">
                     <button class="toggle-btn" id="btnMyQuestions">My Questions</button>
                     <button class="toggle-btn active" id="btnAllQuestions">All Questions</button>
+                    <button class="toggle-btn" id="btnLikedQuestions"><i class="bi bi-heart-fill"
+                            style="color:#ff4081; margin-right:4px;"></i>Liked</button>
                 </div>
             </div>
 
@@ -978,6 +980,7 @@
                     data-category="{{ q.category }}"
                     data-author="{% if q.user_id == current_user_id or (not q.user_id and q.author_name == current_username) %}you{% else %}other{% endif %}"
                     data-author-type="{{ q.author_type }}"
+                    data-liked="{% if q.id in liked_question_ids %}true{% else %}false{% endif %}"
                     data-type="{% if q.author_type == 'grandparent' %}grandparents{% else %}students{% endif %}">
                     <!-- Top Ribbon for Match Quality -->
                     {% if q.match_score and q.match_score >= 80 %}
@@ -1014,9 +1017,10 @@
                         <a href="#">Anonymous</a>
                         {% else %}
                         <a href="{{ url_for('social.agf_profile', user_id=q.user_id) }}">{{ q.author_name }}</a>
-                        <span class="rank-badge rank-badge-tier-{{ q.rank.tier }}">
+                        <a href="{{ url_for('social.agf_ranks') }}" class="rank-badge rank-badge-tier-{{ q.rank.tier }}"
+                            style="text-decoration:none;">
                             {{ q.rank.name }}
-                        </span>
+                        </a>
                         {% endif %}
                         on {{ q.created_at[:10] if q.created_at else 'Recently' }}
                     </div>
@@ -1406,6 +1410,7 @@
         const questionId = btn.getAttribute('data-question-id');
         const icon = btn.querySelector('i');
         const countEl = btn.querySelector('.like-count');
+        const questionCard = document.getElementById('question-' + questionId);
 
         fetch('{{ url_for("social.like_question") }}', {
             method: 'POST',
@@ -1419,9 +1424,11 @@
                 if (data.liked) {
                     btn.classList.add('liked');
                     icon.className = 'bi bi-heart-fill';
+                    if (questionCard) questionCard.dataset.liked = 'true';
                 } else {
                     btn.classList.remove('liked');
                     icon.className = 'bi bi-heart';
+                    if (questionCard) questionCard.dataset.liked = 'false';
                 }
             })
             .catch(err => console.error('Like error:', err));
@@ -1449,6 +1456,7 @@
     // Toggle between My Questions and All Questions
     const btnMyQuestions = document.getElementById('btnMyQuestions');
     const btnAllQuestions = document.getElementById('btnAllQuestions');
+    const btnLikedQuestions = document.getElementById('btnLikedQuestions');
     const questionCards = document.querySelectorAll('.question-card');
     const questionCountEl = document.getElementById('questionCount');
     const headerTitle = document.getElementById('headerTitle');
@@ -1482,8 +1490,9 @@
 
             let show = true;
 
-            // 1. Check View (My vs All)
+            // 1. Check View (My vs All vs Liked)
             if (filterState.view === 'my' && !isMyQuestion) show = false;
+            if (filterState.view === 'liked' && card.dataset.liked !== 'true') show = false;
 
             // 2. Check Role Type
             if (filterState.type === 'grandparent' && authorType !== 'grandparent') show = false;
@@ -1511,6 +1520,7 @@
     btnAllQuestions.addEventListener('click', function () {
         btnAllQuestions.classList.add('active');
         btnMyQuestions.classList.remove('active');
+        btnLikedQuestions.classList.remove('active');
         if (headerTitle) headerTitle.textContent = 'All Questions';
         filterState.view = 'all';
         filterQuestions();
@@ -1519,8 +1529,18 @@
     btnMyQuestions.addEventListener('click', function () {
         btnMyQuestions.classList.add('active');
         btnAllQuestions.classList.remove('active');
+        btnLikedQuestions.classList.remove('active');
         if (headerTitle) headerTitle.textContent = 'My Questions';
         filterState.view = 'my';
+        filterQuestions();
+    });
+
+    btnLikedQuestions.addEventListener('click', function () {
+        btnLikedQuestions.classList.add('active');
+        btnAllQuestions.classList.remove('active');
+        btnMyQuestions.classList.remove('active');
+        if (headerTitle) headerTitle.textContent = 'Liked Questions';
+        filterState.view = 'liked';
         filterQuestions();
     });
 
