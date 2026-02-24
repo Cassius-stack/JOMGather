@@ -1,48 +1,55 @@
 <!-- Search Users Modal -->
 <div class="modal fade" id="searchUsersModal" tabindex="-1">
-    <div class="modal-dialog modal-xl modal-dialog-centered" style="max-width: 950px;">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 520px;">
         <div class="modal-content"
-            style="border-radius: 32px; border: none; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); background: #f8fafc;">
+            style="border-radius: 24px; border: none; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); background: #f8fafc;">
             <!-- Full Width Header -->
-            <div class="modal-header py-4 px-5"
+            <div class="modal-header py-3 px-4"
                 style="background: #1e3a5f; color: white; border: none; border-radius: 0;">
-                <h3 class="modal-title fw-bold d-flex align-items-center" style="letter-spacing: -0.5px;">
-                    <i class="bi bi-search me-3"></i>Find Friends
-                </h3>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
-                    style="font-size: 1.2rem;"></button>
+                <h5 class="modal-title fw-bold d-flex align-items-center" style="letter-spacing: -0.3px;">
+                    <i class="bi bi-search me-2"></i>Find Friends
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
 
-            <div class="modal-body px-5 py-4">
-                <!-- Shorter Search Section -->
-                <div class="row justify-content-center">
-                    <div class="col-lg-11">
-                        <div class="d-flex align-items-center bg-white rounded-pill px-4 py-2 shadow-sm mb-3"
-                            style="border: 2px solid #e2e8f0; transition: all 0.3s ease;"
-                            onmouseover="this.style.borderColor='#3b82f6'"
-                            onmouseout="this.style.borderColor='#e2e8f0'">
-                            <i class="bi bi-search text-primary fs-4 me-3"></i>
-                            <input type="text" id="userSearchInput" class="form-control border-0 fs-4 py-2"
-                                placeholder="Type a name to discover friends..."
-                                style="box-shadow: none; font-weight: 500; background: transparent;">
-                        </div>
-                        <p class="text-center text-muted small mb-4">Reconnect with people you know or find new
-                            companions in the community.</p>
-                    </div>
+            <div class="modal-body px-4 py-4">
+                <!-- Search Section -->
+                <div class="d-flex align-items-center bg-white rounded-pill px-3 py-2 shadow-sm mb-3"
+                    style="border: 2px solid #e2e8f0; transition: all 0.3s ease;"
+                    onmouseover="this.style.borderColor='#3b82f6'" onmouseout="this.style.borderColor='#e2e8f0'">
+                    <i class="bi bi-search text-primary fs-5 me-2"></i>
+                    <input type="text" id="userSearchInput" class="form-control border-0 py-1"
+                        placeholder="Type a name to discover friends..."
+                        style="box-shadow: none; font-weight: 500; background: transparent; font-size: 0.95rem;">
                 </div>
+                <p class="text-center text-muted small mb-3">Reconnect with people you know or find new
+                    companions in the community.</p>
 
                 <!-- Results Area -->
                 <div id="searchResults" class="list-group bg-transparent scrollbar-hide"
-                    style="max-height: 400px; overflow-y: auto;">
+                    style="max-height: 350px; overflow-y: auto;">
                     <div class="text-center text-muted py-5">
                         <i class="bi bi-people mb-2 d-block" style="font-size: 2.5rem; opacity: 0.2;"></i>
-                        <p class="fs-5 fw-medium">Start typing to see results...</p>
+                        <p class="fs-6 fw-medium">Start typing to see results...</p>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+    // Auto-focus search input when Find Friends modal opens
+    document.addEventListener('DOMContentLoaded', function () {
+        const modal = document.getElementById('searchUsersModal');
+        if (modal) {
+            modal.addEventListener('shown.bs.modal', function () {
+                const input = document.getElementById('userSearchInput');
+                if (input) input.focus();
+            });
+        }
+    });
+</script>
 
 <!-- Generic Profile Modal -->
 <div class="modal fade" id="userProfileModal" tabindex="-1">

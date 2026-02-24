@@ -753,6 +753,18 @@ def join_group(group_id):
     """Join a social group."""
     return redirect(url_for('social.group_detail', group_id=group_id))
 
+@social_bp.route('/api/test/set_coins', methods=['POST'])
+def set_test_coins():
+    """Testing route to manually override the current user's coin count for rank testing."""
+    current_user_id = get_current_user_id()
+    if not current_user_id:
+        return redirect(url_for('auth.login'))
+    
+    new_coins = request.form.get('testCoins', 0, type=int)
+    session['agf_test_coins'] = new_coins
+    return redirect(url_for('social.ask_grandfriend'))
+
+
 def get_user_rank(coins):
     """Determine the user's AskAGrandfriend rank based on earned forum coins."""
     coins = coins or 0
@@ -760,9 +772,9 @@ def get_user_rank(coins):
         return {'tier': 6, 'name': 'Legendary Bridge-Builder', 'css_class': 'rank-tier-6'}
     elif coins >= 200:
         return {'tier': 5, 'name': 'Wisdom Keeper', 'css_class': 'rank-tier-5'}
-    elif coins >= 100:
+    elif coins >= 80:
         return {'tier': 4, 'name': 'Trusted Guide', 'css_class': 'rank-tier-4'}
-    elif coins >= 40:
+    elif coins >= 30:
         return {'tier': 3, 'name': 'Kindred Spirit', 'css_class': 'rank-tier-3'}
     elif coins >= 20:
         return {'tier': 2, 'name': 'The Icebreaker', 'css_class': 'rank-tier-2'}
@@ -816,6 +828,12 @@ def ask_grandfriend():
             if uid:
                 # Add coins awarded from replies
                 user_coins[uid] = user_coins.get(uid, 0) + (r.get('coins_awarded') or 0)
+        
+        # Apply test coin override for the current user (if set via Test Coins input)
+        test_coins_override = session.get('agf_test_coins')
+        current_uid = get_current_user_id()
+        if test_coins_override is not None and current_uid:
+            user_coins[current_uid] = test_coins_override
                 
         # Inject ranks into all replies
         for r in all_raw_replies:
@@ -862,50 +880,9 @@ def ask_grandfriend():
             if u: current_username = u.get('username')
         except: pass
     
-    # Build history: collect unique users who have posted questions or replies
+    # History pane has been removed, so no history_users computation needed
     history_users = []
-    try:
-        supabase = get_supabase()
-        user_ids_set = set()
-        
-        # Collect user_ids from questions and replies
-        for q in questions:
-            uid = q.get('user_id')
-            if uid and uid != current_user_id:
-                user_ids_set.add(uid)
-        for r in all_raw_replies:
-            uid = r.get('user_id')
-            if uid and uid != current_user_id:
-                user_ids_set.add(uid)
-        
-        if user_ids_set:
-            # Fetch user profiles
-            user_ids_list = list(user_ids_set)
-            users_res = supabase.table('users').select('user_id, username').in_('user_id', user_ids_list).execute()
-            users_data = {u['user_id']: u for u in (users_res.data or [])}
-            
-            # Fetch friendships involving current user
-            friend_statuses = {}
-            if current_user_id:
-                fr_res = supabase.table('friendships').select('*').or_(
-                    f"user_id_1.eq.{current_user_id},user_id_2.eq.{current_user_id}"
-                ).execute()
-                for f in (fr_res.data or []):
-                    other_id = f['user_id_2'] if f['user_id_1'] == current_user_id else f['user_id_1']
-                    friend_statuses[other_id] = f['status']  # 'pending' or 'accepted'
-            
-            for uid in user_ids_list:
-                udata = users_data.get(uid, {})
-                friendship = friend_statuses.get(uid)
-                history_users.append({
-                    'user_id': uid,
-                    'username': udata.get('username', 'Unknown'),
-                    'profile_picture': udata.get('profile_picture'),
-                    'friendship_status': friendship  # None, 'pending', or 'accepted'
-                })
-    except Exception as e:
-        print(f"Error building history: {e}")
-        
+
     # Determine which questions the current user has liked (from liked_by arrays)
     liked_question_ids = set()
     if current_user_id:
@@ -919,6 +896,7 @@ def ask_grandfriend():
         print(f"DEBUG LIKE: liked_question_ids={liked_question_ids}")
 
     user_type = session.get('user_type', 'youth')
+    test_coins = session.get('agf_test_coins', 0)
     return render_template('social/ask_grandfriend.html', 
                            questions=questions, 
                            current_user_id=current_user_id, 
@@ -928,7 +906,8 @@ def ask_grandfriend():
                            liked_question_ids=liked_question_ids,
                            current_sort=sort_by,
                            current_order=order,
-                           current_unanswered=unanswered_only)
+                           current_unanswered=unanswered_only,
+                           test_coins=test_coins)
 
 @social_bp.route('/ask-grandfriend/post', methods=['GET', 'POST'])
 def post_question():
@@ -1308,6 +1287,11 @@ def agf_profile(user_id):
         stats['replies'] = len(user_replies)
         stats['coins'] = sum(r.get('coins_awarded') or 0 for r in user_replies)
         
+        # Apply test coin override if viewing own profile
+        test_coins_override = session.get('agf_test_coins')
+        if test_coins_override is not None and str(user_id) == str(current_user_id):
+            stats['coins'] = test_coins_override
+        
         # Inject Rank
         profile_user['rank'] = get_user_rank(stats['coins'])
         
@@ -1339,14 +1323,111 @@ def agf_profile(user_id):
         return redirect(url_for('social.ask_grandfriend'))
 
 
+@social_bp.route('/ask-grandfriend/ranks')
+def agf_ranks():
+    """Rank progression page showing all tiers and the user's current rank."""
+    current_user_id = get_current_user_id()
+    if not current_user_id:
+        return redirect(url_for('auth.login'))
+
+    # Calculate user's coins (with test coin override)
+    test_coins = session.get('agf_test_coins')
+    if test_coins is not None:
+        total_coins = test_coins
+    else:
+        try:
+            replies_resp = supabase.table('replies').select('coins_awarded').eq('user_id', current_user_id).execute()
+            total_coins = sum(r.get('coins_awarded', 0) for r in (replies_resp.data or []))
+        except:
+            total_coins = 0
+
+    current_rank = get_user_rank(total_coins)
+
+    # Get user profile picture
+    try:
+        user_resp = supabase.table('users').select('profile_picture').eq('id', current_user_id).single().execute()
+        profile_picture = user_resp.data.get('profile_picture') if user_resp.data else None
+    except:
+        profile_picture = None
+
+    if not profile_picture:
+        profile_picture = f'https://i.pravatar.cc/120?u={current_user_id}'
+
+    # Define all rank tiers with descriptions
+    rank_tiers = [
+        {'tier': 1, 'name': 'Friendly Neighbor', 'css_class': 'rank-tier-1', 'coins': 0,
+         'description': 'Just getting started — say hello!'},
+        {'tier': 2, 'name': 'The Icebreaker', 'css_class': 'rank-tier-2', 'coins': 20,
+         'description': 'Breaking the ice with helpful replies'},
+        {'tier': 3, 'name': 'Kindred Spirit', 'css_class': 'rank-tier-3', 'coins': 30,
+         'description': 'Building genuine connections'},
+        {'tier': 4, 'name': 'Trusted Guide', 'css_class': 'rank-tier-4', 'coins': 80,
+         'description': 'A reliable source of wisdom'},
+        {'tier': 5, 'name': 'Wisdom Keeper', 'css_class': 'rank-tier-5', 'coins': 200,
+         'description': 'Sharing deep knowledge & experience'},
+        {'tier': 6, 'name': 'Legendary Bridge-Builder', 'css_class': 'rank-tier-6', 'coins': 400,
+         'description': 'A true bridge between generations'},
+    ]
+
+    return render_template('social/agf_ranks.html',
+                           current_rank=current_rank,
+                           total_coins=total_coins,
+                           rank_tiers=rank_tiers,
+                           profile_picture=profile_picture,
+                           current_user_id=current_user_id)
+
+
 @social_bp.route('/ask-grandfriend/delete/<question_id>', methods=['POST'])
 def delete_question_route(question_id):
-    """Delete a question."""
+    """Delete a question (Only OP). Uses service role key to bypass RLS."""
+    user_id = get_current_user_id()
+    if not user_id:
+        return redirect(url_for('auth.login'))
+        
     try:
-        supabase = get_supabase()
-        supabase.table('questions').delete().eq('id', question_id).execute()
+        from supabase import create_client
+        
+        # Use Service Role Key to bypass RLS for delete operations
+        sb_url = os.environ.get("SUPABASE_URL")
+        service_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
+        
+        if service_key:
+            admin_supabase = create_client(sb_url, service_key)
+        else:
+            print("DELETE DEBUG: WARNING - SUPABASE_SERVICE_ROLE_KEY not found. RLS might block delete.")
+            admin_supabase = get_supabase()
+        
+        # Verify ownership
+        q_res = admin_supabase.table('questions').select('user_id').eq('id', question_id).execute()
+        if not q_res.data:
+            from flask import flash
+            flash("Question not found.", "error")
+            return redirect(url_for('social.ask_grandfriend'))
+            
+        question = q_res.data[0]
+        if str(question.get('user_id')) != str(user_id):
+            from flask import flash
+            flash("Unauthorized. Only the author can delete this question.", "error")
+            return redirect(url_for('social.ask_grandfriend'))
+            
+        # Delete related replies first (manual cascade)
+        try:
+            admin_supabase.table('replies').delete().eq('question_id', question_id).execute()
+        except Exception as re:
+            print(f"Error cascading delete replies: {re}")
+            
+        # Delete the question
+        admin_supabase.table('questions').delete().eq('id', question_id).execute()
+        
+        from flask import flash
+        flash("Question deleted successfully.", "success")
+        
     except Exception as e:
         print(f"Error deleting question: {e}")
+        traceback.print_exc()
+        from flask import flash
+        flash("An error occurred while deleting the question.", "error")
+        
     return redirect(url_for('social.ask_grandfriend'))
 
 
@@ -1575,3 +1656,59 @@ def debug_trigger_challenges():
         import traceback
         traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# ============================================
+# NOTIFICATION MANAGEMENT API
+# ============================================
+
+@social_bp.route('/api/notifications/read-all', methods=['POST'])
+@login_required
+def mark_all_notifications_read():
+    """Mark all notifications as read for current user."""
+    try:
+        supabase = get_supabase()
+        supabase.table('notifications').update({'is_read': True}).eq('user_id', session['user_id']).eq('is_read', False).execute()
+        # Invalidate cache
+        session.pop('_notif_cache_time', None)
+        session.pop('_cached_notifs', None)
+        session.pop('_cached_unread', None)
+        return jsonify({'success': True})
+    except Exception as e:
+        print(f"Error marking all read: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@social_bp.route('/api/notifications/<notif_id>', methods=['DELETE'])
+@login_required
+def delete_notification(notif_id):
+    """Delete a single notification."""
+    try:
+        supabase = get_supabase()
+        supabase.table('notifications').delete().eq('notification_id', notif_id).eq('user_id', session['user_id']).execute()
+        # Invalidate cache
+        session.pop('_notif_cache_time', None)
+        session.pop('_cached_notifs', None)
+        session.pop('_cached_unread', None)
+        return jsonify({'success': True})
+    except Exception as e:
+        print(f"Error deleting notification: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@social_bp.route('/api/notifications/clear-all', methods=['DELETE'])
+@login_required
+def clear_all_notifications():
+    """Delete ALL notifications for the current user."""
+    try:
+        supabase = get_supabase()
+        supabase.table('notifications').delete().eq('user_id', session['user_id']).execute()
+        # Invalidate cache
+        session.pop('_notif_cache_time', None)
+        session.pop('_cached_notifs', None)
+        session.pop('_cached_unread', None)
+        return jsonify({'success': True})
+    except Exception as e:
+        print(f"Error clearing notifications: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
