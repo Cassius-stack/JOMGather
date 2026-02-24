@@ -907,7 +907,7 @@ def receiver_respond(invite_id):
                 return redirect(url_for('slice_of_life.review', display_id=invite['display_id']))
             
             story = request.form.get('story')
-            image = request.files.get('image') # Get the file object
+            image = request.files.get('image')
             
             image_url = None
             if image and image.filename != '':
@@ -921,23 +921,30 @@ def receiver_respond(invite_id):
                     image_url = None
             
             if not image_url:
-                # Use initials-based placeholder instead of pravatar
                 image_url = f"https://ui-avatars.com/api/?name=Photo&background=e2e8f0&color=94a3b8&size=300"
             
-            # Save Submission
+            # === CRITICAL: Save Submission ===
             insert('sol_submissions', {
                 'display_id': invite['display_id'],
                 'user_id': current_uid,
                 'image_url': image_url,
                 'thought': story
             })
-            
-            # Post-insert dedup: if race condition created duplicates, clean up
+        
+        except Exception as e:
+            import traceback
+            print(f"[SOL] receiver_respond POST error for invite {invite_id}: {e}")
+            traceback.print_exc()
+            flash(f"Error submitting response: {str(e)}", "danger")
+            return redirect(url_for('slice_of_life.receiver_respond', invite_id=invite_id))
+        
+        # === NON-CRITICAL follow-ups — don't let these block the redirect ===
+        try:
+            # Dedup cleanup
             all_my_subs = fetch_all('sol_submissions', display_id=invite['display_id'], user_id=current_uid) or []
             if len(all_my_subs) > 1:
                 for extra in all_my_subs[1:]:
                     delete('sol_submissions', submission_id=extra['submission_id'])
-                print(f"[SOL] Cleaned up {len(all_my_subs)-1} duplicate submission(s) for user {current_uid}")
             
             # Update Invite Status
             update('sol_invites', {
@@ -945,7 +952,7 @@ def receiver_respond(invite_id):
                 'responded_at': datetime.now().isoformat()
             }, invite_id=invite_id)
             
-            # Update Display Status to 'active' so it's accessible
+            # Update Display Status to 'active'
             update('sol_displays', {'status': 'active'}, display_id=display_id)
 
             # Notify Sender
@@ -955,15 +962,11 @@ def receiver_respond(invite_id):
                 'message': f"Your partner responded to your Slice of Life!",
                 'link': url_for('slice_of_life.review', display_id=display_id)
             })
-            
-            return redirect(url_for('slice_of_life.review', display_id=display_id))
+        except Exception as post_err:
+            print(f"[SOL] Non-critical post-submission step failed for invite {invite_id}: {post_err}")
         
-        except Exception as e:
-            import traceback
-            print(f"[SOL] receiver_respond POST error for invite {invite_id}: {e}")
-            traceback.print_exc()
-            flash(f"Error submitting response: {str(e)}", "danger")
-            return redirect(url_for('slice_of_life.receiver_respond', invite_id=invite_id))
+        # Always redirect to review after successful submission
+        return redirect(url_for('slice_of_life.review', display_id=display_id))
     
     return render_template('slice_of_life/receiver_respond.html', 
                          invite=invite, 
