@@ -110,7 +110,7 @@ CREATE TABLE IF NOT EXISTS sol_submissions (
     submission_id SERIAL PRIMARY KEY,
     display_id INTEGER NOT NULL,
     user_id INTEGER NOT NULL,
-    image_url VARCHAR(255),
+    image_url TEXT,
     thought TEXT,
     comment TEXT,
     submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
