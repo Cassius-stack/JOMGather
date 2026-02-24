@@ -35,19 +35,27 @@ def get_current_username():
 @login_required
 def jukebox_page():
     """Main jukebox page with spinning wheel."""
-    # Always find Musicly community dynamically
     try:
         musicly = supabase.table('communities').select('community_id').eq('name', 'Musicly').execute()
         if musicly.data and len(musicly.data) > 0:
             community_id = musicly.data[0]['community_id']
         else:
-            # Fallback if Musicly doesn't exist
             community_id = 2
     except Exception as e:
         print(f"Error finding Musicly: {e}")
         community_id = 2
-    
-    return render_template('jukebox/juke.html', community_id=community_id)
+
+    # Get current user's type so the template knows which wheel to show
+    user_id = get_current_user_id()
+    user_type = 'youth'  # default
+    try:
+        user_row = fetch_one('users', 'user_type', user_id=user_id)
+        if user_row:
+            user_type = user_row.get('user_type', 'youth')
+    except Exception as e:
+        print(f"Error fetching user type: {e}")
+
+    return render_template('jukebox/juke.html', community_id=community_id, user_type=user_type)
 
 
 # ============================================
@@ -73,59 +81,58 @@ def get_songs(community_id):
 @login_required
 def spin_wheel():
     """
-    Spin the wheel and get a random song.
-    FOR DEMO: Shows all songs regardless of user type.
+    Spin the wheel and get a random song from the OPPOSITE generation.
+    Seniors spin to discover youth songs; youth spin to discover senior songs.
     """
     try:
         data = request.get_json()
         community_id = data.get('community_id')
-        
+        wheel = data.get('wheel')  # 'youth' or 'senior' - which generation's songs to fetch
+
         if not community_id:
             return jsonify({'success': False, 'error': 'Community ID required'}), 400
-        
-        # FOR DEMO: Get all songs (no filtering by user type)
-        # This allows demonstration even without proper senior/youth users
-        songs = get_songs_from_channel(community_id, user_type_filter=None)
-        
-        # ORIGINAL CODE (for production with real senior/youth users):
-        # Get current user's info
-        # user_id = get_current_user_id()
-        # user = fetch_one('users', 'user_id, user_type', user_id=user_id)
-        
-        # if not user:
-        #     return jsonify({'success': False, 'error': 'User not found'}), 404
-        
-        # current_user_type = user.get('user_type', '')
-        
-        # Determine which songs to show (opposite generation)
-        # if current_user_type == 'senior':
-        #     # Seniors see youth songs
-        #     filter_type = 'youth'
-        # elif current_user_type == 'youth':
-        #     # Youth see senior songs
-        #     filter_type = 'senior'
-        # else:
-        #     # Default: show all songs
-        #     filter_type = None
-        
-        # Get songs from channel filtered by opposite user type
-        # songs = get_songs_from_channel(community_id, user_type_filter=filter_type)
-        
+
+        # Get current user's type to determine which songs they should see
+        user_id = get_current_user_id()
+        user = fetch_one('users', 'user_id, user_type', user_id=user_id)
+
+        if user:
+            current_user_type = user.get('user_type', '')
+        else:
+            current_user_type = ''
+
+        # Determine filter: show songs from the OPPOSITE generation
+        # If wheel param is specified, use that; otherwise auto-detect from user type
+        if wheel:
+            filter_type = wheel
+        elif current_user_type == 'senior':
+            filter_type = 'youth'
+        elif current_user_type == 'youth':
+            filter_type = 'senior'
+        else:
+            filter_type = None  # Show all if type is unknown
+
+        songs = get_songs_from_channel(community_id, user_type_filter=filter_type)
+
+        if not songs:
+            # Fallback: try all songs if no filtered songs found
+            songs = get_songs_from_channel(community_id, user_type_filter=None)
+
         if not songs:
             return jsonify({
-                'success': False, 
+                'success': False,
                 'error': 'No songs found in the recommendations channel. Try adding some songs first!'
             }), 404
-        
-        # Pick a random song
+
         selected_song = random.choice(songs)
-        
+
         return jsonify({
             'success': True,
             'song': selected_song,
-            'allSongs': songs  # Return all songs for wheel display
+            'allSongs': songs,
+            'filterType': filter_type
         })
-        
+
     except Exception as e:
         print(f"Error in spin_wheel: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500

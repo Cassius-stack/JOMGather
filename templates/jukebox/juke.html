@@ -9,6 +9,8 @@
         --neon-pink: #bc13fe;
         --deep-bg: #1a1a2e;
         --card-bg: #16213e;
+        --youth-color: #ff6b6b;
+        --senior-color: #54a0ff;
     }
 
     body {
@@ -21,31 +23,116 @@
         flex-direction: column;
         align-items: center;
         min-height: 80vh;
-        padding: 2rem;
+        padding: 2rem 1rem;
     }
 
-    /* Wheel Styles */
+    .jukebox-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    .user-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 20px;
+        padding: 6px 16px;
+        font-size: 0.9rem;
+        margin-top: 0.5rem;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .user-badge.youth {
+        border-color: var(--youth-color);
+        color: var(--youth-color);
+    }
+
+    .user-badge.senior {
+        border-color: var(--senior-color);
+        color: var(--senior-color);
+    }
+
+    /* Single-Wheel Layout */
+    .wheels-grid {
+        display: flex;
+        justify-content: center;
+        width: 100%;
+        max-width: 500px;
+        margin-bottom: 2rem;
+    }
+
+    @media (max-width: 700px) {
+        .wheels-grid {
+            grid-template-columns: 1fr;
+            gap: 2rem;
+        }
+    }
+
+    .wheel-section {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .wheel-label {
+        font-size: 1.1rem;
+        font-weight: 700;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        margin-bottom: 0.5rem;
+        padding: 6px 18px;
+        border-radius: 20px;
+    }
+
+    .wheel-label.youth-label {
+        background: rgba(255, 107, 107, 0.15);
+        color: var(--youth-color);
+        border: 1px solid var(--youth-color);
+    }
+
+    .wheel-label.senior-label {
+        background: rgba(84, 160, 255, 0.15);
+        color: var(--senior-color);
+        border: 1px solid var(--senior-color);
+    }
+
+    .wheel-sublabel {
+        font-size: 0.8rem;
+        color: #aaa;
+        margin-bottom: 1rem;
+        font-style: italic;
+    }
+
     .wheel-container {
         position: relative;
-        width: 350px;
-        height: 350px;
-        margin: 2rem 0;
+        width: 280px;
+        height: 280px;
+        margin: 0 auto 1.5rem;
     }
 
     .wheel {
         width: 100%;
         height: 100%;
         border-radius: 50%;
-        border: 10px solid #fff;
+        border: 8px solid #fff;
         position: relative;
         transition: transform 4s cubic-bezier(0.17, 0.67, 0.12, 0.99);
-        background: conic-gradient(#ff6b6b 0 60deg,
-                #feca57 60deg 120deg,
-                #48dbfb 120deg 180deg,
-                #ff9ff3 180deg 240deg,
-                #54a0ff 240deg 300deg,
-                #1dd1a1 300deg 360deg);
-        box-shadow: 0 0 20px rgba(0, 243, 255, 0.5);
+        box-shadow: 0 0 20px rgba(0, 243, 255, 0.4);
+    }
+
+    .wheel.youth-wheel {
+        background: conic-gradient(#ff6b6b 0 60deg, #feca57 60deg 120deg,
+                #ff9ff3 120deg 180deg, #ff6348 180deg 240deg,
+                #ff4757 240deg 300deg, #eccc68 300deg 360deg);
+        box-shadow: 0 0 20px rgba(255, 107, 107, 0.5);
+    }
+
+    .wheel.senior-wheel {
+        background: conic-gradient(#54a0ff 0 60deg, #48dbfb 60deg 120deg,
+                #1dd1a1 120deg 180deg, #00d2d3 180deg 240deg,
+                #5f27cd 240deg 300deg, #2e86de 300deg 360deg);
+        box-shadow: 0 0 20px rgba(84, 160, 255, 0.5);
     }
 
     .wheel-center {
@@ -53,64 +140,81 @@
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
-        width: 60px;
-        height: 60px;
+        width: 52px;
+        height: 52px;
         background: white;
         border-radius: 50%;
         z-index: 100;
-        box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.5rem;
+        font-size: 1.3rem;
     }
 
     .wheel-arrow {
         position: absolute;
-        top: -20px;
+        top: -18px;
         left: 50%;
         transform: translateX(-50%);
         width: 0;
         height: 0;
-        border-left: 20px solid transparent;
-        border-right: 20px solid transparent;
-        border-top: 40px solid white;
+        border-left: 16px solid transparent;
+        border-right: 16px solid transparent;
+        border-top: 32px solid white;
         z-index: 10;
         filter: drop-shadow(0 4px 4px rgba(0, 0, 0, 0.5));
     }
 
     .spin-btn {
-        margin-top: 2rem;
-        padding: 1rem 3rem;
-        font-size: 1.5rem;
+        padding: 0.8rem 2rem;
+        font-size: 1.1rem;
         font-weight: bold;
-        background: linear-gradient(45deg, var(--neon-pink), var(--neon-blue));
         border: none;
         border-radius: 50px;
         color: white;
         cursor: pointer;
         transition: transform 0.2s, box-shadow 0.2s;
-        box-shadow: 0 0 15px rgba(188, 19, 254, 0.5);
+        width: 100%;
+        max-width: 260px;
+    }
+
+    .spin-btn.youth-btn {
+        background: linear-gradient(45deg, #ff6b6b, #feca57);
+        box-shadow: 0 0 15px rgba(255, 107, 107, 0.5);
+    }
+
+    .spin-btn.senior-btn {
+        background: linear-gradient(45deg, var(--senior-color), var(--neon-blue));
+        box-shadow: 0 0 15px rgba(84, 160, 255, 0.5);
     }
 
     .spin-btn:hover {
         transform: scale(1.05);
-        box-shadow: 0 0 25px rgba(188, 19, 254, 0.8);
     }
 
     .spin-btn:disabled {
         opacity: 0.5;
         cursor: not-allowed;
+        transform: none;
     }
 
-    /* Song Card Result */
+    .loading-text {
+        color: #aaa;
+        margin-top: 0.5rem;
+        font-style: italic;
+        font-size: 0.85rem;
+        min-height: 20px;
+        text-align: center;
+    }
+
+    /* Song Result Card */
     .song-result {
-        margin-top: 2rem;
+        margin-top: 1.5rem;
         background: var(--card-bg);
         border-radius: 15px;
-        padding: 2rem;
+        padding: 1.5rem;
         width: 100%;
-        max-width: 500px;
+        max-width: 280px;
         text-align: center;
         opacity: 0;
         transform: translateY(20px);
@@ -125,35 +229,51 @@
         display: block;
     }
 
+    .song-result.youth-card {
+        border-color: rgba(255, 107, 107, 0.4);
+    }
+
+    .song-result.senior-card {
+        border-color: rgba(84, 160, 255, 0.4);
+    }
+
     .song-source-icon {
-        font-size: 2rem;
-        margin-bottom: 1rem;
+        font-size: 1.8rem;
+        margin-bottom: 0.7rem;
     }
 
     .song-title {
-        font-size: 1.5rem;
-        margin-bottom: 0.5rem;
+        font-size: 1.2rem;
+        margin-bottom: 0.4rem;
         color: var(--neon-blue);
+        font-weight: 600;
+    }
+
+    .song-artist {
+        color: #ccc;
+        font-size: 0.9rem;
+        margin-bottom: 0.3rem;
     }
 
     .song-recommender {
         color: #aaa;
         font-style: italic;
-        margin-bottom: 1.5rem;
+        font-size: 0.85rem;
+        margin-bottom: 1rem;
     }
 
     /* Rating Stars */
     .rating-container {
         display: flex;
         justify-content: center;
-        gap: 0.5rem;
-        margin: 1.5rem 0;
+        gap: 0.3rem;
+        margin: 1rem 0;
     }
 
     .star-btn {
         background: none;
         border: none;
-        font-size: 2rem;
+        font-size: 1.6rem;
         color: #444;
         cursor: pointer;
         transition: color 0.2s;
@@ -164,235 +284,312 @@
         color: #ffd700;
     }
 
-    .loading-text {
-        color: #aaa;
-        margin-top: 1rem;
-        font-style: italic;
-        display: none;
+    /* "My Wheel" highlight */
+    .wheel-section.my-wheel .wheel-label {
+        font-size: 1.2rem;
     }
 
-    .history-section {
-        margin-top: 4rem;
-        width: 100%;
-        max-width: 800px;
+    .wheel-section.my-wheel .wheel-container {
+        width: 310px;
+        height: 310px;
     }
 
-    /* Song List Styles */
-    .song-list-container {
-        max-width: 800px;
-        width: 100%;
-        margin: 0 auto;
+    .my-wheel-badge {
+        background: linear-gradient(45deg, var(--neon-pink), var(--neon-blue));
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        display: block;
+        margin-bottom: 4px;
     }
 
-    .song-list {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-        gap: 1rem;
-    }
-
-    .song-item {
-        background: var(--card-bg);
+    .songs-count-badge {
+        display: inline-block;
+        font-size: 0.75rem;
+        background: rgba(255, 255, 255, 0.1);
         border-radius: 12px;
-        padding: 1.2rem;
-        border: 2px solid rgba(255, 255, 255, 0.1);
-        transition: all 0.3s ease;
-    }
-
-    .song-item:hover {
-        transform: translateY(-4px);
-        border-color: var(--neon-blue);
-        box-shadow: 0 4px 12px rgba(0, 243, 255, 0.3);
-    }
-
-    .song-item-title {
-        font-size: 1.1rem;
-        font-weight: 600;
-        color: var(--neon-blue);
+        padding: 2px 10px;
         margin-bottom: 0.5rem;
-    }
-
-    .song-item-artist {
-        color: #aaa;
-        margin-bottom: 0.5rem;
-    }
-
-    .song-item-recommender {
-        font-size: 0.85rem;
-        color: #888;
-        font-style: italic;
+        color: #ccc;
     }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="jukebox-container">
-    <div class="text-center mb-4">
-        <h1 class="display-4 fw-bold">Generational Jukebox</h1>
-        <p class="lead text-light">Spin the wheel to discover songs shared by your community!</p>
-    </div>
-
-    <div class="wheel-container">
-        <div class="wheel-arrow"></div>
-        <div class="wheel" id="wheel"></div>
-    </div>
-
-    <button id="spinBtn" class="spin-btn">SPIN THE WHEEL!</button>
-    <div id="loadingText" class="loading-text">Selecting a song from the archives...</div>
-
-    <!-- Result Card -->
-    <div id="resultCard" class="song-result">
-        <div id="sourceIcon" class="song-source-icon">🎵</div>
-        <h2 id="songTitle" class="song-title">Song Title</h2>
-        <p class="song-recommender">Recommended by <span id="recommenderName">User</span></p>
-
-        <div class="mb-4">
-            <a id="songLink" href="#" target="_blank" class="btn btn-outline-light rounded-pill px-4">
-                <i class="bi bi-play-fill"></i> Listen Now
-            </a>
+    <div class="jukebox-header">
+        <h1 class="display-4 fw-bold">🎵 Generational Jukebox</h1>
+        <p class="lead text-light">Discover music from a different generation!</p>
+        <div class="user-badge {{ user_type }}">
+            <i class="bi bi-person-circle"></i>
+            You are a <strong>{{ user_type | capitalize }}</strong>
+            {% if user_type == 'youth' %}
+            — spin to discover <strong>Senior songs</strong> 🎷
+            {% else %}
+            — spin to discover <strong>Youth songs</strong> 🎸
+            {% endif %}
         </div>
+    </div>
 
-        <div class="rating-section" id="ratingSection">
-            <p>Rate this song:</p>
-            <div class="rating-container">
-                <button class="star-btn" data-rating="1">★</button>
-                <button class="star-btn" data-rating="2">★</button>
-                <button class="star-btn" data-rating="3">★</button>
-                <button class="star-btn" data-rating="4">★</button>
-                <button class="star-btn" data-rating="5">★</button>
+    <div class="wheels-grid">
+
+        {% if user_type == 'senior' %}
+        <!-- Senior users spin the Youth Songs wheel -->
+        <div class="wheel-section my-wheel" id="youth-section">
+            <span class="my-wheel-badge">✨ Your Discovery Wheel</span>
+            <div class="wheel-label youth-label">🎸 Youth Songs</div>
+            <div class="wheel-sublabel">Songs recommended by the younger generation</div>
+
+            <div class="wheel-container">
+                <div class="wheel-arrow"></div>
+                <div class="wheel youth-wheel" id="youthWheel">
+                    <div class="wheel-center">🎸</div>
+                </div>
             </div>
-            <button id="submitRating" class="btn btn-sm btn-primary mt-2" disabled>Submit Rating</button>
-        </div>
-        <div id="ratingSuccess" class="text-success mt-2" style="display: none;">
-            <i class="bi bi-check-circle"></i> Rating submitted!
-        </div>
-    </div>
 
+            <button id="youthSpinBtn" class="spin-btn youth-btn">SPIN THE WHEEL!</button>
+            <div id="youthLoadingText" class="loading-text"></div>
+
+            <div id="youthResultCard" class="song-result youth-card">
+                <div class="song-source-icon">🎸</div>
+                <h2 id="youthSongTitle" class="song-title">–</h2>
+                <p id="youthSongArtist" class="song-artist"></p>
+                <p class="song-recommender">Recommended by <span id="youthRecommenderName">–</span></p>
+                <div class="mb-3">
+                    <a id="youthSongLink" href="#" target="_blank"
+                        class="btn btn-outline-light btn-sm rounded-pill px-3">
+                        <i class="bi bi-play-fill"></i> Listen on YouTube
+                    </a>
+                </div>
+                <div id="youthRatingSection">
+                    <p style="font-size:0.85rem; color:#aaa;">Rate this song:</p>
+                    <div class="rating-container" id="youthStarsContainer"></div>
+                    <button id="youthSubmitRating" class="btn btn-sm btn-primary mt-1" disabled>Submit Rating</button>
+                </div>
+                <div id="youthRatingSuccess" class="text-success mt-2" style="display:none;">
+                    <i class="bi bi-check-circle"></i> Rating submitted!
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if user_type == 'youth' %}
+        <!-- Youth users spin the Senior Songs wheel -->
+        <div class="wheel-section my-wheel" id="senior-section">
+            <span class="my-wheel-badge">✨ Your Discovery Wheel</span>
+            <div class="wheel-label senior-label">🎷 Senior Songs</div>
+            <div class="wheel-sublabel">Songs recommended by the older generation</div>
+
+            <div class="wheel-container">
+                <div class="wheel-arrow"></div>
+                <div class="wheel senior-wheel" id="seniorWheel">
+                    <div class="wheel-center">🎷</div>
+                </div>
+            </div>
+
+            <button id="seniorSpinBtn" class="spin-btn senior-btn">SPIN THE WHEEL!</button>
+            <div id="seniorLoadingText" class="loading-text"></div>
+
+            <div id="seniorResultCard" class="song-result senior-card">
+                <div class="song-source-icon">🎷</div>
+                <h2 id="seniorSongTitle" class="song-title">–</h2>
+                <p id="seniorSongArtist" class="song-artist"></p>
+                <p class="song-recommender">Recommended by <span id="seniorRecommenderName">–</span></p>
+                <div class="mb-3">
+                    <a id="seniorSongLink" href="#" target="_blank"
+                        class="btn btn-outline-light btn-sm rounded-pill px-3">
+                        <i class="bi bi-play-fill"></i> Listen on YouTube
+                    </a>
+                </div>
+                <div id="seniorRatingSection">
+                    <p style="font-size:0.85rem; color:#aaa;">Rate this song:</p>
+                    <div class="rating-container" id="seniorStarsContainer"></div>
+                    <button id="seniorSubmitRating" class="btn btn-sm btn-primary mt-1" disabled>Submit Rating</button>
+                </div>
+                <div id="seniorRatingSuccess" class="text-success mt-2" style="display:none;">
+                    <i class="bi bi-check-circle"></i> Rating submitted!
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+    </div><!-- /.wheels-grid -->
+
+    <p class="text-muted" style="font-size: 0.8rem; margin-top: 0.5rem;">
+        💡 Songs come from the <a href="/social/community" style="color: var(--neon-blue);">#song-recommendations</a>
+        channel in the Musicly community.
+    </p>
 </div>
 
 <script>
     const communityId = {{ community_id | default (2) }};
-    const spinBtn = document.getElementById('spinBtn');
-    const wheel = document.getElementById('wheel');
-    const resultCard = document.getElementById('resultCard');
-    const loadingText = document.getElementById('loadingText');
+    const userType = "{{ user_type | default('youth') }}";
 
-    let currentRotation = 0;
-    let currentSongId = null;
+    // ─── Wheel state ──────────────────────────────────────────
+    const wheelState = {
+        youth: { rotation: 0, currentSongId: null, currentRating: 0 },
+        senior: { rotation: 0, currentSongId: null, currentRating: 0 }
+    };
 
-    spinBtn.addEventListener('click', async () => {
+    // ─── Build star buttons ───────────────────────────────────
+    function buildStars(containerId, submitBtnId, generation) {
+        const container = document.getElementById(containerId);
+        for (let i = 1; i <= 5; i++) {
+            const btn = document.createElement('button');
+            btn.className = 'star-btn';
+            btn.dataset.rating = i;
+            btn.textContent = '★';
+            btn.addEventListener('click', () => {
+                wheelState[generation].currentRating = i;
+                updateStars(containerId, i);
+                document.getElementById(submitBtnId).disabled = false;
+            });
+            container.appendChild(btn);
+        }
+    }
+
+    function updateStars(containerId, rating) {
+        document.querySelectorAll(`#${containerId} .star-btn`).forEach(s => {
+            s.classList.toggle('active', parseInt(s.dataset.rating) <= rating);
+        });
+    }
+
+    // Only build stars for whichever wheel is actually in the DOM
+    if (document.getElementById('youthStarsContainer')) {
+        buildStars('youthStarsContainer', 'youthSubmitRating', 'youth');
+    }
+    if (document.getElementById('seniorStarsContainer')) {
+        buildStars('seniorStarsContainer', 'seniorSubmitRating', 'senior');
+    }
+
+    // ─── Spin logic ───────────────────────────────────────────
+    async function spin(generation) {
+        const ids = {
+            youth: {
+                wheel: 'youthWheel', btn: 'youthSpinBtn', loading: 'youthLoadingText',
+                card: 'youthResultCard', title: 'youthSongTitle', artist: 'youthSongArtist',
+                recommender: 'youthRecommenderName', link: 'youthSongLink',
+                ratingSection: 'youthRatingSection', ratingSuccess: 'youthRatingSuccess',
+                submitBtn: 'youthSubmitRating'
+            },
+            senior: {
+                wheel: 'seniorWheel', btn: 'seniorSpinBtn', loading: 'seniorLoadingText',
+                card: 'seniorResultCard', title: 'seniorSongTitle', artist: 'seniorSongArtist',
+                recommender: 'seniorRecommenderName', link: 'seniorSongLink',
+                ratingSection: 'seniorRatingSection', ratingSuccess: 'seniorRatingSuccess',
+                submitBtn: 'seniorSubmitRating'
+            }
+        };
+        const el = ids[generation];
+
         // Reset UI
-        resultCard.classList.remove('show');
-        spinBtn.disabled = true;
-        loadingText.style.display = 'block';
-        document.getElementById('ratingSection').style.display = 'block';
-        document.getElementById('ratingSuccess').style.display = 'none';
+        document.getElementById(el.card).classList.remove('show');
+        document.getElementById(el.btn).disabled = true;
+        document.getElementById(el.loading).textContent = 'Selecting a song...';
+        document.getElementById(el.ratingSection).style.display = 'block';
+        document.getElementById(el.ratingSuccess).style.display = 'none';
+        document.getElementById(el.submitBtn).disabled = true;
+        wheelState[generation].currentRating = 0;
+        updateStars(generation === 'youth' ? 'youthStarsContainer' : 'seniorStarsContainer', 0);
 
         try {
-            // 1. Get a random song from API
-            const response = await fetch('/jukebox/api/spin', {
+            const res = await fetch('/jukebox/api/spin', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ community_id: communityId })
+                body: JSON.stringify({ community_id: communityId, wheel: generation })
             });
-
-            const data = await response.json();
+            const data = await res.json();
 
             if (!data.success) {
                 alert(data.error || 'Failed to spin wheel');
-                spinBtn.disabled = false;
-                loadingText.style.display = 'none';
+                document.getElementById(el.btn).disabled = false;
+                document.getElementById(el.loading).textContent = '';
                 return;
             }
 
-            // 2. Animate Wheel
-            const spins = 5; // Minimum full rotations
-            const degrees = spins * 360 + Math.floor(Math.random() * 360);
-            currentRotation += degrees;
-            wheel.style.transform = `rotate(${currentRotation}deg)`;
+            // Animate wheel
+            const degrees = 5 * 360 + Math.floor(Math.random() * 360);
+            wheelState[generation].rotation += degrees;
+            document.getElementById(el.wheel).style.transform =
+                `rotate(${wheelState[generation].rotation}deg)`;
 
-            // 3. Wait for animation
             setTimeout(() => {
-                showResult(data.song);
-                spinBtn.disabled = false;
-                loadingText.style.display = 'none';
+                showResult(generation, el, data.song);
+                document.getElementById(el.btn).disabled = false;
+                document.getElementById(el.loading).textContent = '';
             }, 4000);
 
-        } catch (error) {
-            console.error('Error:', error);
+        } catch (err) {
+            console.error(err);
             alert('Something went wrong. Please try again.');
-            spinBtn.disabled = false;
-            loadingText.style.display = 'none';
+            document.getElementById(el.btn).disabled = false;
+            document.getElementById(el.loading).textContent = '';
         }
-    });
-
-    function showResult(song) {
-        currentSongId = song.id;
-
-        // Update Content
-        document.getElementById('songTitle').textContent = song.title;
-        document.getElementById('recommenderName').textContent = song.userName;
-
-        // Create YouTube search URL
-        const searchQuery = encodeURIComponent(`${song.title} ${song.artist}`);
-        const youtubeUrl = `https://www.youtube.com/results?search_query=${searchQuery}`;
-        document.getElementById('songLink').href = youtubeUrl;
-
-        // Set Icon
-        const iconDiv = document.getElementById('sourceIcon');
-        if (song.source === 'youtube') iconDiv.innerHTML = '<i class="bi bi-youtube text-danger"></i>';
-        else if (song.source === 'spotify') iconDiv.innerHTML = '<i class="bi bi-spotify text-success"></i>';
-        else iconDiv.innerHTML = '🎵';
-
-        // Show Card
-        resultCard.classList.add('show');
     }
 
-    // Rating Logic
-    let currentRating = 0;
-    const stars = document.querySelectorAll('.star-btn');
-    const submitRatingBtn = document.getElementById('submitRating');
+    function showResult(generation, el, song) {
+        wheelState[generation].currentSongId = song.id;
 
-    stars.forEach(star => {
-        star.addEventListener('click', () => {
-            currentRating = parseInt(star.dataset.rating);
-            updateStars(currentRating);
-            submitRatingBtn.disabled = false;
-        });
-    });
+        document.getElementById(el.title).textContent = song.title;
+        document.getElementById(el.artist).textContent = song.artist ? `by ${song.artist}` : '';
+        document.getElementById(el.recommender).textContent = song.userName || 'Unknown';
 
-    function updateStars(rating) {
-        stars.forEach(s => {
-            if (parseInt(s.dataset.rating) <= rating) s.classList.add('active');
-            else s.classList.remove('active');
-        });
+        const query = encodeURIComponent(`${song.title} ${song.artist || ''}`);
+        document.getElementById(el.link).href =
+            `https://www.youtube.com/results?search_query=${query}`;
+
+        document.getElementById(el.card).classList.add('show');
     }
 
-    submitRatingBtn.addEventListener('click', async () => {
-        if (!currentSongId || !currentRating) return;
+    // ─── Wire spin buttons (only for the wheel present in the DOM) ──────
+    const youthSpinBtn = document.getElementById('youthSpinBtn');
+    const seniorSpinBtn = document.getElementById('seniorSpinBtn');
+    if (youthSpinBtn) youthSpinBtn.addEventListener('click', () => spin('youth'));
+    if (seniorSpinBtn) seniorSpinBtn.addEventListener('click', () => spin('senior'));
+
+    // ─── Submit rating ────────────────────────────────────────
+    async function submitRating(generation) {
+        const songId = wheelState[generation].currentSongId;
+        const rating = wheelState[generation].currentRating;
+        const ids = {
+            youth: { title: 'youthSongTitle', section: 'youthRatingSection', success: 'youthRatingSuccess', btn: 'youthSubmitRating' },
+            senior: { title: 'seniorSongTitle', section: 'seniorRatingSection', success: 'seniorRatingSuccess', btn: 'seniorSubmitRating' }
+        };
+        const el = ids[generation];
+
+        if (!songId || !rating) return;
 
         try {
-            const response = await fetch('/jukebox/api/rate', {
+            const res = await fetch('/jukebox/api/rate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     community_id: communityId,
-                    song_id: currentSongId,
-                    song_title: document.getElementById('songTitle').textContent,
-                    rating: currentRating
+                    song_id: songId,
+                    song_title: document.getElementById(el.title).textContent,
+                    rating
                 })
             });
-
-            const data = await response.json();
+            const data = await res.json();
             if (data.success) {
-                document.getElementById('ratingSection').style.display = 'none';
-                document.getElementById('ratingSuccess').style.display = 'block';
+                document.getElementById(el.section).style.display = 'none';
+                document.getElementById(el.success).style.display = 'block';
             } else {
-                alert(data.error);
+                alert(data.error || 'Failed to submit rating');
             }
-        } catch (error) {
-            console.error(error);
+        } catch (err) {
+            console.error(err);
             alert('Failed to submit rating');
         }
-    });
+    }
+
+    const youthSubmitBtn = document.getElementById('youthSubmitRating');
+    const seniorSubmitBtn = document.getElementById('seniorSubmitRating');
+    if (youthSubmitBtn) youthSubmitBtn.addEventListener('click', () => submitRating('youth'));
+    if (seniorSubmitBtn) seniorSubmitBtn.addEventListener('click', () => submitRating('senior'));
 </script>
 {% endblock %}

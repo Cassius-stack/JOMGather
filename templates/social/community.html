@@ -969,6 +969,7 @@
         activeChannelId: null,
         activeTab: 'channels',
         messageText: '',
+        isLoadingMessages: false,
         showAddChannel: false,
         showAddCommunity: false,
         showBrowseCommunities: false,
@@ -1140,6 +1141,52 @@
             render();
         } catch (error) {
             console.error('Error deleting channel:', error);
+        }
+    }
+
+    const SONG_FORMAT_TEMPLATE = `Song Name: 
+Artist: 
+Year Released: 
+Why they like this song: `;
+
+    function isSongChannel(channel) {
+        if (!channel) return false;
+        const name = (channel.name || '').toLowerCase();
+        return name.includes('song') && name.includes('recommend');
+    }
+
+    async function selectChannel(channelId) {
+        // If switching to a new channel, reset message text
+        if (state.activeChannelId !== channelId) {
+            state.messageText = '';
+        }
+        state.activeChannelId = channelId;
+        state.isLoadingMessages = true;
+        render();
+
+        try {
+            const res = await fetch(
+                `${API_BASE}/communities/${state.activeCommunityId}/channels/${channelId}/messages`
+            );
+            if (!res.ok) throw new Error('Failed to load messages');
+            const messages = await res.json();
+
+            // Store messages in the channel object in state
+            const community = state.communities.find(c => c.id === state.activeCommunityId);
+            const channel = community?.channels?.find(ch => ch.id === channelId);
+            if (channel) {
+                channel.messages = messages;
+                // Pre-fill template if it's a song channel and input is empty
+                if (isSongChannel(channel) && !state.messageText.trim()) {
+                    state.messageText = SONG_FORMAT_TEMPLATE;
+                }
+            }
+        } catch (err) {
+            console.error('Error loading messages:', err);
+        } finally {
+            state.isLoadingMessages = false;
+            render();
+            scrollToBottom();
         }
     }
 
@@ -1530,7 +1577,7 @@
             <ul class="channel-list">
                 ${channels.map(ch => `
                     <li class="channel-item ${ch.id === state.activeChannelId ? 'active' : ''}"
-                        onclick="state.activeChannelId = ${ch.id}; render();">
+                        onclick="selectChannel(${ch.id});">
                         <div class="channel-icon">
                             <i class="bi ${ch.isAnnouncement ? 'bi-megaphone' : 'bi-hash'}"></i>
                         </div>
@@ -1547,40 +1594,67 @@
     }
 
     function renderMembers(community) {
-        const admins = community.admins || [];
-        const moderators = community.moderators || [];
+        const admins = new Set(community.admins || []);
+        const moderators = new Set(community.moderators || []);
+        const memberList = community.memberList || [];
+
+        // Sort: admins first, then mods, then regular members, then self at top
+        const sorted = [...memberList].sort((a, b) => {
+            const rankA = a.id === CURRENT_USER_ID ? 0 : admins.has(a.id) ? 1 : moderators.has(a.id) ? 2 : 3;
+            const rankB = b.id === CURRENT_USER_ID ? 0 : admins.has(b.id) ? 1 : moderators.has(b.id) ? 2 : 3;
+            return rankA - rankB;
+        });
+
+        const roleLabel = (id) => {
+            if (admins.has(id)) return '<span style="font-size:10px; background:#fef3c7; color:#92400e; padding:2px 6px; border-radius:10px; font-weight:600;">Admin</span>';
+            if (moderators.has(id)) return '<span style="font-size:10px; background:#eff6ff; color:#1d4ed8; padding:2px 6px; border-radius:10px; font-weight:600;">Mod</span>';
+            return '';
+        };
+
+        const typeLabel = (t) => {
+            if (t === 'youth') return '🟢';
+            if (t === 'senior') return '🔵';
+            return '';
+        };
+
+        const rows = sorted.map(m => {
+            const isSelf = m.id === CURRENT_USER_ID;
+            const initial = (m.username || 'U')[0].toUpperCase();
+            const clickable = !isSelf ? `cursor:pointer;` : '';
+            const onClick = !isSelf
+                ? `onclick="showUserPopup(${m.id}, '${(m.username || 'User').replace(/'/g, "\\'")}', event); event.stopPropagation();"`
+                : '';
+            return `
+                <div style="display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid #f3f4f6;" ${onClick}>
+                    <div style="width:34px; height:34px; border-radius:50%; background: linear-gradient(135deg,#667eea,#764ba2);
+                                color:#fff; display:flex; align-items:center; justify-content:center;
+                                font-weight:700; font-size:14px; flex-shrink:0; ${clickable}">
+                        ${initial}
+                    </div>
+                    <div style="flex:1; min-width:0;">
+                        <div style="font-size:14px; font-weight:500; ${clickable}">
+                            ${m.username}${isSelf ? ' <span style="color:#888; font-size:12px;">(You)</span>' : ''}
+                            ${typeLabel(m.userType)}
+                        </div>
+                    </div>
+                    ${roleLabel(m.id)}
+                </div>
+            `;
+        }).join('');
+
         return `
-            <div style="padding: 16px; overflow-y: auto; flex-grow: 1;">
-                <div style="margin-bottom: 16px;">
-                    <h4 style="font-size: 12px; text-transform: uppercase; color: #888; margin-bottom: 8px;">
-                        Admins (${admins.length})
-                    </h4>
-                    ${admins.map(id => `
-                        <div style="display: flex; align-items: center; gap: 10px; padding: 8px 0;">
-                            <div style="width: 32px; height: 32px; background: #fbbf24; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600;">
-                                ${id === CURRENT_USER_ID ? 'Y' : 'A'}
-                            </div>
-                            <span style="font-size: 14px;">${id === CURRENT_USER_ID ? 'You' : `User ${id}`}</span>
-                        </div>
-                    `).join('')}
-                </div>
-                ${moderators.length > 0 ? `
-                <div>
-                    <h4 style="font-size: 12px; text-transform: uppercase; color: #888; margin-bottom: 8px;">
-                        Moderators (${moderators.length})
-                    </h4>
-                    ${moderators.map(id => `
-                        <div style="display: flex; align-items: center; gap: 10px; padding: 8px 0;">
-                            <div style="width: 32px; height: 32px; background: #3b82f6; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600;">M</div>
-                            <span style="font-size: 14px;">${id === CURRENT_USER_ID ? 'You' : `User ${id}`}</span>
-                        </div>
-                    `).join('')}
-                </div>
-                ` : ''}
-                <p style="font-size: 12px; color: #888; text-align: center; margin-top: 16px;">Total: ${community.members} members</p>
+            <div style="padding:16px; overflow-y:auto; flex-grow:1;">
+                <h4 style="font-size:12px; text-transform:uppercase; color:#888; margin-bottom:12px; letter-spacing:.05em;">
+                    Members (${memberList.length})
+                </h4>
+                ${rows || '<p style="color:#aaa; font-size:13px; text-align:center; padding:20px;">No members found</p>'}
+                <p style="font-size:11px; color:#ccc; text-align:center; margin-top:12px;">
+                    🟢 Youth &nbsp; 🔵 Senior
+                </p>
             </div>
         `;
     }
+
 
     function renderSelectChannel() {
         return `
@@ -1600,6 +1674,7 @@
         const community = getActiveCommunity();
         const canPost = !channel.isAnnouncement || isUserAdmin();
         const messages = channel.messages || [];
+        const songChannel = isSongChannel(channel);
 
         return `
             <div class="community-chat-area">
@@ -1626,6 +1701,23 @@
                     </div>
                 </div>
 
+                ${songChannel ? `
+                <div style="background: #fef9c3; border-bottom: 1px solid #fde68a; padding: 10px 20px; display: flex; align-items: flex-start; gap: 10px;">
+                    <i class="bi bi-info-circle-fill" style="color: #d97706; font-size: 16px; margin-top: 2px; flex-shrink: 0;"></i>
+                    <div style="font-size: 13px; color: #92400e; line-height: 1.5;">
+                        <strong>🎵 Song Recommendation Format Required:</strong><br>
+                        <code style="background: #fde68a; padding: 2px 6px; border-radius: 4px; font-size: 12px;">
+                            Song Name: &lt;title&gt; | Artist: &lt;artist&gt; | Year Released: &lt;year&gt; | Why they like this song: &lt;reason&gt;
+                        </code>
+                    </div>
+                </div>
+                ` : ''}
+
+                ${state.isLoadingMessages ? `
+                <div class="community-messages" id="messages-container" style="display:flex; align-items:center; justify-content:center;">
+                    <div class="loading-spinner"><div class="spinner"></div></div>
+                </div>
+                ` : `
                 <div class="community-messages" id="messages-container">
                     ${messages.length === 0 ? `
                         <div style="text-align: center; color: #888; padding: 40px;">
@@ -1633,9 +1725,21 @@
                         </div>
                     ` : messages.map(msg => renderMessage(msg)).join('')}
                 </div>
+                `}
 
                 <div class="community-input-area">
                     ${canPost ? `
+                        ${songChannel ? `
+                        <textarea
+                               id="message-input"
+                               placeholder="Song Name: &#10;Artist: &#10;Year Released: &#10;Why they like this song: "
+                               style="flex-grow:1; padding:10px 14px; border:1px solid #e0e0e0; background:#f9f9f9; border-radius:12px; outline:none; font-size:13px; font-family:monospace; resize:none; min-height:80px;"
+                               oninput="state.messageText = this.value;"
+                               onkeydown="if(event.key==='Enter' && event.ctrlKey) sendMessage();">${state.messageText}</textarea>
+                        <button class="send-btn" onclick="sendMessage();" title="Send (Ctrl+Enter)" style="align-self:flex-end;">
+                            <i class="bi bi-send"></i>
+                        </button>
+                        ` : `
                         <input type="text" 
                                id="message-input"
                                placeholder="Type your message..." 
@@ -1645,6 +1749,7 @@
                         <button class="send-btn" onclick="sendMessage();">
                             <i class="bi bi-send"></i>
                         </button>
+                        `}
                     ` : `
                         <div class="announcement-notice" style="width: 100%;">
                             Only admins can post in announcement channels
@@ -1660,6 +1765,12 @@
         const canDelete = isOwn || hasModPermissions();
         const canEdit = isOwn;
         const reactions = Object.entries(msg.reactions || {});
+
+        // Click handler for avatar/username — only for OTHER people's messages
+        const escapedUserName = (msg.userName || 'User').replace(/'/g, "\\'");
+        const userClickHandler = !isOwn
+            ? `onclick="showUserPopup(${msg.userId}, '${escapedUserName}', event); event.stopPropagation();"`
+            : '';
 
         // Message action buttons (edit/delete) - positioned to the left of message
         const actionsHtml = isOwn ? `
@@ -1682,10 +1793,10 @@
         return `
             <div class="community-message ${isOwn ? 'sent' : 'received'}" data-message-id="${msg.id}">
                 ${isOwn ? actionsHtml : ''}
-                <div class="msg-avatar">${(msg.userName || 'U')[0].toUpperCase()}</div>
+                <div class="msg-avatar" style="${!isOwn ? 'cursor:pointer;' : ''}" ${userClickHandler}>${(msg.userName || 'U')[0].toUpperCase()}</div>
                 <div class="msg-content">
                     <div class="msg-meta">
-                        <strong>${msg.userName || 'Unknown'}</strong> · ${formatTime(msg.timestamp)}
+                        <strong style="${!isOwn ? 'cursor:pointer;' : ''}" ${userClickHandler}>${msg.userName || 'Unknown'}</strong> · ${formatTime(msg.timestamp)}
                         ${msg.edited ? '<span class="edited-indicator">(edited)</span>' : ''}
                     </div>
                     <div class="msg-bubble" id="msg-bubble-${msg.id}">${msg.text}</div>
@@ -1857,8 +1968,208 @@
     }
 
     // Initialize
+    // ─── User Profile Popup ───────────────────────────────────────────────────
+
+    function showUserPopup(userId, userName, event) {
+        // Remove any existing popup first
+        closeUserPopup();
+
+        const popup = document.createElement('div');
+        popup.id = 'user-profile-popup';
+        popup.innerHTML = `
+            <div class="upp-header">
+                <div class="upp-avatar">${(userName || 'U')[0].toUpperCase()}</div>
+                <div class="upp-name">${userName}</div>
+            </div>
+            <div class="upp-actions">
+                <button class="upp-btn upp-btn-add" onclick="addFriendFromCommunity(${userId}, '${userName.replace(/'/g, "\\'")}')">  
+                    <i class='bi bi-person-plus-fill'></i> Add Friend
+                </button>
+                <a class="upp-btn upp-btn-view" href="/profile/view/${userId}">
+                    <i class='bi bi-person-fill'></i> View Profile
+                </a>
+            </div>
+        `;
+
+        document.body.appendChild(popup);
+
+        // Position near the click
+        const x = event.clientX;
+        const y = event.clientY + window.scrollY;
+        popup.style.left = Math.min(x, window.innerWidth - 200) + 'px';
+        popup.style.top = (y + 10) + 'px';
+
+        // Dismiss on outside click
+        setTimeout(() => {
+            document.addEventListener('click', closeUserPopupOnOutside);
+        }, 0);
+    }
+
+    function closeUserPopupOnOutside(e) {
+        const popup = document.getElementById('user-profile-popup');
+        if (popup && !popup.contains(e.target)) {
+            closeUserPopup();
+        }
+    }
+
+    function closeUserPopup() {
+        const existing = document.getElementById('user-profile-popup');
+        if (existing) existing.remove();
+        document.removeEventListener('click', closeUserPopupOnOutside);
+    }
+
+    async function addFriendFromCommunity(userId, userName) {
+        closeUserPopup();
+        try {
+            const res = await fetch('/social/api/friend-request', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ target_id: userId })
+            });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                showToast(`Friend request sent to ${userName}! 🎉`, 'success');
+            } else {
+                showToast(data.error || 'Could not send friend request.', 'warning');
+            }
+        } catch (err) {
+            console.error(err);
+            showToast('Something went wrong.', 'error');
+        }
+    }
+
+    function showToast(message, type = 'info') {
+        const existing = document.getElementById('comm-toast');
+        if (existing) existing.remove();
+        const colors = { success: '#22c55e', warning: '#f59e0b', error: '#ef4444', info: '#3b82f6' };
+        const toast = document.createElement('div');
+        toast.id = 'comm-toast';
+        toast.textContent = message;
+        toast.style.cssText = `
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+            background: ${colors[type] || colors.info}; color: #fff;
+            padding: 10px 22px; border-radius: 30px; font-size: 14px;
+            font-weight: 500; z-index: 9999; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            animation: fadeInUp 0.3s ease;
+        `;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3500);
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
         fetchCommunities();
     });
 </script>
+
+<style>
+    /* ── User Profile Popup ───────────────────── */
+    #user-profile-popup {
+        position: absolute;
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 14px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+        padding: 14px;
+        min-width: 180px;
+        z-index: 8000;
+        animation: popupIn 0.18s ease;
+    }
+
+    @keyframes popupIn {
+        from {
+            opacity: 0;
+            transform: scale(0.92) translateY(-6px);
+        }
+
+        to {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+        }
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateX(-50%) translateY(8px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+    }
+
+    .upp-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 12px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #f3f4f6;
+    }
+
+    .upp-avatar {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 16px;
+        flex-shrink: 0;
+    }
+
+    .upp-name {
+        font-weight: 600;
+        font-size: 14px;
+        color: #111;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 110px;
+    }
+
+    .upp-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .upp-btn {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 12px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        text-decoration: none;
+        border: none;
+        transition: background 0.15s;
+        width: 100%;
+    }
+
+    .upp-btn-add {
+        background: #eff6ff;
+        color: #2563eb;
+    }
+
+    .upp-btn-add:hover {
+        background: #dbeafe;
+    }
+
+    .upp-btn-view {
+        background: #f0fdf4;
+        color: #16a34a;
+    }
+
+    .upp-btn-view:hover {
+        background: #dcfce7;
+    }
+</style>
+
 {% endblock %}
