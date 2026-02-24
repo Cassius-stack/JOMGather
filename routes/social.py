@@ -941,12 +941,8 @@ def post_question():
             flash("Please log in to ask a question.", "warning")
             return redirect(url_for('auth.login'))
         
-        # Role check: only students (youth) can post questions
+        # Both students and grandparents can now post questions
         current_type = session.get('user_type', 'youth')
-        if current_type == 'senior':
-            from flask import flash
-            flash("Grandparents can reply to questions but cannot post new ones.", "warning")
-            return redirect(url_for('social.ask_grandfriend'))
             
         title = request.form.get('title', '').strip()
         content = request.form.get('content', '').strip()

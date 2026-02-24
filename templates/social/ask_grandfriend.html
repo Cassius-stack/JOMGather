@@ -936,15 +936,9 @@
             <div class="main-header">
                 <h2><span id="headerTitle">All Questions</span> (<span id="questionCount">{{ questions|length if
                         questions else 0 }}</span>)</h2>
-                {% if user_type != 'senior' %}
                 <button type="button" class="btn-ask" data-bs-toggle="modal" data-bs-target="#askQuestionModal">
                     <i class="bi bi-plus-circle"></i> Ask A Question
                 </button>
-                {% else %}
-                <span style="color: #999; font-size: 0.85rem; font-style: italic;">
-                    <i class="bi bi-info-circle"></i> Grandparents reply to student questions
-                </span>
-                {% endif %}
             </div>
 
             <!-- Questions Feed -->
@@ -1280,7 +1274,7 @@
         <div class="modal-content" style="border-radius: 20px; border: none;">
             <div class="modal-header" style="border-bottom: none; padding: 2rem 2rem 1rem;">
                 <h4 class="modal-title" id="askQuestionModalLabel" style="color: #3949ab; font-weight: 800;">Ask a
-                    Student</h4>
+                    {% if user_type == 'senior' %}Student{% else %}Grandfriend{% endif %}</h4>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body" style="padding: 0 2rem 2rem;">
@@ -1585,6 +1579,7 @@
 
         let shouldHide = false;
         if (userType === 'youth' && filterState.type === 'grandparent') shouldHide = true;
+        else if (userType === 'senior' && filterState.type === 'student') shouldHide = true;
 
         if (shouldHide) {
             askBtn.style.display = 'none';
