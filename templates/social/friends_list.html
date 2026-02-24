@@ -46,10 +46,16 @@
                         style="background: white; border: 1px solid #f1f5f9 !important;">
                         <div class="d-flex align-items-center gap-3">
                             <div class="position-relative">
+                                {% if friend.profile_photo_url %}
+                                <img src="{{ friend.profile_photo_url }}" alt="{{ friend.username }}"
+                                    class="rounded-circle object-fit-cover"
+                                    style="width: 60px; height: 60px; border: 2px solid #e0f2fe;">
+                                {% else %}
                                 <div class="bg-light rounded-circle d-flex align-items-center justify-content-center fw-bold"
                                     style="width: 60px; height: 60px; font-size: 1.5rem; color: #1e3a5f; border: 2px solid #e0f2fe;">
                                     {{ friend.username[0] | upper }}
                                 </div>
+                                {% endif %}
                                 {% if friend.is_online %}
                                 <span
                                     class="position-absolute bottom-0 end-0 bg-success border border-white rounded-circle p-1"

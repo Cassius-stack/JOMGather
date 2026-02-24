@@ -3,7 +3,7 @@ Authentication routes - Login, Register, Onboarding
 """
 
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
-from utils.supabase_db import get_supabase, insert, fetch_one
+from utils.supabase_db import get_supabase, insert, fetch_one, upload_file
 from werkzeug.security import generate_password_hash, check_password_hash
 import uuid
 import traceback
@@ -134,20 +134,34 @@ def onboarding():
         if session.get('user_type') == 'admin':
             user_type = 'admin'
         
+        # Handle profile photo upload
+        profile_photo_url = None
+        photo_file = request.files.get('profile_photo')
+        if photo_file and photo_file.filename:
+            try:
+                import os
+                ext = os.path.splitext(photo_file.filename)[1].lower() or '.jpg'
+                storage_path = f"avatars/{session['user_id']}{ext}"
+                profile_photo_url = upload_file(photo_file, bucket='avatars', path=storage_path)
+            except Exception as upload_err:
+                print(f"Photo Upload Error: {upload_err}")
+                flash("Profile saved, but photo upload failed. You can add one later.", "warning")
+        
         try:
             # Update the user's profile with onboarding data
             from utils.supabase_db import update
             
-            update('users', 
-                {
-                    'age': age,
-                    'region': region,
-                    'hobbies': hobbies if hobbies else [],
-                    'skills': skills if skills else [],
-                    'user_type': user_type
-                },
-                user_id=session['user_id']  # filter as keyword argument
-            )
+            update_data = {
+                'age': age,
+                'region': region,
+                'hobbies': hobbies if hobbies else [],
+                'skills': skills if skills else [],
+                'user_type': user_type
+            }
+            if profile_photo_url:
+                update_data['profile_photo_url'] = profile_photo_url
+            
+            update('users', update_data, user_id=session['user_id'])
             
             # Update session with new user type
             session['user_type'] = user_type

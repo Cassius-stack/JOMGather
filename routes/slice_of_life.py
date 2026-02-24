@@ -16,17 +16,29 @@ def get_current_user_id():
     return session.get('user_id')
 
 def _get_profile_pic(user_id):
-    """Helper to get profile picture safely."""
+    """Helper to get profile picture. Checks profiles table first, then users table."""
     try:
+        # 1. Check profiles table (schema has profile_picture here)
         p = fetch_one('profiles', user_id=user_id)
         if p and p.get('profile_picture'):
             return p['profile_picture']
-    except Exception as e:
-        # DB schema mismatch or missing table
-        print(f"[SliceOfLife] Profile fetch fallback for user {user_id}: {e}")
+    except:
+        pass
     
-    # Consistent fallback with rest of app
-    return f"https://i.pravatar.cc/150?u={user_id}"
+    try:
+        # 2. Fallback: check users table (some features store it here)
+        user = fetch_one('users', user_id=user_id)
+        if user and user.get('profile_picture'):
+            return user['profile_picture']
+        # 3. Generate initials avatar (Facebook-style)
+        if user and user.get('username'):
+            name = user['username']
+            return f"https://ui-avatars.com/api/?name={name}&background=1e3a5f&color=fff&size=150&rounded=true&bold=true"
+    except:
+        pass
+    
+    # Final fallback
+    return f"https://ui-avatars.com/api/?name=U&background=94a3b8&color=fff&size=150&rounded=true"
 
 # ============================================
 # MAIN FLOW ROUTES
@@ -51,9 +63,19 @@ def index():
     my_displays = [d for d in existing_today if d['creator_id'] == current_uid or d['partner_id'] == current_uid]
     
     if my_displays:
-        # Prioritize ACTIVE displays (ready for review) over pending ones
-        active = [d for d in my_displays if d['status'] != 'pending']
-        pending = [d for d in my_displays if d['status'] == 'pending']
+        # Check each display for actual reviewability (both submissions exist)
+        active = []
+        pending = []
+        for d in my_displays:
+            # Check if both users have submitted
+            subs = fetch_all('sol_submissions', display_id=d['display_id']) or []
+            unique_users = set(s['user_id'] for s in subs)
+            both_submitted = d['creator_id'] in unique_users and d['partner_id'] in unique_users
+            
+            if both_submitted or d['status'] != 'pending':
+                active.append(d)
+            else:
+                pending.append(d)
         
         if active:
             # Redirect to first active display for review
@@ -91,13 +113,12 @@ def prompt():
         prompt_data = fetch_all('sol_prompts', active_date=today)[0]
     
     # Relaxed Check: Only auto-redirect to waiting room if NOT forcing new,
-    # AND they have a PENDING invite that hasn't been handled.
+    # AND user is a CREATOR with pending displays (not a receiver who needs to respond).
     if not force_new:
         existing_today = fetch_all('sol_displays', prompt_id=prompt_data['prompt_id']) or []
         for disp in existing_today:
-            if disp['creator_id'] == current_uid or disp['partner_id'] == current_uid:
-                if disp['status'] == 'pending':
-                    return redirect(url_for('slice_of_life.waiting_room'))
+            if disp['creator_id'] == current_uid and disp['status'] == 'pending':
+                return redirect(url_for('slice_of_life.waiting_room'))
             
     session['sol_prompt_id'] = prompt_data['prompt_id']
     user_state = session.get('sol_state', 'new')
@@ -123,10 +144,10 @@ def create_display():
         # Upload Image to Supabase Storage
         image_url = ""
         if image_file and image_file.filename != '':
-            import time
-            # Use a specific path logic: uploads/{user_id}/{timestamp}_{filename}
-            # But simple unique filename is okay for MVP
-            filename = f"{int(time.time())}_{image_file.filename}"
+            import time, os
+            # Truncate filename to avoid exceeding VARCHAR(255) on image_url
+            ext = os.path.splitext(image_file.filename)[1][:10]
+            filename = f"sol_{int(time.time())}{ext}"
             # Upload and get URL
             image_url = upload_file(image_file, bucket='images', path=filename)
         
@@ -176,10 +197,6 @@ def choose_recipients():
     # In a real app: supabase.table('users').select('*').in_('user_id', friend_ids)...
     all_users = fetch_all('users') or []
 
-    # Optimization: Fetch all profiles once to map avatars
-    all_profiles = fetch_all('profiles') or []
-    profile_map = {p['user_id']: p.get('profile_picture') for p in all_profiles}
-
     friends = []
     for u in all_users:
         if u['user_id'] in friend_ids:
@@ -197,8 +214,8 @@ def choose_recipients():
                 except:
                     pass
             u['is_active'] = is_active
-            # Attach real profile picture
-            u['profile_picture'] = profile_map.get(u['user_id'])
+            # Attach profile picture (from profiles table or initials fallback)
+            u['profile_picture'] = _get_profile_pic(u['user_id'])
             friends.append(u)
 
     # 3. Sort by active status first, then username
@@ -400,8 +417,20 @@ def waiting_room():
         my_subs = fetch_all('sol_submissions', display_id=invite['display_id'], user_id=current_uid) or []
         my_sub = my_subs[0] if my_subs else None
         
-        # Determine if this item is reviewable (active = partner responded)
-        is_reviewable = display['status'] != 'pending'
+        # Check partner's submission too — this is the ground truth for reviewability
+        partner_subs = fetch_all('sol_submissions', display_id=invite['display_id'], user_id=partner_id) or []
+        partner_sub = partner_subs[0] if partner_subs else None
+        
+        # Reviewable = both users have submitted (don't rely solely on display status)
+        is_reviewable = (my_sub is not None and partner_sub is not None)
+        
+        # Auto-heal: if both submitted but display status is still 'pending', fix it
+        if is_reviewable and display['status'] == 'pending':
+            try:
+                update('sol_displays', {'status': 'active'}, display_id=display['display_id'])
+                print(f"[SOL] Auto-healed display {display['display_id']} from 'pending' to 'active'")
+            except:
+                pass
         
         view_data.append({
             'invite': invite,
@@ -871,57 +900,72 @@ def receiver_respond(invite_id):
         sender['profile_picture'] = _get_profile_pic(invite['sender_id'])
 
     if request.method == 'POST':
-        # Re-check for duplicates right before insert (race condition guard)
-        recheck = fetch_one('sol_submissions', display_id=invite['display_id'], user_id=current_uid)
-        if recheck:
-            return redirect(url_for('slice_of_life.review', display_id=invite['display_id']))
+        try:
+            # Re-check for duplicates right before insert (race condition guard)
+            recheck = fetch_one('sol_submissions', display_id=invite['display_id'], user_id=current_uid)
+            if recheck:
+                return redirect(url_for('slice_of_life.review', display_id=invite['display_id']))
+            
+            story = request.form.get('story')
+            image = request.files.get('image')
+            
+            image_url = None
+            if image and image.filename != '':
+                try:
+                    import time, os
+                    ext = os.path.splitext(image.filename)[1][:10]
+                    filename = f"resp_{int(time.time())}{ext}"
+                    image_url = upload_file(image, bucket='images', path=filename)
+                except Exception as upload_err:
+                    print(f"[SOL] Image upload failed, using placeholder: {upload_err}")
+                    image_url = None
+            
+            if not image_url:
+                image_url = f"https://ui-avatars.com/api/?name=Photo&background=e2e8f0&color=94a3b8&size=300"
+            
+            # === CRITICAL: Save Submission ===
+            insert('sol_submissions', {
+                'display_id': invite['display_id'],
+                'user_id': current_uid,
+                'image_url': image_url,
+                'thought': story
+            })
         
-        story = request.form.get('story')
-        image = request.files.get('image') # Get the file object
+        except Exception as e:
+            import traceback
+            print(f"[SOL] receiver_respond POST error for invite {invite_id}: {e}")
+            traceback.print_exc()
+            flash(f"Error submitting response: {str(e)}", "danger")
+            return redirect(url_for('slice_of_life.receiver_respond', invite_id=invite_id))
         
-        image_url = None
-        if image and image.filename != '':
-            import time
-            filename = f"resp_{int(time.time())}_{image.filename}"
-            image_url = upload_file(image, bucket='images', path=filename)
-        
-        if not image_url:
-            image_url = "https://i.pravatar.cc/300?img=25"
-        
-        # Save Submission
-        insert('sol_submissions', {
-            'display_id': invite['display_id'],
-            'user_id': current_uid,
-            'image_url': image_url,
-            'thought': story
-        })
-        
-        # Post-insert dedup: if race condition created duplicates, clean up
-        all_my_subs = fetch_all('sol_submissions', display_id=invite['display_id'], user_id=current_uid) or []
-        if len(all_my_subs) > 1:
-            # Keep only the first submission, delete the rest
-            for extra in all_my_subs[1:]:
-                delete('sol_submissions', submission_id=extra['submission_id'])
-            print(f"[SOL] Cleaned up {len(all_my_subs)-1} duplicate submission(s) for user {current_uid}")
-        
-        # Update Invite Status
-        update('sol_invites', {
-            'status': 'accepted', 
-            'responded_at': datetime.now().isoformat()
-        }, invite_id=invite_id)
-        
-        # Update Display Status to 'active' (or 'review') so it's accessible
-        # This assumes invite acceptance completes the interaction for now (1-on-1)
-        update('sol_displays', {'status': 'active'}, display_id=display_id)
+        # === NON-CRITICAL follow-ups — don't let these block the redirect ===
+        try:
+            # Dedup cleanup
+            all_my_subs = fetch_all('sol_submissions', display_id=invite['display_id'], user_id=current_uid) or []
+            if len(all_my_subs) > 1:
+                for extra in all_my_subs[1:]:
+                    delete('sol_submissions', submission_id=extra['submission_id'])
+            
+            # Update Invite Status
+            update('sol_invites', {
+                'status': 'accepted', 
+                'responded_at': datetime.now().isoformat()
+            }, invite_id=invite_id)
+            
+            # Update Display Status to 'active'
+            update('sol_displays', {'status': 'active'}, display_id=display_id)
 
-        # Notify Sender
-        insert('notifications', {
-            'user_id': invite['sender_id'],
-            'type': 'sol_accept', # or sol_response
-            'message': f"Your partner responded to your Slice of Life!",
-            'link': url_for('slice_of_life.review', display_id=display_id)
-        })
+            # Notify Sender
+            insert('notifications', {
+                'user_id': invite['sender_id'],
+                'type': 'sol_accept',
+                'message': f"Your partner responded to your Slice of Life!",
+                'link': url_for('slice_of_life.review', display_id=display_id)
+            })
+        except Exception as post_err:
+            print(f"[SOL] Non-critical post-submission step failed for invite {invite_id}: {post_err}")
         
+        # Always redirect to review after successful submission
         return redirect(url_for('slice_of_life.review', display_id=display_id))
     
     return render_template('slice_of_life/receiver_respond.html', 

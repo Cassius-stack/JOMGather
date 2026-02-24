@@ -458,10 +458,16 @@
 
     <!-- Profile Header -->
     <div class="profile-header-card">
-        <div class="profile-bg-shape"></div>
         <div class="profile-content-wrapper {{ profile_user.rank.css_class }}">
-            <img src="{{ profile_user.profile_picture or 'https://i.pravatar.cc/150?u=' ~ profile_user.user_id }}"
-                alt="Profile" class="profile-avatar-large">
+            {% if profile_user.profile_photo_url or profile_user.profile_picture %}
+            <img src="{{ profile_user.profile_photo_url or profile_user.profile_picture }}" alt="Profile"
+                class="profile-avatar-large" style="object-fit: cover;">
+            {% else %}
+            <div class="profile-avatar-large"
+                style="background: #e0f2fe; display: flex; align-items: center; justify-content: center; overflow: hidden; margin: 0 auto; margin-bottom: 15px;">
+                <i class="bi bi-person-circle" style="font-size: 5rem; color: #1e3a5f;"></i>
+            </div>
+            {% endif %}
             <h1 class="profile-name">{{ profile_user.username }}</h1>
 
             <div class="rank-badge rank-badge-tier-{{ profile_user.rank.tier }}">

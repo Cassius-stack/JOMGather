@@ -14,12 +14,14 @@ load_dotenv()
 # Supabase configuration
 SUPABASE_URL = os.getenv('SUPABASE_URL')
 SUPABASE_KEY = os.getenv('SUPABASE_ANON_KEY')
+SUPABASE_SERVICE_KEY = os.getenv('SUPABASE_SERVICE_KEY')  # Service role key for admin operations
 
 # Timeout config: 15s to connect, 30s to read response
 _SUPABASE_TIMEOUT = Timeout(connect=15.0, read=30.0, write=30.0, pool=15.0)
 
 # Create Supabase client (singleton)
 _supabase_client: Client = None
+_supabase_admin_client: Client = None
 
 
 def get_supabase() -> Client:
@@ -52,6 +54,20 @@ def reconnect_supabase() -> Client:
     global _supabase_client
     _supabase_client = _create_client()
     return _supabase_client
+
+
+def get_supabase_admin() -> Client:
+    """Get a Supabase admin client using the service role key (bypasses RLS).
+    Falls back to the anon client if no service key is set."""
+    global _supabase_admin_client
+    if _supabase_admin_client is None:
+        if SUPABASE_URL and SUPABASE_SERVICE_KEY:
+            _supabase_admin_client = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+        else:
+            # Fallback: use anon client (coins updates may fail if RLS is restrictive)
+            print("[WARNING] SUPABASE_SERVICE_KEY not set. Falling back to anon key for admin operations.")
+            return get_supabase()
+    return _supabase_admin_client
 
 
 # ============================================

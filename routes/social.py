@@ -253,7 +253,7 @@ def search_users():
         # Checking robust implementation.
         
         # 1. Fetch potential matches
-        response = supabase.table('users').select('user_id, username, user_type').ilike('username', f'%{query}%').neq('user_id', current_user_id).neq('is_deleted', True).limit(10).execute()
+        response = supabase.table('users').select('user_id, username, user_type, profile_photo_url').ilike('username', f'%{query}%').neq('user_id', current_user_id).neq('is_deleted', True).limit(10).execute()
         
         results = []
         if response.data:
@@ -278,7 +278,8 @@ def search_users():
                     'id': user['user_id'],
                     'username': user['username'],
                     'type': user['user_type'],
-                    'friendship_status': status
+                    'friendship_status': status,
+                    'profile_photo_url': user.get('profile_photo_url') or None
                 })
             
         return jsonify(results)
@@ -319,12 +320,12 @@ def send_friend_request():
             'status': 'pending'
         })
 
-        # Insert notification
+        # Insert notification — store requester's user_id in link for direct accept/reject
         insert('notifications', {
             'user_id': target_id,
             'type': 'friend_request',
             'message': f"{session.get('username')} sent you a friend request!",
-            'link': url_for('social.social_hub'),
+            'link': str(current_user_id),
             'is_read': False
         })
         
@@ -335,18 +336,35 @@ def send_friend_request():
 
 @social_bp.route('/api/friend-accept', methods=['POST'])
 def accept_friend_request():
-    """Accept a friend request."""
+    """Accept a friend request. Idempotent — safe to call multiple times."""
     try:
         current_user_id = get_current_user_id()
         requester_id = request.json.get('requester_id')
         
         if not requester_id:
             return jsonify({'error': 'Missing requester_id'}), 400
+        
+        # Ensure requester_id is an integer
+        try:
+            requester_id = int(requester_id)
+        except (ValueError, TypeError):
+            return jsonify({'error': 'Invalid requester_id'}), 400
             
         supabase = get_supabase()
-        # Update status to accepted
-        # user_id_1 is requester, user_id_2 is current_user
-        supabase.table('friendships').update({'status': 'accepted'}).eq('user_id_1', requester_id).eq('user_id_2', current_user_id).execute()
+        
+        # Check if friendship exists and its current status
+        existing = supabase.table('friendships').select('*').eq('user_id_1', requester_id).eq('user_id_2', current_user_id).execute()
+        
+        if existing.data:
+            if existing.data[0]['status'] == 'accepted':
+                # Already friends — idempotent, just clean up notification
+                pass
+            else:
+                # Update status to accepted
+                supabase.table('friendships').update({'status': 'accepted'}).eq('user_id_1', requester_id).eq('user_id_2', current_user_id).execute()
+        else:
+            # No friendship record found — might have been deleted or wrong direction
+            return jsonify({'error': 'Friend request not found'}), 404
         
         # Clear the specific notification for this friend request
         try:
@@ -522,7 +540,8 @@ def get_contacts():
                     'lastMessage': preview,
                     'status': status,
                     'lastMessageTime': last_msg_time,
-                    'unreadCount': unread_count
+                    'unreadCount': unread_count,
+                    'profile_photo_url': user_data.get('profile_photo_url') or None
                 })
             except Exception as e:
                 print(f"[Contacts] Skipping friend {friend_id} due to error: {e}")
@@ -874,10 +893,13 @@ def ask_grandfriend():
         
     current_user_id = get_current_user_id()
     current_username = "Jeremy Khoo" # Default fallback
+    current_user_photo = None
     if current_user_id:
         try:
             u = fetch_one('users', user_id=current_user_id)
-            if u: current_username = u.get('username')
+            if u: 
+                current_username = u.get('username')
+                current_user_photo = u.get('profile_photo_url') or u.get('profile_picture')
         except: pass
     
     # History pane has been removed, so no history_users computation needed
@@ -905,8 +927,8 @@ def ask_grandfriend():
                            user_type=user_type, 
                            liked_question_ids=liked_question_ids,
                            current_sort=sort_by,
-                           current_order=order,
                            current_unanswered=unanswered_only,
+                           current_user_photo=current_user_photo,
                            test_coins=test_coins)
 
 @social_bp.route('/ask-grandfriend/post', methods=['GET', 'POST'])
@@ -919,12 +941,8 @@ def post_question():
             flash("Please log in to ask a question.", "warning")
             return redirect(url_for('auth.login'))
         
-        # Role check: only students (youth) can post questions
+        # Both students and grandparents can now post questions
         current_type = session.get('user_type', 'youth')
-        if current_type == 'senior':
-            from flask import flash
-            flash("Grandparents can reply to questions but cannot post new ones.", "warning")
-            return redirect(url_for('social.ask_grandfriend'))
             
         title = request.form.get('title', '').strip()
         content = request.form.get('content', '').strip()
@@ -1345,13 +1363,14 @@ def agf_ranks():
 
     # Get user profile picture
     try:
-        user_resp = supabase.table('users').select('profile_picture').eq('id', current_user_id).single().execute()
-        profile_picture = user_resp.data.get('profile_picture') if user_resp.data else None
+        user_resp = supabase.table('users').select('profile_photo_url, profile_picture').eq('id', current_user_id).single().execute()
+        if user_resp.data:
+            profile_picture = user_resp.data.get('profile_photo_url') or user_resp.data.get('profile_picture')
+        else:
+            profile_picture = None
     except:
         profile_picture = None
 
-    if not profile_picture:
-        profile_picture = f'https://i.pravatar.cc/120?u={current_user_id}'
 
     # Define all rank tiers with descriptions
     rank_tiers = [

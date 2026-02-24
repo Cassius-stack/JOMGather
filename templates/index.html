@@ -128,10 +128,15 @@
             <a href="{{ url_for('profile.view_profile', user_id=friend['user_id']) }}" class="text-decoration-none"
                 title="Online">
                 <div class="text-center position-relative" style="flex-shrink: 0;">
+                    {% if friend.profile_photo_url %}
+                    <img src="{{ friend.profile_photo_url }}" alt="{{ friend.username }}"
+                        style="width: 65px; height: 65px; border-radius: 50%; object-fit: cover; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                    {% else %}
                     <div
                         style="width: 65px; height: 65px; background: #e0f2fe; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #1e3a5f; font-weight: 600; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
                         {{ friend.username[0] | upper }}
                     </div>
+                    {% endif %}
                     <span
                         style="position: absolute; bottom: 28px; right: 5px; width: 14px; height: 14px; background: #22c55e; border-radius: 50%; border: 2px solid white; z-index: 2;"></span>
                     <p
@@ -146,10 +151,15 @@
             <a href="{{ url_for('profile.view_profile', user_id=friend['user_id']) }}" class="text-decoration-none"
                 title="Offline">
                 <div class="text-center position-relative" style="flex-shrink: 0;">
+                    {% if friend.profile_photo_url %}
+                    <img src="{{ friend.profile_photo_url }}" alt="{{ friend['username'] }}"
+                        style="width: 65px; height: 65px; border-radius: 50%; object-fit: cover; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.1); filter: grayscale(30%);">
+                    {% else %}
                     <div
                         style="width: 65px; height: 65px; background: #f1f5f9; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #64748b; font-weight: 600; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
                         {{ friend['username'][0] | upper }}
                     </div>
+                    {% endif %}
                     <span
                         style="position: absolute; bottom: 28px; right: 5px; width: 14px; height: 14px; background: #94a3b8; border-radius: 50%; border: 2px solid white; z-index: 2;"></span>
                     <p
@@ -321,8 +331,15 @@
                         <a href="{{ url_for('profile.view_profile', user_id=person.user_id) }}"
                             class="text-decoration-none">
                             <div style="position: relative; display: inline-block; margin-bottom: 1rem;">
-                                <img src="https://i.pravatar.cc/80?u={{ person.user_id }}" alt="{{ person.username }}"
+                                {% if person.profile_photo_url %}
+                                <img src="{{ person.profile_photo_url }}" alt="{{ person.username }}"
                                     style="width: 70px; height: 70px; border-radius: 50%; object-fit: cover; border: 3px solid #f8fafc;">
+                                {% else %}
+                                <div
+                                    style="width: 70px; height: 70px; border-radius: 50%; background: #e0f2fe; border: 3px solid #f8fafc; display: flex; align-items: center; justify-content: center; color: #1e3a5f; font-size: 1.6rem; font-weight: 700;">
+                                    {{ person.username[0] | upper }}
+                                </div>
+                                {% endif %}
                                 {% if person.score >= 5 %}
                                 <span
                                     style="position: absolute; top: -5px; right: -5px; background: #22c55e; color: white; font-size: 0.65rem; padding: 2px 6px; border-radius: 10px; font-weight: 700;">Top

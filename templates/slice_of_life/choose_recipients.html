@@ -78,7 +78,7 @@
                             style="background: white; border-radius: 20px; padding: 1.5rem; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.05); border: 3px solid transparent; transition: all 0.2s;">
                             <div style="position: relative; display: inline-block; margin-bottom: 1rem;">
                                 <!-- Avatar with Active Indicator -->
-                                <img src="{{ person.profile_picture or 'https://i.pravatar.cc/80?img=' ~ ((person.user_id * 5) % 70) }}"
+                                <img src="{{ person.profile_picture or 'https://ui-avatars.com/api/?name=' ~ person.username ~ '&background=1e3a5f&color=fff&size=80&rounded=true&bold=true' }}"
                                     alt="{{ person.username }}"
                                     style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid {{ border_color }};">
                                 {% if person.is_active %}
