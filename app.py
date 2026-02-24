@@ -131,13 +131,16 @@ def create_app(config_name='default'):
                 # Fetch total_coins
                 coin_res = supabase.table('coins').select('total_coins').eq('user_id', session.get('user_id')).execute()
                 total_coins = coin_res.data[0]['total_coins'] if coin_res.data else 0
+                # Fetch profile photo URL
+                photo_res = supabase.table('users').select('profile_photo_url').eq('user_id', session.get('user_id')).limit(1).execute()
+                current_user_photo = photo_res.data[0].get('profile_photo_url') if photo_res.data else None
                 
-                return dict(notifications=notifications, unread_notifications_count=unread_count, total_coins=total_coins, ice_servers=ice_servers)
+                return dict(notifications=notifications, unread_notifications_count=unread_count, total_coins=total_coins, ice_servers=ice_servers, current_user_photo=current_user_photo)
             except Exception as e:
                 print(f"Error fetching notifications/coins: {e}")
-                return dict(notifications=[], unread_notifications_count=0, total_coins=0, ice_servers=ice_servers)
+                return dict(notifications=[], unread_notifications_count=0, total_coins=0, ice_servers=ice_servers, current_user_photo=None)
         
-        return dict(notifications=[], unread_notifications_count=0, total_coins=0, ice_servers=ice_servers)
+        return dict(notifications=[], unread_notifications_count=0, total_coins=0, ice_servers=ice_servers, current_user_photo=None)
 
     # Home route
     @app.route('/')
@@ -165,7 +168,7 @@ def create_app(config_name='default'):
                 
                 if friends_ids:
                     # Fetch all friends with last_seen
-                    response = supabase.table('users').select('user_id, username, last_seen').in_('user_id', friends_ids).execute()
+                    response = supabase.table('users').select('user_id, username, last_seen, profile_photo_url').in_('user_id', friends_ids).execute()
                     all_friends = response.data
                     
                     five_mins_ago = (datetime.datetime.now() - datetime.timedelta(minutes=5)).isoformat()

@@ -2018,11 +2018,14 @@ async function loadContacts() {
             li.dataset.contactName = contact.name;
             li.dataset.contactStatus = contact.status;
             li.dataset.contactType = contact.type;
+            li.dataset.contactPhoto = contact.profile_photo_url || '';
+
+            const avatarHtml = contact.profile_photo_url
+                ? `<div class="avatar" style="overflow:hidden;"><img src="${contact.profile_photo_url}" alt="${contact.name}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;"></div>`
+                : `<div class="avatar" style="background:#e0f2fe;color:#1e3a5f;font-weight:700;font-size:1rem;display:flex;align-items:center;justify-content:center;">${contact.name.charAt(0).toUpperCase()}</div>`;
 
             li.innerHTML = `
-                <div class="avatar">
-                    <i class="bi bi-person-fill"></i>
-                </div>
+                ${avatarHtml}
                 <div class="contact-info">
                     <div class="name-row">
                         <span class="name">${contact.name}</span>
@@ -2071,6 +2074,7 @@ async function loadContacts() {
             chatContactName.textContent = firstContact.name;
             chatContactStatus.textContent = firstContact.status;
             chatContactStatus.style.color = firstContact.status === 'Active' ? '#22c55e' : '#888';
+            updateHeaderAvatar(firstContact.profile_photo_url, firstContact.name);
 
             // Update role in header
             const roleSpan = document.getElementById('chat-contact-role');
@@ -2098,6 +2102,27 @@ async function loadContacts() {
 }
 
 /**
+ * Update the large avatar in the chat header.
+ * Shows the photo if available, else an initial-letter circle.
+ */
+function updateHeaderAvatar(photoUrl, name) {
+    const headerAvatar = document.getElementById('chat-header-avatar');
+    if (!headerAvatar) return;
+    if (photoUrl) {
+        headerAvatar.innerHTML = `<img src="${photoUrl}" alt="${name}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+        headerAvatar.style.background = 'transparent';
+        headerAvatar.style.overflow = 'hidden';
+    } else {
+        headerAvatar.innerHTML = `<span style="font-size:1.4rem;font-weight:700;color:#1e3a5f;">${(name || '?').charAt(0).toUpperCase()}</span>`;
+        headerAvatar.style.background = '#e0f2fe';
+        headerAvatar.style.display = 'flex';
+        headerAvatar.style.alignItems = 'center';
+        headerAvatar.style.justifyContent = 'center';
+        headerAvatar.style.overflow = 'hidden';
+    }
+}
+
+/**
  * Switch to a different contact
  */
 function switchContact(contactId, contactName, contactStatus) {
@@ -2120,6 +2145,8 @@ function switchContact(contactId, contactName, contactStatus) {
     // Update header
     chatContactName.textContent = contactName;
     chatContactStatus.textContent = contactStatus || 'Active';
+    const activeItemForPhoto = document.querySelector(`[data-contact-id="${contactId}"]`);
+    updateHeaderAvatar(activeItemForPhoto ? activeItemForPhoto.dataset.contactPhoto : '', contactName);
 
     // Update role in header
     const activeItem = document.querySelector(`[data-contact-id="${contactId}"]`);

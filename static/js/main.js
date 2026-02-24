@@ -187,9 +187,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
                         item.innerHTML = `
                             <a href="/profile/view/${user.id}" class="text-decoration-none d-flex align-items-center gap-3 flex-grow-1">
-                                <div style="width: 50px; height: 50px; background: #e0f2fe; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #1e3a5f; font-size: 1.2rem;">
-                                    <i class="bi bi-person-fill"></i>
-                                </div>
+                                ${user.profile_photo_url
+                                ? `<img src="${user.profile_photo_url}" alt="${user.username}" style="width:50px;height:50px;border-radius:50%;object-fit:cover;flex-shrink:0;">`
+                                : `<div style="width:50px;height:50px;background:#e0f2fe;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#1e3a5f;font-weight:700;font-size:1.2rem;flex-shrink:0;">${user.username.charAt(0).toUpperCase()}</div>`
+                            }
                                 <div class="flex-grow-1">
                                     <h6 class="mb-0 fw-bold" style="color: #1e3a5f;">${user.username}</h6>
                                     <small class="text-muted text-capitalize">${user.type}</small>
@@ -237,9 +238,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         item.innerHTML = `
             <a href="/profile/view/${user.id}" class="text-decoration-none d-flex align-items-center gap-3 flex-grow-1">
-                <div style="width: 40px; height: 40px; background: #e0f2fe; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #1e3a5f;">
-                    <i class="bi bi-person-fill"></i>
-                </div>
+                ${user.profile_photo_url
+                ? `<img src="${user.profile_photo_url}" alt="${user.username}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;flex-shrink:0;">`
+                : `<div style="width:40px;height:40px;background:#e0f2fe;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#1e3a5f;font-weight:700;font-size:1rem;flex-shrink:0;">${user.username.charAt(0).toUpperCase()}</div>`
+            }
                 <div class="flex-grow-1">
                     <h6 class="mb-0 fw-bold" style="color: #1e3a5f;">${user.username}</h6>
                     <small class="text-muted text-capitalize">${user.type}</small>

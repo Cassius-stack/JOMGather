@@ -65,7 +65,7 @@
     </script>
     <script>
         // Global WebRTC Configuration
-        window.ICE_SERVERS = {{ ice_servers | default([]) | tojson }};
+        window.ICE_SERVERS = {{ ice_servers | default ([]) | tojson }};
     </script>
 </head>
 
@@ -181,8 +181,13 @@
                     <div class="dropdown d-inline-block">
                         <a href="#" class="text-decoration-none" data-bs-toggle="dropdown" aria-expanded="false">
                             <div
-                                style="width: 40px; height: 40px; background: #e0f2fe; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #1e3a5f; font-weight: 600;">
+                                style="width: 40px; height: 40px; background: #e0f2fe; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #1e3a5f; font-weight: 600; overflow: hidden;">
+                                {% if current_user_photo %}
+                                <img src="{{ current_user_photo }}" alt="avatar"
+                                    style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+                                {% else %}
                                 {{ session.get('username')[0] | upper }}
+                                {% endif %}
                             </div>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end dropdown-menu-premium border-0 rounded-4 mt-3">

@@ -253,7 +253,7 @@ def search_users():
         # Checking robust implementation.
         
         # 1. Fetch potential matches
-        response = supabase.table('users').select('user_id, username, user_type').ilike('username', f'%{query}%').neq('user_id', current_user_id).neq('is_deleted', True).limit(10).execute()
+        response = supabase.table('users').select('user_id, username, user_type, profile_photo_url').ilike('username', f'%{query}%').neq('user_id', current_user_id).neq('is_deleted', True).limit(10).execute()
         
         results = []
         if response.data:
@@ -278,7 +278,8 @@ def search_users():
                     'id': user['user_id'],
                     'username': user['username'],
                     'type': user['user_type'],
-                    'friendship_status': status
+                    'friendship_status': status,
+                    'profile_photo_url': user.get('profile_photo_url') or None
                 })
             
         return jsonify(results)
@@ -514,7 +515,8 @@ def get_contacts():
                     'lastMessage': preview,
                     'status': status,
                     'lastMessageTime': last_msg_time,
-                    'unreadCount': unread_count
+                    'unreadCount': unread_count,
+                    'profile_photo_url': user_data.get('profile_photo_url') or None
                 })
         
         # Sort by last message time (most recent first), new friends (no messages) at top
@@ -812,7 +814,7 @@ def ask_grandfriend():
         if user_ids_set:
             # Fetch user profiles
             user_ids_list = list(user_ids_set)
-            users_res = supabase.table('users').select('user_id, username, profile_picture').in_('user_id', user_ids_list).execute()
+            users_res = supabase.table('users').select('user_id, username, profile_photo_url').in_('user_id', user_ids_list).execute()
             users_data = {u['user_id']: u for u in (users_res.data or [])}
             
             # Fetch friendships involving current user
@@ -831,7 +833,7 @@ def ask_grandfriend():
                 history_users.append({
                     'user_id': uid,
                     'username': udata.get('username', 'Unknown'),
-                    'profile_picture': udata.get('profile_picture'),
+                    'profile_photo_url': udata.get('profile_photo_url'),
                     'friendship_status': friendship  # None, 'pending', or 'accepted'
                 })
     except Exception as e:
