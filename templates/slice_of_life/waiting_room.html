@@ -109,4 +109,16 @@
         </div>
     </div>
 </div>
+
+{% block extra_js %}
+<script>
+    // Auto-refresh waiting room every 15 seconds to detect partner responses
+    (function () {
+        let hasWaiting = document.querySelectorAll('.badge.bg-secondary').length > 0;
+        if (hasWaiting) {
+            setTimeout(() => { window.location.reload(); }, 15000);
+        }
+    })();
+</script>
+{% endblock %}
 {% endblock %}

@@ -16,13 +16,12 @@ def get_current_user_id():
     return session.get('user_id')
 
 def _get_profile_pic(user_id):
-    """Helper to get profile picture safely."""
+    """Helper to get profile picture from users table."""
     try:
-        p = fetch_one('profiles', user_id=user_id)
-        if p and p.get('profile_picture'):
-            return p['profile_picture']
+        user = fetch_one('users', user_id=user_id)
+        if user and user.get('profile_picture'):
+            return user['profile_picture']
     except Exception as e:
-        # DB schema mismatch or missing table
         print(f"[SliceOfLife] Profile fetch fallback for user {user_id}: {e}")
     
     # Consistent fallback with rest of app
@@ -51,9 +50,19 @@ def index():
     my_displays = [d for d in existing_today if d['creator_id'] == current_uid or d['partner_id'] == current_uid]
     
     if my_displays:
-        # Prioritize ACTIVE displays (ready for review) over pending ones
-        active = [d for d in my_displays if d['status'] != 'pending']
-        pending = [d for d in my_displays if d['status'] == 'pending']
+        # Check each display for actual reviewability (both submissions exist)
+        active = []
+        pending = []
+        for d in my_displays:
+            # Check if both users have submitted
+            subs = fetch_all('sol_submissions', display_id=d['display_id']) or []
+            unique_users = set(s['user_id'] for s in subs)
+            both_submitted = d['creator_id'] in unique_users and d['partner_id'] in unique_users
+            
+            if both_submitted or d['status'] != 'pending':
+                active.append(d)
+            else:
+                pending.append(d)
         
         if active:
             # Redirect to first active display for review
@@ -91,13 +100,12 @@ def prompt():
         prompt_data = fetch_all('sol_prompts', active_date=today)[0]
     
     # Relaxed Check: Only auto-redirect to waiting room if NOT forcing new,
-    # AND they have a PENDING invite that hasn't been handled.
+    # AND user is a CREATOR with pending displays (not a receiver who needs to respond).
     if not force_new:
         existing_today = fetch_all('sol_displays', prompt_id=prompt_data['prompt_id']) or []
         for disp in existing_today:
-            if disp['creator_id'] == current_uid or disp['partner_id'] == current_uid:
-                if disp['status'] == 'pending':
-                    return redirect(url_for('slice_of_life.waiting_room'))
+            if disp['creator_id'] == current_uid and disp['status'] == 'pending':
+                return redirect(url_for('slice_of_life.waiting_room'))
             
     session['sol_prompt_id'] = prompt_data['prompt_id']
     user_state = session.get('sol_state', 'new')
@@ -176,10 +184,6 @@ def choose_recipients():
     # In a real app: supabase.table('users').select('*').in_('user_id', friend_ids)...
     all_users = fetch_all('users') or []
 
-    # Optimization: Fetch all profiles once to map avatars
-    all_profiles = fetch_all('profiles') or []
-    profile_map = {p['user_id']: p.get('profile_picture') for p in all_profiles}
-
     friends = []
     for u in all_users:
         if u['user_id'] in friend_ids:
@@ -197,8 +201,8 @@ def choose_recipients():
                 except:
                     pass
             u['is_active'] = is_active
-            # Attach real profile picture
-            u['profile_picture'] = profile_map.get(u['user_id'])
+            # Profile picture is already on the users table — use it directly
+            # (fallback handled in template with pravatar)
             friends.append(u)
 
     # 3. Sort by active status first, then username
@@ -400,8 +404,20 @@ def waiting_room():
         my_subs = fetch_all('sol_submissions', display_id=invite['display_id'], user_id=current_uid) or []
         my_sub = my_subs[0] if my_subs else None
         
-        # Determine if this item is reviewable (active = partner responded)
-        is_reviewable = display['status'] != 'pending'
+        # Check partner's submission too — this is the ground truth for reviewability
+        partner_subs = fetch_all('sol_submissions', display_id=invite['display_id'], user_id=partner_id) or []
+        partner_sub = partner_subs[0] if partner_subs else None
+        
+        # Reviewable = both users have submitted (don't rely solely on display status)
+        is_reviewable = (my_sub is not None and partner_sub is not None)
+        
+        # Auto-heal: if both submitted but display status is still 'pending', fix it
+        if is_reviewable and display['status'] == 'pending':
+            try:
+                update('sol_displays', {'status': 'active'}, display_id=display['display_id'])
+                print(f"[SOL] Auto-healed display {display['display_id']} from 'pending' to 'active'")
+            except:
+                pass
         
         view_data.append({
             'invite': invite,
