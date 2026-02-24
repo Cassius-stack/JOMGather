@@ -961,7 +961,7 @@ def receiver_respond(invite_id):
             import traceback
             print(f"[SOL] receiver_respond POST error for invite {invite_id}: {e}")
             traceback.print_exc()
-            flash("Something went wrong submitting your response. Please try again.", "danger")
+            flash(f"Error submitting response: {str(e)}", "danger")
             return redirect(url_for('slice_of_life.receiver_respond', invite_id=invite_id))
     
     return render_template('slice_of_life/receiver_respond.html', 
