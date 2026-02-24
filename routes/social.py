@@ -320,12 +320,12 @@ def send_friend_request():
             'status': 'pending'
         })
 
-        # Insert notification
+        # Insert notification — store requester's user_id in link for direct accept/reject
         insert('notifications', {
             'user_id': target_id,
             'type': 'friend_request',
             'message': f"{session.get('username')} sent you a friend request!",
-            'link': url_for('social.social_hub'),
+            'link': str(current_user_id),
             'is_read': False
         })
         
@@ -336,18 +336,35 @@ def send_friend_request():
 
 @social_bp.route('/api/friend-accept', methods=['POST'])
 def accept_friend_request():
-    """Accept a friend request."""
+    """Accept a friend request. Idempotent — safe to call multiple times."""
     try:
         current_user_id = get_current_user_id()
         requester_id = request.json.get('requester_id')
         
         if not requester_id:
             return jsonify({'error': 'Missing requester_id'}), 400
+        
+        # Ensure requester_id is an integer
+        try:
+            requester_id = int(requester_id)
+        except (ValueError, TypeError):
+            return jsonify({'error': 'Invalid requester_id'}), 400
             
         supabase = get_supabase()
-        # Update status to accepted
-        # user_id_1 is requester, user_id_2 is current_user
-        supabase.table('friendships').update({'status': 'accepted'}).eq('user_id_1', requester_id).eq('user_id_2', current_user_id).execute()
+        
+        # Check if friendship exists and its current status
+        existing = supabase.table('friendships').select('*').eq('user_id_1', requester_id).eq('user_id_2', current_user_id).execute()
+        
+        if existing.data:
+            if existing.data[0]['status'] == 'accepted':
+                # Already friends — idempotent, just clean up notification
+                pass
+            else:
+                # Update status to accepted
+                supabase.table('friendships').update({'status': 'accepted'}).eq('user_id_1', requester_id).eq('user_id_2', current_user_id).execute()
+        else:
+            # No friendship record found — might have been deleted or wrong direction
+            return jsonify({'error': 'Friend request not found'}), 404
         
         # Clear the specific notification for this friend request
         try:
