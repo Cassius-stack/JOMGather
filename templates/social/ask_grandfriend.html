@@ -921,38 +921,6 @@
                     <button class="category-btn" data-category="mentoring">Mentoring</button>
                 </div>
             </div>
-
-            <!-- History - Past Users -->
-            <div class="sidebar-card">
-                <div class="sidebar-title">
-                    <i class="bi bi-clock-history"></i> History
-                </div>
-                <div class="history-users-list">
-                    {% if history_users %}
-                    {% for hu in history_users %}
-                    <div class="history-user-item">
-                        <a href="{{ url_for('profile.view_profile', user_id=hu.user_id) }}" class="history-user-link">
-                            <img src="{{ hu.profile_picture or 'https://i.pravatar.cc/40?u=' ~ hu.user_id }}"
-                                alt="{{ hu.username }}" class="history-user-avatar">
-                            <span class="history-user-name">{{ hu.username }}</span>
-                        </a>
-                        {% if hu.friendship_status == 'accepted' %}
-                        <span class="history-friend-badge badge-friend"><i class="bi bi-people-fill"></i> Friend</span>
-                        {% elif hu.friendship_status == 'pending' %}
-                        <span class="history-friend-badge badge-pending"><i class="bi bi-hourglass-split"></i>
-                            Pending</span>
-                        {% else %}
-                        <button class="history-add-btn" onclick="addFriendFromHistory('{{ hu.user_id }}', this)">
-                            <i class="bi bi-person-plus-fill"></i> Add
-                        </button>
-                        {% endif %}
-                    </div>
-                    {% endfor %}
-                    {% else %}
-                    <div class="text-muted small text-center py-2">No users yet</div>
-                    {% endif %}
-                </div>
-            </div>
         </div>
 
         <!-- Main Content -->
@@ -1688,40 +1656,6 @@
                 }, 3000);
             }
         }
-    }
-
-    // Add friend from history sidebar
-    function addFriendFromHistory(targetId, btnEl) {
-        btnEl.disabled = true;
-        btnEl.innerHTML = '<i class="bi bi-hourglass-split"></i> ...';
-        fetch('/social/api/friend-request', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ target_id: targetId })
-        })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    const badge = document.createElement('span');
-                    badge.className = 'history-friend-badge badge-pending';
-                    badge.innerHTML = '<i class="bi bi-hourglass-split"></i> Pending';
-                    btnEl.replaceWith(badge);
-                } else if (data.error && data.error.includes('already')) {
-                    // Already sent — show as pending
-                    const badge = document.createElement('span');
-                    badge.className = 'history-friend-badge badge-pending';
-                    badge.innerHTML = '<i class="bi bi-check-lg"></i> Added';
-                    btnEl.replaceWith(badge);
-                } else {
-                    btnEl.disabled = false;
-                    btnEl.innerHTML = '<i class="bi bi-person-plus-fill"></i> Add';
-                    alert(data.error || 'Could not send request');
-                }
-            })
-            .catch(() => {
-                btnEl.disabled = false;
-                btnEl.innerHTML = '<i class="bi bi-person-plus-fill"></i> Add';
-            });
     }
 </script>
 
