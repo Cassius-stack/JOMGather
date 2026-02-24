@@ -843,7 +843,14 @@
             </div>
 
             <a href="{{ url_for('social.agf_profile', user_id=current_user_id) }}" title="View My AGF Profile">
-                <img src="https://i.pravatar.cc/45?img=12" alt="Profile" class="profile-avatar">
+                {% if current_user_photo %}
+                <img src="{{ current_user_photo }}" alt="Profile" class="profile-avatar" style="object-fit: cover;">
+                {% else %}
+                <div class="profile-avatar"
+                    style="background: #e0f2fe; display: flex; align-items: center; justify-content: center; color: #1e3a5f; font-weight: 700; font-size: 1.2rem;">
+                    {{ session.get('username', '?')[0] | upper }}
+                </div>
+                {% endif %}
             </a>
         </div>
     </div>

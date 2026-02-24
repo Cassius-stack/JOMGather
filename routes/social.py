@@ -253,7 +253,7 @@ def search_users():
         # Checking robust implementation.
         
         # 1. Fetch potential matches
-        response = supabase.table('users').select('user_id, username, user_type').ilike('username', f'%{query}%').neq('user_id', current_user_id).neq('is_deleted', True).limit(10).execute()
+        response = supabase.table('users').select('user_id, username, user_type, profile_photo_url').ilike('username', f'%{query}%').neq('user_id', current_user_id).neq('is_deleted', True).limit(10).execute()
         
         results = []
         if response.data:
@@ -278,7 +278,8 @@ def search_users():
                     'id': user['user_id'],
                     'username': user['username'],
                     'type': user['user_type'],
-                    'friendship_status': status
+                    'friendship_status': status,
+                    'profile_photo_url': user.get('profile_photo_url') or None
                 })
             
         return jsonify(results)
@@ -522,7 +523,8 @@ def get_contacts():
                     'lastMessage': preview,
                     'status': status,
                     'lastMessageTime': last_msg_time,
-                    'unreadCount': unread_count
+                    'unreadCount': unread_count,
+                    'profile_photo_url': user_data.get('profile_photo_url') or None
                 })
             except Exception as e:
                 print(f"[Contacts] Skipping friend {friend_id} due to error: {e}")
@@ -894,7 +896,35 @@ def ask_grandfriend():
             if current_user_id in liked_by or uid_str in [str(x) for x in liked_by]:
                 liked_question_ids.add(q['id'])
         print(f"DEBUG LIKE: liked_question_ids={liked_question_ids}")
-
+        
+        if user_ids_set:
+            # Fetch user profiles
+            user_ids_list = list(user_ids_set)
+            users_res = supabase.table('users').select('user_id, username, profile_photo_url').in_('user_id', user_ids_list).execute()
+            users_data = {u['user_id']: u for u in (users_res.data or [])}
+            
+            # Fetch friendships involving current user
+            friend_statuses = {}
+            if current_user_id:
+                fr_res = supabase.table('friendships').select('*').or_(
+                    f"user_id_1.eq.{current_user_id},user_id_2.eq.{current_user_id}"
+                ).execute()
+                for f in (fr_res.data or []):
+                    other_id = f['user_id_2'] if f['user_id_1'] == current_user_id else f['user_id_1']
+                    friend_statuses[other_id] = f['status']  # 'pending' or 'accepted'
+            
+            for uid in user_ids_list:
+                udata = users_data.get(uid, {})
+                friendship = friend_statuses.get(uid)
+                history_users.append({
+                    'user_id': uid,
+                    'username': udata.get('username', 'Unknown'),
+                    'profile_photo_url': udata.get('profile_photo_url'),
+                    'friendship_status': friendship  # None, 'pending', or 'accepted'
+                })
+    except Exception as e:
+        print(f"Error building history: {e}")
+        
     user_type = session.get('user_type', 'youth')
     test_coins = session.get('agf_test_coins', 0)
     return render_template('social/ask_grandfriend.html', 

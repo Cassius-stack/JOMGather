@@ -16,94 +16,136 @@
             <p style="color: #64748b;">Tell us a bit about yourself</p>
         </div>
 
-        <!-- Progress Dots (2 steps now) -->
+        <!-- Progress Dots (3 steps) -->
         <div style="display: flex; justify-content: center; gap: 0.5rem; margin-bottom: 2rem;">
             <div id="dot-1"
                 style="height: 10px; width: 10px; border-radius: 50%; background: #1e3a5f; transition: all 0.3s;"></div>
             <div id="dot-2"
                 style="height: 10px; width: 10px; border-radius: 50%; background: #e2e8f0; transition: all 0.3s;"></div>
+            <div id="dot-3"
+                style="height: 10px; width: 10px; border-radius: 50%; background: #e2e8f0; transition: all 0.3s;"></div>
         </div>
 
         <p id="step-label" style="text-align: center; color: #64748b; font-size: 0.9rem; margin-bottom: 1.5rem;">Step 1
-            of 2: About You</p>
+            of 3: Profile Photo</p>
 
-        <form id="onboarding-form" method="POST" action="{{ url_for('auth.onboarding') }}">
+        <form id="onboarding-form" method="POST" action="{{ url_for('auth.onboarding') }}"
+            enctype="multipart/form-data">
 
-            <!-- STEP 1: DEMOGRAPHICS (Step 2 of overall flow) -->
+            <!-- STEP 1: PROFILE PHOTO -->
             <div id="step-1" style="display: block;">
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 1.5rem;">
+
+                    <!-- Upload circle / preview -->
+                    <div id="photo-circle" onclick="document.getElementById('profile_photo').click()"
+                        style="width: 180px; height: 180px; border-radius: 50%; border: 3px dashed #cbd5e1; background: #f8fafc; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; overflow: hidden; transition: border-color 0.2s; position: relative;">
+                        <img id="photo-preview" src="" alt=""
+                            style="width: 100%; height: 100%; object-fit: cover; display: none; border-radius: 50%;">
+                        <div id="photo-placeholder" style="text-align: center; pointer-events: none;">
+                            <i class="bi bi-camera" style="font-size: 2.5rem; color: #94a3b8;"></i>
+                            <p style="color: #94a3b8; font-size: 0.85rem; margin-top: 0.5rem;">Click to upload</p>
+                        </div>
+                    </div>
+
+                    <input type="file" id="profile_photo" name="profile_photo" accept="image/*" style="display: none;"
+                        onchange="previewPhoto(this)">
+
+                    <p style="color: #64748b; font-size: 0.9rem; text-align: center;">
+                        Upload a profile photo so others can recognize you.<br>
+                        <span style="color: #94a3b8; font-size: 0.8rem;">JPG, PNG or GIF — max 5 MB</span>
+                    </p>
+
+                    <button type="button" id="remove-photo-btn" onclick="removePhoto()"
+                        style="display: none; padding: 0.4rem 1rem; background: none; color: #ef4444; border: 1px solid #ef4444; border-radius: 8px; font-size: 0.85rem; cursor: pointer;">
+                        Remove photo
+                    </button>
+                </div>
+
+                <div style="margin-top: 2.5rem; display: flex; justify-content: space-between;">
+                    <a href="{{ url_for('index') }}"
+                        style="padding: 0.75rem 1.5rem; background: none; color: #64748b; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 1rem; cursor: pointer; text-decoration: none;">
+                        Skip for now
+                    </a>
+                    <button type="button" onclick="nextStep(2)"
+                        style="padding: 0.75rem 2rem; background: #1e3a5f; color: white; border: none; border-radius: 12px; font-size: 1rem; font-weight: 600; cursor: pointer;">
+                        Next &rarr;
+                    </button>
+                </div>
+            </div>
+
+            <!-- STEP 2: DEMOGRAPHICS -->
+            <div id="step-2" style="display: none;">
                 <div style="display: flex; flex-direction: column; gap: 1rem;">
-                    <div id="step-1" style="display: block;">
-                        <div>
-                            <label for="age"
-                                style="display: block; margin-bottom: 0.5rem; color: #334155; font-weight: 500;">Age</label>
-                            <input type="number" id="age" name="age" placeholder="Your age" min="1" max="120"
-                                style="width: 100%; padding: 0.75rem 1rem; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 1rem;">
-                        </div>
-                        <div>
-                            <label for="region"
-                                style="display: block; margin-bottom: 0.5rem; color: #334155; font-weight: 500;">Region</label>
-                            <select id="region" name="region"
-                                style="width: 100%; padding: 0.75rem 1rem; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 1rem; background: white;">
-                                <option value="" disabled selected>Select your region</option>
-                                <option value="North">North</option>
-                                <option value="South">South</option>
-                                <option value="East">East</option>
-                                <option value="West">West</option>
-                                <option value="Central">Central</option>
-                            </select>
-                        </div>
+                    <div>
+                        <label for="age"
+                            style="display: block; margin-bottom: 0.5rem; color: #334155; font-weight: 500;">Age</label>
+                        <input type="number" id="age" name="age" placeholder="Your age" min="1" max="120"
+                            style="width: 100%; padding: 0.75rem 1rem; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 1rem;">
                     </div>
-                    <div style="margin-top: 2rem; display: flex; justify-content: space-between;">
-                        <a href="{{ url_for('index') }}"
-                            style="padding: 0.75rem 1.5rem; background: none; color: #64748b; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 1rem; cursor: pointer; text-decoration: none;">
-                            Skip for now
-                        </a>
-                        <button type="button" onclick="nextStep(2)"
-                            style="padding: 0.75rem 2rem; background: #1e3a5f; color: white; border: none; border-radius: 12px; font-size: 1rem; font-weight: 600; cursor: pointer;">
-                            Next &rarr;
-                        </button>
+                    <div>
+                        <label for="region"
+                            style="display: block; margin-bottom: 0.5rem; color: #334155; font-weight: 500;">Region</label>
+                        <select id="region" name="region"
+                            style="width: 100%; padding: 0.75rem 1rem; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 1rem; background: white;">
+                            <option value="" disabled selected>Select your region</option>
+                            <option value="North">North</option>
+                            <option value="South">South</option>
+                            <option value="East">East</option>
+                            <option value="West">West</option>
+                            <option value="Central">Central</option>
+                        </select>
                     </div>
                 </div>
-
-                <!-- STEP 2: HOBBIES & SKILLS (Step 3 of overall flow) -->
-                <div id="step-2" style="display: none;">
-                    <h3 style="color: #334155; margin-bottom: 1rem;">Your Hobbies</h3>
-                    <p style="color: #64748b; margin-bottom: 1rem; font-size: 0.9rem;">Select hobbies you enjoy:</p>
-                    <div id="hobbies-container"
-                        style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.5rem;">
-                        <!-- Hobby buttons generated by JS -->
-                    </div>
-
-                    <h3 style="color: #334155; margin-bottom: 1rem; margin-top: 1.5rem;">Your Skills</h3>
-                    <p style="color: #64748b; margin-bottom: 1rem; font-size: 0.9rem;">What skills can you share with
-                        others?</p>
-                    <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
-                        <input type="text" id="skill-input" placeholder="Type a skill..."
-                            style="flex: 1; padding: 0.75rem 1rem; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 1rem;">
-                        <button type="button" onclick="addSkill()"
-                            style="padding: 0.75rem 1rem; background: #334155; color: white; border: none; border-radius: 12px; cursor: pointer;">
-                            Add
-                        </button>
-                    </div>
-                    <div id="skills-list"
-                        style="display: flex; flex-wrap: wrap; gap: 0.5rem; min-height: 40px; margin-bottom: 1rem;">
-                        <!-- Skills tags added by JS -->
-                    </div>
-                    <div id="skills-hidden-inputs">
-                        <!-- Hidden inputs for skills added by JS -->
-                    </div>
-
-                    <div style="margin-top: 2rem; display: flex; justify-content: space-between;">
-                        <button type="button" onclick="nextStep(1)"
-                            style="padding: 0.75rem 1.5rem; background: none; color: #64748b; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 1rem; cursor: pointer;">
-                            &larr; Back
-                        </button>
-                        <button type="submit"
-                            style="padding: 0.75rem 2rem; background: #22c55e; color: white; border: none; border-radius: 12px; font-size: 1rem; font-weight: 600; cursor: pointer;">
-                            Complete Registration ✓
-                        </button>
-                    </div>
+                <div style="margin-top: 2rem; display: flex; justify-content: space-between;">
+                    <button type="button" onclick="nextStep(1)"
+                        style="padding: 0.75rem 1.5rem; background: none; color: #64748b; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 1rem; cursor: pointer;">
+                        &larr; Back
+                    </button>
+                    <button type="button" onclick="nextStep(3)"
+                        style="padding: 0.75rem 2rem; background: #1e3a5f; color: white; border: none; border-radius: 12px; font-size: 1rem; font-weight: 600; cursor: pointer;">
+                        Next &rarr;
+                    </button>
                 </div>
+            </div>
+
+            <!-- STEP 3: HOBBIES & SKILLS -->
+            <div id="step-3" style="display: none;">
+                <h3 style="color: #334155; margin-bottom: 1rem;">Your Hobbies</h3>
+                <p style="color: #64748b; margin-bottom: 1rem; font-size: 0.9rem;">Select hobbies you enjoy:</p>
+                <div id="hobbies-container" style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.5rem;">
+                    <!-- Hobby buttons generated by JS -->
+                </div>
+
+                <h3 style="color: #334155; margin-bottom: 1rem; margin-top: 1.5rem;">Your Skills</h3>
+                <p style="color: #64748b; margin-bottom: 1rem; font-size: 0.9rem;">What skills can you share with
+                    others?</p>
+                <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+                    <input type="text" id="skill-input" placeholder="Type a skill..."
+                        style="flex: 1; padding: 0.75rem 1rem; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 1rem;">
+                    <button type="button" onclick="addSkill()"
+                        style="padding: 0.75rem 1rem; background: #334155; color: white; border: none; border-radius: 12px; cursor: pointer;">
+                        Add
+                    </button>
+                </div>
+                <div id="skills-list"
+                    style="display: flex; flex-wrap: wrap; gap: 0.5rem; min-height: 40px; margin-bottom: 1rem;">
+                    <!-- Skills tags added by JS -->
+                </div>
+                <div id="skills-hidden-inputs">
+                    <!-- Hidden inputs for skills added by JS -->
+                </div>
+
+                <div style="margin-top: 2rem; display: flex; justify-content: space-between;">
+                    <button type="button" onclick="nextStep(2)"
+                        style="padding: 0.75rem 1.5rem; background: none; color: #64748b; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 1rem; cursor: pointer;">
+                        &larr; Back
+                    </button>
+                    <button type="submit"
+                        style="padding: 0.75rem 2rem; background: #22c55e; color: white; border: none; border-radius: 12px; font-size: 1rem; font-weight: 600; cursor: pointer;">
+                        Complete Registration ✓
+                    </button>
+                </div>
+            </div>
         </form>
     </div>
 </div>
@@ -115,11 +157,104 @@
     const skillsList = [];
     let currentStep = 1;
 
-    // Initialize hobbies on page load
+    // Initialize on page load
     document.addEventListener('DOMContentLoaded', function () {
         initHobbies();
+
+        const skillInput = document.getElementById('skill-input');
+        if (skillInput) {
+            skillInput.addEventListener('keypress', function (e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    addSkill();
+                }
+            });
+        }
+
+        // Hover effect on photo circle
+        const circle = document.getElementById('photo-circle');
+        circle.addEventListener('mouseenter', function () {
+            if (!document.getElementById('photo-preview').style.display || document.getElementById('photo-preview').style.display === 'none') {
+                circle.style.borderColor = '#1e3a5f';
+            }
+        });
+        circle.addEventListener('mouseleave', function () {
+            if (!document.getElementById('photo-preview').style.display || document.getElementById('photo-preview').style.display === 'none') {
+                circle.style.borderColor = '#cbd5e1';
+            }
+        });
     });
 
+    // ── Photo Upload ──────────────────────────────────────────
+    function previewPhoto(input) {
+        if (input.files && input.files[0]) {
+            const file = input.files[0];
+            if (file.size > 5 * 1024 * 1024) {
+                alert('Image is too large. Please choose a file under 5 MB.');
+                input.value = '';
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const preview = document.getElementById('photo-preview');
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+                document.getElementById('photo-placeholder').style.display = 'none';
+                document.getElementById('remove-photo-btn').style.display = 'inline-block';
+                document.getElementById('photo-circle').style.border = '3px solid #1e3a5f';
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+
+    function removePhoto() {
+        const input = document.getElementById('profile_photo');
+        input.value = '';
+        document.getElementById('photo-preview').style.display = 'none';
+        document.getElementById('photo-preview').src = '';
+        document.getElementById('photo-placeholder').style.display = 'block';
+        document.getElementById('remove-photo-btn').style.display = 'none';
+        document.getElementById('photo-circle').style.border = '3px dashed #cbd5e1';
+    }
+
+    // ── Step Navigation ───────────────────────────────────────
+    function nextStep(step) {
+        // Hide all steps
+        document.getElementById('step-1').style.display = 'none';
+        document.getElementById('step-2').style.display = 'none';
+        document.getElementById('step-3').style.display = 'none';
+
+        // Show target step
+        document.getElementById('step-' + step).style.display = 'block';
+        currentStep = step;
+
+        // Update dots and label
+        const dot1 = document.getElementById('dot-1');
+        const dot2 = document.getElementById('dot-2');
+        const dot3 = document.getElementById('dot-3');
+        const label = document.getElementById('step-label');
+
+        // Reset all dots
+        dot1.style.background = '#e2e8f0';
+        dot2.style.background = '#e2e8f0';
+        dot3.style.background = '#e2e8f0';
+
+        if (step === 1) {
+            dot1.style.background = '#1e3a5f';
+            label.textContent = 'Step 1 of 3: Profile Photo';
+        } else if (step === 2) {
+            dot1.style.background = '#22c55e';
+            dot2.style.background = '#1e3a5f';
+            label.textContent = 'Step 2 of 3: About You';
+        } else {
+            dot1.style.background = '#22c55e';
+            dot2.style.background = '#22c55e';
+            dot3.style.background = '#1e3a5f';
+            label.textContent = 'Step 3 of 3: Interests & Skills';
+        }
+    }
+
+    // ── Hobbies ───────────────────────────────────────────────
     function initHobbies() {
         const container = document.getElementById('hobbies-container');
         container.innerHTML = '';
@@ -150,24 +285,9 @@
         updateHobbiesInput();
     }
 
-    function updateHobbyButtons() {
-        selectedHobbies.forEach(hobby => {
-            const btn = document.getElementById('hobby-btn-' + hobby);
-            if (btn) {
-                btn.style.background = '#1e3a5f';
-                btn.style.borderColor = '#1e3a5f';
-                btn.style.color = 'white';
-            }
-        });
-        updateHobbiesInput();
-    }
-
     function updateHobbiesInput() {
-        // Remove existing hidden inputs
         const existing = document.querySelectorAll('input[name="hobbies"]');
         existing.forEach(el => el.remove());
-
-        // Add new hidden inputs for each selected hobby
         const form = document.getElementById('onboarding-form');
         selectedHobbies.forEach(hobby => {
             const input = document.createElement('input');
@@ -178,55 +298,26 @@
         });
     }
 
-    function nextStep(step) {
-        // Hide all steps
-        document.getElementById('step-1').style.display = 'none';
-        document.getElementById('step-2').style.display = 'none';
-
-        // Show target step
-        document.getElementById('step-' + step).style.display = 'block';
-        currentStep = step;
-
-        // Update progress dots and label (2 steps now)
-        const dot1 = document.getElementById('dot-1');
-        const dot2 = document.getElementById('dot-2');
-        const label = document.getElementById('step-label');
-
-        if (step === 1) {
-            dot1.style.background = '#1e3a5f';
-            dot2.style.background = '#e2e8f0';
-            label.textContent = 'Step 1 of 2: About You';
-        } else {
-            dot1.style.background = '#22c55e';
-            dot2.style.background = '#1e3a5f';
-            label.textContent = 'Step 2 of 2: Interests & Skills';
-        }
-    }
-
+    // ── Skills ────────────────────────────────────────────────
     function addSkill() {
         const input = document.getElementById('skill-input');
         const skill = input.value.trim();
-
         if (skill && !skillsList.includes(skill)) {
             addSkillToList(skill);
             input.value = '';
-            saveOnboardingData();
         }
     }
 
     function addSkillToList(skill) {
         if (skillsList.includes(skill)) return;
-
         skillsList.push(skill);
 
-        // Add visible tag
         const tag = document.createElement('span');
         tag.id = 'skill-tag-' + skill.replace(/\s+/g, '-');
         tag.style.cssText = 'display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; background: #f1f5f9; border-radius: 20px; font-size: 0.9rem;';
         tag.innerHTML = `${skill} <button type="button" onclick="removeSkill('${skill}')" style="background: none; border: none; color: #ef4444; cursor: pointer; font-size: 1rem; line-height: 1;">&times;</button>`;
         document.getElementById('skills-list').appendChild(tag);
 
-        // Add hidden input
         const hidden = document.createElement('input');
         hidden.type = 'hidden';
         hidden.name = 'skills';
@@ -237,33 +328,11 @@
 
     function removeSkill(skill) {
         const index = skillsList.indexOf(skill);
-        if (index > -1) {
-            skillsList.splice(index, 1);
-        }
+        if (index > -1) skillsList.splice(index, 1);
         const tag = document.getElementById('skill-tag-' + skill.replace(/\s+/g, '-'));
         if (tag) tag.remove();
         const hidden = document.getElementById('skill-hidden-' + skill.replace(/\s+/g, '-'));
         if (hidden) hidden.remove();
-        saveOnboardingData();
     }
-
-    // Allow Enter key to add skills
-    document.addEventListener('DOMContentLoaded', function () {
-        const skillInput = document.getElementById('skill-input');
-        if (skillInput) {
-            skillInput.addEventListener('keypress', function (e) {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    addSkill();
-                }
-            });
-        }
-    });
-
-    // Clear sessionStorage after successful submission
-    document.getElementById('onboarding-form').addEventListener('submit', function () {
-        // Data will be cleared after server processes it successfully
-        // For now, we let the form submit naturally
-    });
 </script>
 {% endblock %}
