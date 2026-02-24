@@ -16,16 +16,29 @@ def get_current_user_id():
     return session.get('user_id')
 
 def _get_profile_pic(user_id):
-    """Helper to get profile picture from users table."""
+    """Helper to get profile picture. Checks profiles table first, then users table."""
     try:
+        # 1. Check profiles table (schema has profile_picture here)
+        p = fetch_one('profiles', user_id=user_id)
+        if p and p.get('profile_picture'):
+            return p['profile_picture']
+    except:
+        pass
+    
+    try:
+        # 2. Fallback: check users table (some features store it here)
         user = fetch_one('users', user_id=user_id)
         if user and user.get('profile_picture'):
             return user['profile_picture']
-    except Exception as e:
-        print(f"[SliceOfLife] Profile fetch fallback for user {user_id}: {e}")
+        # 3. Generate initials avatar (Facebook-style)
+        if user and user.get('username'):
+            name = user['username']
+            return f"https://ui-avatars.com/api/?name={name}&background=1e3a5f&color=fff&size=150&rounded=true&bold=true"
+    except:
+        pass
     
-    # Consistent fallback with rest of app
-    return f"https://i.pravatar.cc/150?u={user_id}"
+    # Final fallback
+    return f"https://ui-avatars.com/api/?name=U&background=94a3b8&color=fff&size=150&rounded=true"
 
 # ============================================
 # MAIN FLOW ROUTES
@@ -201,8 +214,8 @@ def choose_recipients():
                 except:
                     pass
             u['is_active'] = is_active
-            # Profile picture is already on the users table — use it directly
-            # (fallback handled in template with pravatar)
+            # Attach profile picture (from profiles table or initials fallback)
+            u['profile_picture'] = _get_profile_pic(u['user_id'])
             friends.append(u)
 
     # 3. Sort by active status first, then username
@@ -887,58 +900,69 @@ def receiver_respond(invite_id):
         sender['profile_picture'] = _get_profile_pic(invite['sender_id'])
 
     if request.method == 'POST':
-        # Re-check for duplicates right before insert (race condition guard)
-        recheck = fetch_one('sol_submissions', display_id=invite['display_id'], user_id=current_uid)
-        if recheck:
-            return redirect(url_for('slice_of_life.review', display_id=invite['display_id']))
-        
-        story = request.form.get('story')
-        image = request.files.get('image') # Get the file object
-        
-        image_url = None
-        if image and image.filename != '':
-            import time
-            filename = f"resp_{int(time.time())}_{image.filename}"
-            image_url = upload_file(image, bucket='images', path=filename)
-        
-        if not image_url:
-            image_url = "https://i.pravatar.cc/300?img=25"
-        
-        # Save Submission
-        insert('sol_submissions', {
-            'display_id': invite['display_id'],
-            'user_id': current_uid,
-            'image_url': image_url,
-            'thought': story
-        })
-        
-        # Post-insert dedup: if race condition created duplicates, clean up
-        all_my_subs = fetch_all('sol_submissions', display_id=invite['display_id'], user_id=current_uid) or []
-        if len(all_my_subs) > 1:
-            # Keep only the first submission, delete the rest
-            for extra in all_my_subs[1:]:
-                delete('sol_submissions', submission_id=extra['submission_id'])
-            print(f"[SOL] Cleaned up {len(all_my_subs)-1} duplicate submission(s) for user {current_uid}")
-        
-        # Update Invite Status
-        update('sol_invites', {
-            'status': 'accepted', 
-            'responded_at': datetime.now().isoformat()
-        }, invite_id=invite_id)
-        
-        # Update Display Status to 'active' (or 'review') so it's accessible
-        # This assumes invite acceptance completes the interaction for now (1-on-1)
-        update('sol_displays', {'status': 'active'}, display_id=display_id)
+        try:
+            # Re-check for duplicates right before insert (race condition guard)
+            recheck = fetch_one('sol_submissions', display_id=invite['display_id'], user_id=current_uid)
+            if recheck:
+                return redirect(url_for('slice_of_life.review', display_id=invite['display_id']))
+            
+            story = request.form.get('story')
+            image = request.files.get('image') # Get the file object
+            
+            image_url = None
+            if image and image.filename != '':
+                try:
+                    import time
+                    filename = f"resp_{int(time.time())}_{image.filename}"
+                    image_url = upload_file(image, bucket='images', path=filename)
+                except Exception as upload_err:
+                    print(f"[SOL] Image upload failed, using placeholder: {upload_err}")
+                    image_url = None
+            
+            if not image_url:
+                # Use initials-based placeholder instead of pravatar
+                image_url = f"https://ui-avatars.com/api/?name=Photo&background=e2e8f0&color=94a3b8&size=300"
+            
+            # Save Submission
+            insert('sol_submissions', {
+                'display_id': invite['display_id'],
+                'user_id': current_uid,
+                'image_url': image_url,
+                'thought': story
+            })
+            
+            # Post-insert dedup: if race condition created duplicates, clean up
+            all_my_subs = fetch_all('sol_submissions', display_id=invite['display_id'], user_id=current_uid) or []
+            if len(all_my_subs) > 1:
+                for extra in all_my_subs[1:]:
+                    delete('sol_submissions', submission_id=extra['submission_id'])
+                print(f"[SOL] Cleaned up {len(all_my_subs)-1} duplicate submission(s) for user {current_uid}")
+            
+            # Update Invite Status
+            update('sol_invites', {
+                'status': 'accepted', 
+                'responded_at': datetime.now().isoformat()
+            }, invite_id=invite_id)
+            
+            # Update Display Status to 'active' so it's accessible
+            update('sol_displays', {'status': 'active'}, display_id=display_id)
 
-        # Notify Sender
-        insert('notifications', {
-            'user_id': invite['sender_id'],
-            'type': 'sol_accept', # or sol_response
-            'message': f"Your partner responded to your Slice of Life!",
-            'link': url_for('slice_of_life.review', display_id=display_id)
-        })
+            # Notify Sender
+            insert('notifications', {
+                'user_id': invite['sender_id'],
+                'type': 'sol_accept',
+                'message': f"Your partner responded to your Slice of Life!",
+                'link': url_for('slice_of_life.review', display_id=display_id)
+            })
+            
+            return redirect(url_for('slice_of_life.review', display_id=display_id))
         
-        return redirect(url_for('slice_of_life.review', display_id=display_id))
+        except Exception as e:
+            import traceback
+            print(f"[SOL] receiver_respond POST error for invite {invite_id}: {e}")
+            traceback.print_exc()
+            flash("Something went wrong submitting your response. Please try again.", "danger")
+            return redirect(url_for('slice_of_life.receiver_respond', invite_id=invite_id))
     
     return render_template('slice_of_life/receiver_respond.html', 
                          invite=invite, 

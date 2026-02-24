@@ -70,7 +70,7 @@
                     <div class="card-body p-4">
 
                         <div class="d-flex align-items-center mb-3">
-                            <img src="{{ sub.profile_picture or 'https://i.pravatar.cc/100?img=' ~ ((sub.user_id * 5) % 70) }}"
+                            <img src="{{ sub.profile_picture or 'https://ui-avatars.com/api/?name=' ~ sub.username ~ '&background=1e3a5f&color=fff&size=100&rounded=true&bold=true' }}"
                                 class="rounded-circle me-3 border shadow-sm"
                                 style="width: 40px; height: 40px; object-fit: cover;">
                             <div>
@@ -186,7 +186,7 @@
                         {% if comments %}
                         {% for comm in comments %}
                         <div class="d-flex gap-3 mb-3 pb-3 border-bottom border-light">
-                            <img src="{{ comm.profile_picture or 'https://i.pravatar.cc/100?u=' ~ comm.username }}"
+                            <img src="{{ comm.profile_picture or 'https://ui-avatars.com/api/?name=' ~ comm.username ~ '&background=1e3a5f&color=fff&size=100&rounded=true&bold=true' }}"
                                 class="rounded-circle flex-shrink-0 border"
                                 style="width: 40px; height: 40px; object-fit: cover;">
                             <div>
