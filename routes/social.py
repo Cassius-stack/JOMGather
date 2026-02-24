@@ -876,10 +876,13 @@ def ask_grandfriend():
         
     current_user_id = get_current_user_id()
     current_username = "Jeremy Khoo" # Default fallback
+    current_user_photo = None
     if current_user_id:
         try:
             u = fetch_one('users', user_id=current_user_id)
-            if u: current_username = u.get('username')
+            if u: 
+                current_username = u.get('username')
+                current_user_photo = u.get('profile_photo_url') or u.get('profile_picture')
         except: pass
     
     # History pane has been removed, so no history_users computation needed
@@ -896,35 +899,7 @@ def ask_grandfriend():
             if current_user_id in liked_by or uid_str in [str(x) for x in liked_by]:
                 liked_question_ids.add(q['id'])
         print(f"DEBUG LIKE: liked_question_ids={liked_question_ids}")
-        
-        if user_ids_set:
-            # Fetch user profiles
-            user_ids_list = list(user_ids_set)
-            users_res = supabase.table('users').select('user_id, username, profile_photo_url').in_('user_id', user_ids_list).execute()
-            users_data = {u['user_id']: u for u in (users_res.data or [])}
-            
-            # Fetch friendships involving current user
-            friend_statuses = {}
-            if current_user_id:
-                fr_res = supabase.table('friendships').select('*').or_(
-                    f"user_id_1.eq.{current_user_id},user_id_2.eq.{current_user_id}"
-                ).execute()
-                for f in (fr_res.data or []):
-                    other_id = f['user_id_2'] if f['user_id_1'] == current_user_id else f['user_id_1']
-                    friend_statuses[other_id] = f['status']  # 'pending' or 'accepted'
-            
-            for uid in user_ids_list:
-                udata = users_data.get(uid, {})
-                friendship = friend_statuses.get(uid)
-                history_users.append({
-                    'user_id': uid,
-                    'username': udata.get('username', 'Unknown'),
-                    'profile_photo_url': udata.get('profile_photo_url'),
-                    'friendship_status': friendship  # None, 'pending', or 'accepted'
-                })
-    except Exception as e:
-        print(f"Error building history: {e}")
-        
+
     user_type = session.get('user_type', 'youth')
     test_coins = session.get('agf_test_coins', 0)
     return render_template('social/ask_grandfriend.html', 
@@ -935,8 +910,8 @@ def ask_grandfriend():
                            user_type=user_type, 
                            liked_question_ids=liked_question_ids,
                            current_sort=sort_by,
-                           current_order=order,
                            current_unanswered=unanswered_only,
+                           current_user_photo=current_user_photo,
                            test_coins=test_coins)
 
 @social_bp.route('/ask-grandfriend/post', methods=['GET', 'POST'])
@@ -1375,13 +1350,14 @@ def agf_ranks():
 
     # Get user profile picture
     try:
-        user_resp = supabase.table('users').select('profile_picture').eq('id', current_user_id).single().execute()
-        profile_picture = user_resp.data.get('profile_picture') if user_resp.data else None
+        user_resp = supabase.table('users').select('profile_photo_url, profile_picture').eq('id', current_user_id).single().execute()
+        if user_resp.data:
+            profile_picture = user_resp.data.get('profile_photo_url') or user_resp.data.get('profile_picture')
+        else:
+            profile_picture = None
     except:
         profile_picture = None
 
-    if not profile_picture:
-        profile_picture = f'https://i.pravatar.cc/120?u={current_user_id}'
 
     # Define all rank tiers with descriptions
     rank_tiers = [
