@@ -144,10 +144,10 @@ def create_display():
         # Upload Image to Supabase Storage
         image_url = ""
         if image_file and image_file.filename != '':
-            import time
-            # Use a specific path logic: uploads/{user_id}/{timestamp}_{filename}
-            # But simple unique filename is okay for MVP
-            filename = f"{int(time.time())}_{image_file.filename}"
+            import time, os
+            # Truncate filename to avoid exceeding VARCHAR(255) on image_url
+            ext = os.path.splitext(image_file.filename)[1][:10]
+            filename = f"sol_{int(time.time())}{ext}"
             # Upload and get URL
             image_url = upload_file(image_file, bucket='images', path=filename)
         
@@ -912,8 +912,9 @@ def receiver_respond(invite_id):
             image_url = None
             if image and image.filename != '':
                 try:
-                    import time
-                    filename = f"resp_{int(time.time())}_{image.filename}"
+                    import time, os
+                    ext = os.path.splitext(image.filename)[1][:10]
+                    filename = f"resp_{int(time.time())}{ext}"
                     image_url = upload_file(image, bucket='images', path=filename)
                 except Exception as upload_err:
                     print(f"[SOL] Image upload failed, using placeholder: {upload_err}")
