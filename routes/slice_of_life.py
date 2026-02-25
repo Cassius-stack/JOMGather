@@ -952,8 +952,8 @@ def receiver_respond(invite_id):
                 'responded_at': datetime.now().isoformat()
             }, invite_id=invite_id)
             
-            # Update Display Status to 'completed'
-            update('sol_displays', {'status': 'completed'}, display_id=display_id)
+            # NOTE: Display stays 'pending' — both users review and comment first.
+            # The explicit /publish/<display_id> route handles setting status='completed'.
 
             # Notify Sender
             insert('notifications', {
