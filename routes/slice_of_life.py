@@ -427,8 +427,8 @@ def waiting_room():
         # Auto-heal: if both submitted but display status is still 'pending', fix it
         if is_reviewable and display['status'] == 'pending':
             try:
-                update('sol_displays', {'status': 'active'}, display_id=display['display_id'])
-                print(f"[SOL] Auto-healed display {display['display_id']} from 'pending' to 'active'")
+                update('sol_displays', {'status': 'completed'}, display_id=display['display_id'])
+                print(f"[SOL] Auto-healed display {display['display_id']} from 'pending' to 'completed'")
             except:
                 pass
         
@@ -952,8 +952,8 @@ def receiver_respond(invite_id):
                 'responded_at': datetime.now().isoformat()
             }, invite_id=invite_id)
             
-            # Update Display Status to 'active'
-            update('sol_displays', {'status': 'active'}, display_id=display_id)
+            # NOTE: Display stays 'pending' — both users review and comment first.
+            # The explicit /publish/<display_id> route handles setting status='completed'.
 
             # Notify Sender
             insert('notifications', {
