@@ -5,6 +5,7 @@ Uses Supabase for data storage
 from utils.supabase_db import get_supabase, get_supabase_admin, fetch_one, retry_query
 
 
+@retry_query()
 def get_user_coins(user_id):
     """Get user's current coin balance from Supabase.
     Uses admin client to bypass RLS so any user's balance can be read server-side.
@@ -16,6 +17,7 @@ def get_user_coins(user_id):
     return result.data[0]['total_coins'] if result.data else 0
 
 
+@retry_query()
 def add_coins(user_id, amount):
     """Add coins to user's balance.
     Uses the admin client (service role key) to bypass RLS and update any user's coins.
@@ -41,6 +43,7 @@ def add_coins(user_id, amount):
     return True
 
 
+@retry_query()
 def remove_coins(user_id, amount):
     """Remove coins from user's balance. Returns True if successful."""
     if not user_id or amount <= 0:
