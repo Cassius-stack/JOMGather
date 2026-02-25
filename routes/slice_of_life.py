@@ -424,13 +424,8 @@ def waiting_room():
         # Reviewable = both users have submitted (don't rely solely on display status)
         is_reviewable = (my_sub is not None and partner_sub is not None)
         
-        # Auto-heal: if both submitted but display status is still 'pending', fix it
-        if is_reviewable and display['status'] == 'pending':
-            try:
-                update('sol_displays', {'status': 'completed'}, display_id=display['display_id'])
-                print(f"[SOL] Auto-healed display {display['display_id']} from 'pending' to 'completed'")
-            except:
-                pass
+        # NOTE: Display stays 'pending' until explicit publish.
+        # is_reviewable is based on actual submissions, not display status.
         
         view_data.append({
             'invite': invite,
