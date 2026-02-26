@@ -21,6 +21,96 @@
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=1005">
 
+    <!-- Google Translate: hide default widget & banner -->
+    <style>
+        /* Hide the default Google Translate bar */
+        .goog-te-banner-frame,
+        .skiptranslate,
+        #google_translate_element {
+            display: none !important;
+        }
+
+        body {
+            top: 0 !important;
+        }
+
+        /* Custom Language Dropdown Styling */
+        .lang-dropdown-menu {
+            width: 260px;
+            max-height: 380px;
+            overflow-y: auto;
+            border: none;
+            border-radius: 16px;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+            padding: 0;
+        }
+
+        .lang-dropdown-menu .lang-header {
+            background: linear-gradient(135deg, #1e3a5f, #0f172a);
+            color: white;
+            padding: 14px 18px;
+            border-radius: 16px 16px 0 0;
+            font-weight: 700;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .lang-dropdown-menu .lang-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 18px;
+            font-size: 0.88rem;
+            cursor: pointer;
+            transition: background 0.15s ease;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+            color: #334155;
+        }
+
+        .lang-dropdown-menu .lang-item:hover {
+            background: #f1f5f9;
+        }
+
+        .lang-dropdown-menu .lang-item.active {
+            background: #eff6ff;
+            color: #1e40af;
+            font-weight: 600;
+        }
+
+        .lang-dropdown-menu .lang-item .lang-flag {
+            font-size: 1.3rem;
+            width: 28px;
+            text-align: center;
+        }
+
+        .lang-dropdown-menu .lang-item .lang-name {
+            flex: 1;
+        }
+
+        .lang-dropdown-menu .lang-item .lang-check {
+            color: #2563eb;
+            font-size: 1rem;
+        }
+
+        .lang-globe-btn {
+            font-size: 1.35rem;
+            color: #1e3a5f;
+            cursor: pointer;
+            transition: transform 0.2s, color 0.2s;
+            padding: 4px;
+        }
+
+        .lang-globe-btn:hover {
+            color: #2563eb;
+            transform: scale(1.1);
+        }
+    </style>
+
     <!-- CRITICAL: Inline override to force update if cache is stuck -->
     <style>
         /* Container override if needed */
@@ -109,6 +199,74 @@
                         style="border: 1px solid #e2e8f0; height: 40px;">
                         <span class="text-warning me-1">🪙</span>
                         <span style="font-weight: 700; color: #1e3a5f;">{{ total_coins }}</span>
+                    </div>
+
+                    <!-- Language Translate Button -->
+                    <div class="dropdown me-3" id="langDropdownContainer">
+                        <a href="#" class="text-decoration-none lang-globe-btn" data-bs-toggle="dropdown"
+                            data-bs-auto-close="true" aria-expanded="false" id="langGlobeBtn" title="Translate">
+                            <i class="bi bi-translate"></i>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-end lang-dropdown-menu mt-3" id="langDropdownMenu">
+                            <div class="lang-header">
+                                <i class="bi bi-translate"></i> Translate Page
+                            </div>
+                            <button class="lang-item" onclick="translatePage('en')" data-lang="en">
+                                <span class="lang-flag">🇬🇧</span>
+                                <span class="lang-name">English</span>
+                                <i class="bi bi-check-lg lang-check d-none"></i>
+                            </button>
+                            <button class="lang-item" onclick="translatePage('ms')" data-lang="ms">
+                                <span class="lang-flag">🇲🇾</span>
+                                <span class="lang-name">Bahasa Melayu</span>
+                                <i class="bi bi-check-lg lang-check d-none"></i>
+                            </button>
+                            <button class="lang-item" onclick="translatePage('zh-CN')" data-lang="zh-CN">
+                                <span class="lang-flag">🇨🇳</span>
+                                <span class="lang-name">中文 (Chinese)</span>
+                                <i class="bi bi-check-lg lang-check d-none"></i>
+                            </button>
+                            <button class="lang-item" onclick="translatePage('ta')" data-lang="ta">
+                                <span class="lang-flag">🇮🇳</span>
+                                <span class="lang-name">தமிழ் (Tamil)</span>
+                                <i class="bi bi-check-lg lang-check d-none"></i>
+                            </button>
+                            <button class="lang-item" onclick="translatePage('ja')" data-lang="ja">
+                                <span class="lang-flag">🇯🇵</span>
+                                <span class="lang-name">日本語 (Japanese)</span>
+                                <i class="bi bi-check-lg lang-check d-none"></i>
+                            </button>
+                            <button class="lang-item" onclick="translatePage('ko')" data-lang="ko">
+                                <span class="lang-flag">🇰🇷</span>
+                                <span class="lang-name">한국어 (Korean)</span>
+                                <i class="bi bi-check-lg lang-check d-none"></i>
+                            </button>
+                            <button class="lang-item" onclick="translatePage('th')" data-lang="th">
+                                <span class="lang-flag">🇹🇭</span>
+                                <span class="lang-name">ไทย (Thai)</span>
+                                <i class="bi bi-check-lg lang-check d-none"></i>
+                            </button>
+                            <button class="lang-item" onclick="translatePage('vi')" data-lang="vi">
+                                <span class="lang-flag">🇻🇳</span>
+                                <span class="lang-name">Tiếng Việt (Vietnamese)</span>
+                                <i class="bi bi-check-lg lang-check d-none"></i>
+                            </button>
+                            <button class="lang-item" onclick="translatePage('id')" data-lang="id">
+                                <span class="lang-flag">🇮🇩</span>
+                                <span class="lang-name">Bahasa Indonesia</span>
+                                <i class="bi bi-check-lg lang-check d-none"></i>
+                            </button>
+                            <button class="lang-item" onclick="translatePage('hi')" data-lang="hi">
+                                <span class="lang-flag">🇮🇳</span>
+                                <span class="lang-name">हिन्दी (Hindi)</span>
+                                <i class="bi bi-check-lg lang-check d-none"></i>
+                            </button>
+                            <button class="lang-item" onclick="translatePage('ar')" data-lang="ar">
+                                <span class="lang-flag">🇸🇦</span>
+                                <span class="lang-name">العربية (Arabic)</span>
+                                <i class="bi bi-check-lg lang-check d-none"></i>
+                            </button>
+                        </div>
                     </div>
 
                     <!-- Notification Bell -->
@@ -257,6 +415,76 @@
                         </div>
                     </div>
                 </div> <!-- End Right Side -->
+                {% else %}
+                <!-- Non-logged-in: just show translate button -->
+                <div class="ms-auto d-flex align-items-center">
+                    <div class="dropdown" id="langDropdownContainerGuest">
+                        <a href="#" class="text-decoration-none lang-globe-btn" data-bs-toggle="dropdown"
+                            data-bs-auto-close="true" aria-expanded="false" title="Translate">
+                            <i class="bi bi-translate"></i>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-end lang-dropdown-menu mt-3">
+                            <div class="lang-header">
+                                <i class="bi bi-translate"></i> Translate Page
+                            </div>
+                            <button class="lang-item" onclick="translatePage('en')" data-lang="en">
+                                <span class="lang-flag">🇬🇧</span>
+                                <span class="lang-name">English</span>
+                                <i class="bi bi-check-lg lang-check d-none"></i>
+                            </button>
+                            <button class="lang-item" onclick="translatePage('ms')" data-lang="ms">
+                                <span class="lang-flag">🇲🇾</span>
+                                <span class="lang-name">Bahasa Melayu</span>
+                                <i class="bi bi-check-lg lang-check d-none"></i>
+                            </button>
+                            <button class="lang-item" onclick="translatePage('zh-CN')" data-lang="zh-CN">
+                                <span class="lang-flag">🇨🇳</span>
+                                <span class="lang-name">中文 (Chinese)</span>
+                                <i class="bi bi-check-lg lang-check d-none"></i>
+                            </button>
+                            <button class="lang-item" onclick="translatePage('ta')" data-lang="ta">
+                                <span class="lang-flag">🇮🇳</span>
+                                <span class="lang-name">தமிழ் (Tamil)</span>
+                                <i class="bi bi-check-lg lang-check d-none"></i>
+                            </button>
+                            <button class="lang-item" onclick="translatePage('ja')" data-lang="ja">
+                                <span class="lang-flag">🇯🇵</span>
+                                <span class="lang-name">日本語 (Japanese)</span>
+                                <i class="bi bi-check-lg lang-check d-none"></i>
+                            </button>
+                            <button class="lang-item" onclick="translatePage('ko')" data-lang="ko">
+                                <span class="lang-flag">🇰🇷</span>
+                                <span class="lang-name">한국어 (Korean)</span>
+                                <i class="bi bi-check-lg lang-check d-none"></i>
+                            </button>
+                            <button class="lang-item" onclick="translatePage('th')" data-lang="th">
+                                <span class="lang-flag">🇹🇭</span>
+                                <span class="lang-name">ไทย (Thai)</span>
+                                <i class="bi bi-check-lg lang-check d-none"></i>
+                            </button>
+                            <button class="lang-item" onclick="translatePage('vi')" data-lang="vi">
+                                <span class="lang-flag">🇻🇳</span>
+                                <span class="lang-name">Tiếng Việt (Vietnamese)</span>
+                                <i class="bi bi-check-lg lang-check d-none"></i>
+                            </button>
+                            <button class="lang-item" onclick="translatePage('id')" data-lang="id">
+                                <span class="lang-flag">🇮🇩</span>
+                                <span class="lang-name">Bahasa Indonesia</span>
+                                <i class="bi bi-check-lg lang-check d-none"></i>
+                            </button>
+                            <button class="lang-item" onclick="translatePage('hi')" data-lang="hi">
+                                <span class="lang-flag">🇮🇳</span>
+                                <span class="lang-name">हिन्दी (Hindi)</span>
+                                <i class="bi bi-check-lg lang-check d-none"></i>
+                            </button>
+                            <button class="lang-item" onclick="translatePage('ar')" data-lang="ar">
+                                <span class="lang-flag">🇸🇦</span>
+                                <span class="lang-name">العربية (Arabic)</span>
+                                <i class="bi bi-check-lg lang-check d-none"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
                 {% endif %}
             </div> <!-- End navbar-collapse -->
         </div> <!-- End container -->
@@ -634,6 +862,58 @@
         });
     </script>
     {% endif %}
+    <!-- Google Translate Hidden Widget (required by API) -->
+    <div id="google_translate_element" style="display:none;"></div>
+    <script>
+        function googleTranslateElementInit() {
+            new google.translate.TranslateElement({
+                pageLanguage: 'en',
+                autoDisplay: false
+            }, 'google_translate_element');
+            // Restore saved language after widget loads
+            setTimeout(function () {
+                var saved = localStorage.getItem('jomgather_lang') || 'en';
+                highlightActiveLang(saved);
+            }, 500);
+        }
+
+        function translatePage(lang) {
+            var sel = document.querySelector('.goog-te-combo');
+            if (sel) {
+                sel.value = lang;
+                sel.dispatchEvent(new Event('change'));
+                localStorage.setItem('jomgather_lang', lang);
+                highlightActiveLang(lang);
+            } else {
+                // Widget not loaded yet, retry
+                setTimeout(function () { translatePage(lang); }, 300);
+            }
+        }
+
+        function highlightActiveLang(lang) {
+            document.querySelectorAll('.lang-item').forEach(function (btn) {
+                var check = btn.querySelector('.lang-check');
+                if (btn.dataset.lang === lang) {
+                    btn.classList.add('active');
+                    if (check) check.classList.remove('d-none');
+                } else {
+                    btn.classList.remove('active');
+                    if (check) check.classList.add('d-none');
+                }
+            });
+        }
+
+        // Restore language on page load
+        window.addEventListener('load', function () {
+            var saved = localStorage.getItem('jomgather_lang');
+            if (saved && saved !== 'en') {
+                setTimeout(function () { translatePage(saved); }, 1000);
+            } else {
+                highlightActiveLang('en');
+            }
+        });
+    </script>
+    <script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
 </body>
 
 </html>
