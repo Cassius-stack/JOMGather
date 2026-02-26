@@ -305,7 +305,7 @@ def offer_help(request_id):
                         ).execute()
                     
                     # Send automated message with request details
-                    msg = (f"I am {helper_username}. I have accepted your request regard {req_title} from your post.\n\n"
+                    msg = (f"Hi! I am {helper_username}. I have accepted your request regarding '{req_title}' from your post.\n\n"
                            f"Request Details:\n"
                            f"- Title: {req_title}\n"
                            f"- Description: {req_desc}\n"

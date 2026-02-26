@@ -1432,6 +1432,7 @@ body {
 
 .message-text {
     display: block;
+    white-space: pre-wrap;
 }
 
 .message-metadata {
