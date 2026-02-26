@@ -8,20 +8,11 @@ from models.reward import (
     redeem_reward, 
     get_user_rewards, 
     mark_reward_redeemed,
-    get_user_redeemed_reward_ids
+    get_user_redeemed_reward_ids,
+    get_all_rewards
 )
 
 rewards_bp = Blueprint('rewards', __name__)
-
-# List of available rewards (can be moved to database later)
-REWARDS = [
-    {'id': 1, 'name': 'Welcome Gift', 'price': 15, 'image': 'giftbox.svg'},
-    {'id': 2, 'name': 'NTUC: $10 Voucher', 'price': 30, 'image': 'bulb.svg'},
-    {'id': 3, 'name': 'Reusable Tote', 'price': 50, 'image': 'giftbox.svg'},
-    {'id': 4, 'name': 'Tiger Balm Plaster', 'price': 100, 'image': 'bulb.svg'},
-    {'id': 5, 'name': 'Pei Pa Koa: Nin Joim', 'price': 300, 'image': 'giftbox.svg'},
-    {'id': 6, 'name': 'Essence of Chicken (Pack of 6)', 'price': 500, 'image': 'bulb.svg'},
-]
 
 
 @rewards_bp.route('/')
@@ -30,13 +21,14 @@ def redeem():
     try:
         user_id = session.get('user_id')
         user_coins = get_user_coins(user_id)
+        rewards = get_all_rewards()
         
         # Get list of already redeemed reward IDs
         redeemed_ids = get_user_redeemed_reward_ids(user_id)
         
         # Add 'redeemed' flag to each reward
         rewards_with_status = []
-        for reward in REWARDS:
+        for reward in rewards:
             reward_copy = reward.copy()
             reward_copy['already_redeemed'] = reward['id'] in redeemed_ids
             rewards_with_status.append(reward_copy)
@@ -45,8 +37,7 @@ def redeem():
     except Exception as e:
         print(f"[Rewards] Error loading redeem page: {e}")
         # Fallback: show page with 0 coins and no redeemed flags
-        rewards_with_status = [dict(r, already_redeemed=False) for r in REWARDS]
-        return render_template('rewards/redeem.html', coins=0, rewards=rewards_with_status)
+        return render_template('rewards/redeem.html', coins=0, rewards=[])
 
 
 @rewards_bp.route('/redeem', methods=['POST'])
@@ -69,8 +60,9 @@ def redeem_item():
     if not isinstance(reward_id, int) or reward_id < 1:
         return jsonify({'success': False, 'error': 'Invalid reward selection'}), 400
     
-    # Find the reward
-    reward = next((r for r in REWARDS if r['id'] == reward_id), None)
+    # Find the reward from Supabase
+    rewards = get_all_rewards()
+    reward = next((r for r in rewards if r['id'] == reward_id), None)
     if not reward:
         return jsonify({'success': False, 'error': 'This reward is no longer available'}), 404
     

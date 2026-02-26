@@ -6,6 +6,14 @@ from utils.supabase_db import get_supabase, get_supabase_admin, fetch_one, retry
 
 
 @retry_query()
+def get_all_rewards():
+    """Fetch all available rewards from the Supabase 'rewards' table."""
+    supabase = get_supabase()
+    result = supabase.table('rewards').select('*').order('id').execute()
+    return result.data if result.data else []
+
+
+@retry_query()
 def get_user_coins(user_id):
     """Get user's current coin balance from Supabase.
     Uses admin client to bypass RLS so any user's balance can be read server-side.

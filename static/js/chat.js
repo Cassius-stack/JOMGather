@@ -828,12 +828,32 @@ function appendMessage(msg) {
     chatMessages.appendChild(messageElement);
     chatMessages.scrollTop = chatMessages.scrollHeight;
 
+    // Detect multiline bubbles for text alignment
+    detectMultilineBubbles();
+
     // Async check for challenges
     if (msg.type === 'cyber-challenge' || msg.text === '!cyber') {
         const effectiveChallengeId = msg.challenge_id || `msg_${msg.id}`;
         const effectiveScenarioId = msg.scenario_id || (cyberScenarios[0].id);
         checkAndUpdateChallengeCard(effectiveChallengeId, effectiveScenarioId);
     }
+}
+
+/**
+ * Detect multiline message bubbles and add 'multiline' class
+ * so CSS can switch text alignment (right for short, left for long)
+ */
+function detectMultilineBubbles() {
+    document.querySelectorAll('.message.sent .bubble').forEach(bubble => {
+        const textEl = bubble.querySelector('.message-text');
+        if (!textEl) return;
+        const lineHeight = parseFloat(getComputedStyle(textEl).lineHeight) || 21;
+        if (textEl.scrollHeight > lineHeight * 1.5) {
+            bubble.classList.add('multiline');
+        } else {
+            bubble.classList.remove('multiline');
+        }
+    });
 }
 
 /**
@@ -1070,6 +1090,9 @@ function renderMessages(messages) {
     });
 
     chatMessages.innerHTML = fullHtml;
+
+    // Detect multiline bubbles for text alignment
+    detectMultilineBubbles();
 
     // After setting HTML, trigger async challenge checks
     challengesToUpdate.forEach(c => {

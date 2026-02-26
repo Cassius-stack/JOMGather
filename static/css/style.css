@@ -1044,6 +1044,7 @@ body {
 /* --- 1. Sidebar (Leftmost) --- */
 .sidebar {
     width: 80px;
+    flex-shrink: 0;
     background-color: #2B4ACB;
     /* Deep Blue */
     display: flex;
@@ -1078,6 +1079,7 @@ body {
 /* --- 2. Inbox Pane --- */
 .inbox-pane {
     width: 320px;
+    flex-shrink: 0;
     background-color: #fff;
     border-right: 1px solid #ddd;
     display: flex;
@@ -1244,6 +1246,8 @@ body {
 /* --- 3. Chat Window --- */
 .chat-window {
     flex-grow: 1;
+    min-width: 0;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
     background-color: #fff;
@@ -1399,10 +1403,12 @@ body {
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
     position: relative;
     min-width: 110px;
-    width: fit-content;
+    max-width: 100%;
     background-color: inherit;
     color: inherit;
     word-wrap: break-word;
+    overflow-wrap: break-word;
+    text-align: left;
     display: flex;
     flex-direction: column;
 }
@@ -1420,32 +1426,21 @@ body {
 }
 
 .message-body {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 8px;
+    display: block;
     min-height: 24px;
-    /* Ensure enough room for centering */
 }
 
 .message-text {
-    flex: 1;
-    display: inline-block;
-    align-self: center;
-    /* Center the text vertically */
+    display: block;
 }
 
 .message-metadata {
-    display: inline-flex;
+    display: flex;
+    justify-content: flex-end;
     align-items: center;
     gap: 4px;
-    margin-left: auto;
-    align-self: flex-end;
-    /* Push metadata to the bottom */
+    margin-top: 2px;
     line-height: 1;
-    position: relative;
-    bottom: -1px;
-    /* Minimal adjustment for baseline */
 }
 
 .message-image {
@@ -1479,8 +1474,11 @@ body {
     border-bottom-right-radius: 4px;
     display: flex;
     flex-direction: column;
-    align-items: flex-end;
     text-align: right;
+}
+
+.sent .bubble.multiline {
+    text-align: left;
 }
 
 /* Message Actions - Edit & Delete icons */
