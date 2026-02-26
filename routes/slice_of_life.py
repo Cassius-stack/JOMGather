@@ -47,44 +47,7 @@ def _get_profile_pic(user_id):
 @slice_of_life_bp.route('/')
 @login_required
 def index():
-    """Smart router: Prioritize active (reviewable) displays over pending ones."""
-    current_uid = get_current_user_id()
-    today = datetime.now().date().isoformat()
-    
-    # 0. Find today's prompt
-    prompts = fetch_all('sol_prompts', active_date=today)
-    if not prompts:
-        return redirect(url_for('slice_of_life.prompt'))
-    
-    prompt_id = prompts[0]['prompt_id']
-
-    # 1. Check if user has any displays for TODAY's prompt
-    existing_today = fetch_all('sol_displays', prompt_id=prompt_id) or []
-    my_displays = [d for d in existing_today if d['creator_id'] == current_uid or d['partner_id'] == current_uid]
-    
-    if my_displays:
-        # Check each display for actual reviewability (both submissions exist)
-        active = []
-        pending = []
-        for d in my_displays:
-            # Check if both users have submitted
-            subs = fetch_all('sol_submissions', display_id=d['display_id']) or []
-            unique_users = set(s['user_id'] for s in subs)
-            both_submitted = d['creator_id'] in unique_users and d['partner_id'] in unique_users
-            
-            if both_submitted or d['status'] != 'pending':
-                active.append(d)
-            else:
-                pending.append(d)
-        
-        if active:
-            # Redirect to first active display for review
-            return redirect(url_for('slice_of_life.review', display_id=active[0]['display_id']))
-        elif pending:
-            # All are still pending — go to waiting room
-            return redirect(url_for('slice_of_life.waiting_room'))
-
-    # If nothing found for today, proceed to prompt
+    """Entry point: Always go to prompt page. Waiting room is accessed via button."""
     return redirect(url_for('slice_of_life.prompt'))
 
 @slice_of_life_bp.route('/prompt')
@@ -112,20 +75,21 @@ def prompt():
         # Re-fetch to get ID
         prompt_data = fetch_all('sol_prompts', active_date=today)[0]
     
-    # Relaxed Check: Only auto-redirect to waiting room if NOT forcing new,
-    # AND user is a CREATOR with pending displays (not a receiver who needs to respond).
-    if not force_new:
-        existing_today = fetch_all('sol_displays', prompt_id=prompt_data['prompt_id']) or []
-        for disp in existing_today:
-            if disp['creator_id'] == current_uid and disp['status'] == 'pending':
-                return redirect(url_for('slice_of_life.waiting_room'))
+    # Count user's pending/active SOLs for today (to show waiting room button)
+    pending_sol_count = 0
+    existing_today = fetch_all('sol_displays', prompt_id=prompt_data['prompt_id']) or []
+    for disp in existing_today:
+        if disp['creator_id'] == current_uid or disp['partner_id'] == current_uid:
+            if disp['status'] == 'pending':
+                pending_sol_count += 1
             
     session['sol_prompt_id'] = prompt_data['prompt_id']
     user_state = session.get('sol_state', 'new')
     
     return render_template('slice_of_life/prompt.html', 
                          prompt=prompt_data, 
-                         user_state=user_state)
+                         user_state=user_state,
+                         pending_sol_count=pending_sol_count)
 
 
 @slice_of_life_bp.route('/create', methods=['GET', 'POST'])
@@ -876,7 +840,7 @@ def receiver_respond(invite_id):
     # 1b. Duplicate Submission Check
     existing_sub = fetch_one('sol_submissions', display_id=invite['display_id'], user_id=current_uid)
     if existing_sub:
-        return redirect(url_for('slice_of_life.review', display_id=invite['display_id']))
+        return redirect(url_for('slice_of_life.waiting_room'))
 
     # Ensure current user is the recipient
     if invite['recipient_id'] != current_uid:
@@ -899,7 +863,7 @@ def receiver_respond(invite_id):
             # Re-check for duplicates right before insert (race condition guard)
             recheck = fetch_one('sol_submissions', display_id=invite['display_id'], user_id=current_uid)
             if recheck:
-                return redirect(url_for('slice_of_life.review', display_id=invite['display_id']))
+                return redirect(url_for('slice_of_life.waiting_room'))
             
             story = request.form.get('story')
             image = request.files.get('image')
@@ -955,13 +919,13 @@ def receiver_respond(invite_id):
                 'user_id': invite['sender_id'],
                 'type': 'sol_accept',
                 'message': f"Your partner responded to your Slice of Life!",
-                'link': url_for('slice_of_life.review', display_id=display_id)
+                'link': url_for('slice_of_life.waiting_room')
             })
         except Exception as post_err:
             print(f"[SOL] Non-critical post-submission step failed for invite {invite_id}: {post_err}")
         
-        # Always redirect to review after successful submission
-        return redirect(url_for('slice_of_life.review', display_id=display_id))
+        # Redirect to waiting room — user enters review via "Review Now" button
+        return redirect(url_for('slice_of_life.waiting_room'))
     
     return render_template('slice_of_life/receiver_respond.html', 
                          invite=invite, 
