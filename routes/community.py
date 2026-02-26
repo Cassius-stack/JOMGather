@@ -4,6 +4,7 @@ Uses Supabase for database
 """
 
 from flask import Blueprint, render_template, request, jsonify, session
+from flask_socketio import emit
 from utils.supabase_db import get_supabase, fetch_all, fetch_one, insert, update, delete
 from utils.auth_middleware import login_required
 from datetime import datetime
@@ -44,84 +45,123 @@ def get_communities():
     try:
         user_id = get_current_user_id()
         supabase = get_supabase()
-        
+
         # Get communities user is a member of
         memberships = supabase.table('community_members').select('community_id').eq('user_id', user_id).execute()
         community_ids = [m['community_id'] for m in memberships.data]
-        
+
         # AUTO-JOIN MUSICLY: If user isn't in any communities, add them to Musicly automatically
-        if not community_ids:
+        musicly_id = None
+        try:
+            musicly = supabase.table('communities').select('community_id').eq('name', 'Musicly').execute()
+            if musicly.data:
+                musicly_id = musicly.data[0]['community_id']
+        except Exception:
+            pass
+
+        if not community_ids and musicly_id:
             try:
-                # Check if Musicly exists
-                musicly = supabase.table('communities').select('community_id').eq('name', 'Musicly').execute()
-                if musicly.data:
-                    musicly_id = musicly.data[0]['community_id']
-                    # Add user to Musicly
-                    supabase.table('community_members').insert({
-                        'community_id': musicly_id,
-                        'user_id': user_id,
-                        'joined_at': 'now()'
-                    }).execute()
-                    print(f"✅ Auto-joined user {user_id} to Musicly")
-                    # Add Musicly to their community list
-                    community_ids = [musicly_id]
-                else:
-                    print("⚠️ Musicly community not found. Please run the setup SQL.")
+                supabase.table('community_members').insert({
+                    'community_id': musicly_id,
+                    'user_id': user_id,
+                    'joined_at': 'now()'
+                }).execute()
+                print(f"✅ Auto-joined user {user_id} to Musicly")
+                community_ids = [musicly_id]
             except Exception as e:
                 print(f"⚠️ Error auto-joining Musicly: {e}")
-        
+        elif not community_ids:
+            print("⚠️ Musicly community not found. Please run the setup SQL.")
+
         if not community_ids:
             return jsonify([])
-        
+
+        # AUTO-PROMOTE: Give dev_ accounts admin access in Musicly
+        if musicly_id and musicly_id in community_ids:
+            try:
+                current_user = supabase.table('users').select('username').eq('user_id', user_id).execute()
+                if current_user.data:
+                    username = current_user.data[0].get('username', '')
+                    if username.startswith('dev_'):
+                        # Check if already an admin
+                        existing_role = supabase.table('community_roles').select('role_id').eq(
+                            'community_id', musicly_id
+                        ).eq('user_id', user_id).eq('role', 'admin').execute()
+                        if not existing_role.data:
+                            supabase.table('community_roles').insert({
+                                'community_id': musicly_id,
+                                'user_id': user_id,
+                                'role': 'admin'
+                            }).execute()
+                            print(f"✅ Promoted dev_ user {username} to admin in Musicly")
+            except Exception as e:
+                print(f"⚠️ Error promoting dev_ user: {e}")
+
         # Fetch community details
         communities = supabase.table('communities').select('*').in_('community_id', community_ids).execute()
-        
+
         result = []
         for comm in communities.data:
+            comm_id = comm['community_id']
+
             # Get member count
-            member_count = supabase.table('community_members').select('user_id', count='exact').eq('community_id', comm['community_id']).execute()
-            
+            member_count = supabase.table('community_members').select('user_id', count='exact').eq('community_id', comm_id).execute()
+
+            # Get ALL members with their usernames
+            member_rows = supabase.table('community_members').select('user_id').eq('community_id', comm_id).execute()
+            member_user_ids = [m['user_id'] for m in member_rows.data]
+
+            member_list = []
+            if member_user_ids:
+                users_data = supabase.table('users').select('user_id, username, user_type').in_('user_id', member_user_ids).execute()
+                for u in users_data.data:
+                    member_list.append({
+                        'id': u['user_id'],
+                        'username': u.get('username', f"User {u['user_id']}"),
+                        'userType': u.get('user_type', '')
+                    })
+
             # Get channels
-            channels = supabase.table('community_channels').select('*').eq('community_id', comm['community_id']).execute()
-            
+            channels = supabase.table('community_channels').select('*').eq('community_id', comm_id).execute()
+
             # Get roles (admins/moderators)
-            roles = supabase.table('community_roles').select('*').eq('community_id', comm['community_id']).execute()
+            roles = supabase.table('community_roles').select('*').eq('community_id', comm_id).execute()
             admins = [r['user_id'] for r in roles.data if r['role'] == 'admin']
             moderators = [r['user_id'] for r in roles.data if r['role'] == 'moderator']
-            
+
             # If no admin set, creator is admin
             if not admins and comm.get('created_by'):
                 admins = [comm['created_by']]
-            
+
             # Format channels with message data
             formatted_channels = []
             for ch in channels.data:
-                # Don't load messages here - they'll be loaded when channel is clicked
-                # This prevents the API from being too slow
                 formatted_channels.append({
                     'id': ch['channel_id'],
                     'name': ch['name'],
                     'members': member_count.count or 0,
                     'private': False,
                     'isAnnouncement': ch.get('is_announcement', False),
-                    'messages': []  # Empty array - messages loaded separately
+                    'messages': []  # Empty - messages loaded separately on click
                 })
-            
+
             result.append({
-                'id': comm['community_id'],
+                'id': comm_id,
                 'name': comm['name'],
                 'description': comm.get('description', ''),
                 'members': member_count.count or 0,
                 'admins': admins,
                 'moderators': moderators,
+                'memberList': member_list,
                 'channels': formatted_channels
             })
-        
+
         return jsonify(result)
     except Exception as e:
         print(f"Error fetching communities: {e}")
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500
+
 
 
 @community_bp.route('/api/communities', methods=['POST'])
@@ -444,7 +484,8 @@ def send_message(community_id, channel_id):
             'reply_to_id': data.get('replyTo')
         })
         
-        return jsonify({
+        # Broadcast message to all users in this channel via Socket.IO
+        message_data = {
             'id': new_message['message_id'],
             'userId': user_id,
             'userName': username,
@@ -452,8 +493,15 @@ def send_message(community_id, channel_id):
             'timestamp': new_message['created_at'],
             'reactions': {},
             'replyTo': new_message.get('reply_to_id'),
-            'edited': False
-        }), 201
+            'edited': False,
+            'channel_id': channel_id,
+            'community_id': community_id
+        }
+        
+        # Emit to all users in the community channel room
+        emit('new_community_message', message_data, room=f'community_{community_id}_channel_{channel_id}', namespace='/')
+        
+        return jsonify(message_data), 201
     except Exception as e:
         print(f"Error sending message: {e}")
         traceback.print_exc()

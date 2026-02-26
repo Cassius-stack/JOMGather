@@ -45,8 +45,8 @@ def upload_photo():
 
 @activities_bp.route('/boomerang')
 def boomerang():
-    """BOOMERang - Entry Transition."""
-    return render_template('activities/Boomerang/Transition.html')
+    """BOOMERang - Redirect to home/setup page."""
+    return redirect(url_for('activities.boomerang_home'))
 
 
 @activities_bp.route('/boomerang/home')

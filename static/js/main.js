@@ -187,9 +187,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
                         item.innerHTML = `
                             <a href="/profile/view/${user.id}" class="text-decoration-none d-flex align-items-center gap-3 flex-grow-1">
-                                <div style="width: 50px; height: 50px; background: #e0f2fe; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #1e3a5f; font-size: 1.2rem;">
-                                    <i class="bi bi-person-fill"></i>
-                                </div>
+                                ${user.profile_photo_url
+                                ? `<img src="${user.profile_photo_url}" alt="${user.username}" style="width:50px;height:50px;border-radius:50%;object-fit:cover;flex-shrink:0;">`
+                                : `<div style="width:50px;height:50px;background:#e0f2fe;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#1e3a5f;font-weight:700;font-size:1.2rem;flex-shrink:0;">${user.username.charAt(0).toUpperCase()}</div>`
+                            }
                                 <div class="flex-grow-1">
                                     <h6 class="mb-0 fw-bold" style="color: #1e3a5f;">${user.username}</h6>
                                     <small class="text-muted text-capitalize">${user.type}</small>
@@ -237,9 +238,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         item.innerHTML = `
             <a href="/profile/view/${user.id}" class="text-decoration-none d-flex align-items-center gap-3 flex-grow-1">
-                <div style="width: 40px; height: 40px; background: #e0f2fe; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #1e3a5f;">
-                    <i class="bi bi-person-fill"></i>
-                </div>
+                ${user.profile_photo_url
+                ? `<img src="${user.profile_photo_url}" alt="${user.username}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;flex-shrink:0;">`
+                : `<div style="width:40px;height:40px;background:#e0f2fe;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#1e3a5f;font-weight:700;font-size:1rem;flex-shrink:0;">${user.username.charAt(0).toUpperCase()}</div>`
+            }
                 <div class="flex-grow-1">
                     <h6 class="mb-0 fw-bold" style="color: #1e3a5f;">${user.username}</h6>
                     <small class="text-muted text-capitalize">${user.type}</small>
@@ -321,15 +323,13 @@ async function acceptFriendRequest(requesterId, btn) {
  * Handle friendship actions from the notification dropdown
  * @param {Event} event 
  * @param {string} action 'accept' or 'reject'
- * @param {string} message The notification message to parse user info
+ * @param {string} requesterId The requester's user ID (stored in notification link)
  * @param {HTMLElement} btn The button clicked
  */
-async function handleFriendRequest(event, action, message, btn) {
+async function handleFriendRequest(event, action, requesterId, btn) {
     event.preventDefault();
     event.stopPropagation(); // Keep dropdown open
 
-    // Parse username from message (e.g., "Jeremy sent you a friend request!")
-    const username = message.split(' ')[0];
     const endpoint = action === 'accept' ? '/social/api/friend-accept' : '/social/api/friend-reject';
 
     try {
@@ -340,35 +340,21 @@ async function handleFriendRequest(event, action, message, btn) {
 
         btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
 
-        // Find requester_id. This is tricky since it's not in the notification message usually.
-        // We'll search for the user by name first OR we could have included it in the notification.
-        // For now, let's search via API.
-        const searchRes = await fetch(`/social/api/search?q=${encodeURIComponent(username)}`);
-        const searchData = await searchRes.json();
-        const user = searchData.find(u => u.username === username);
-
-        if (!user) {
-            alert('Could not find user details');
-            buttons.forEach(b => b.disabled = false);
-            btn.innerHTML = action === 'accept' ? 'Accept' : 'Reject';
-            return;
-        }
-
         const res = await fetch(endpoint, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ requester_id: user.id })
+            body: JSON.stringify({ requester_id: parseInt(requesterId) })
         });
 
         if (res.ok) {
-            const item = btn.closest('.notification-item-container');
+            const item = btn.closest('.notif-item');
             if (action === 'accept') {
                 container.innerHTML = `<span class="text-success small"><i class="bi bi-check-circle-fill"></i> Friend Request Accepted</span>`;
             } else {
                 container.innerHTML = `<span class="text-muted small"><i class="bi bi-x-circle"></i> Request Ignored</span>`;
             }
 
-            // Optional: Remove item after a delay
+            // Remove item after a delay
             setTimeout(() => {
                 if (item) {
                     item.style.opacity = '0';
@@ -376,9 +362,15 @@ async function handleFriendRequest(event, action, message, btn) {
                 }
             }, 2000);
         } else {
-            alert(`Failed to ${action} request`);
-            buttons.forEach(b => b.disabled = false);
-            btn.innerHTML = action === 'accept' ? 'Accept' : 'Reject';
+            const data = await res.json().catch(() => ({}));
+            if (res.status === 404) {
+                // Request already handled — just clean up the UI
+                container.innerHTML = `<span class="text-muted small"><i class="bi bi-check-circle"></i> Already handled</span>`;
+            } else {
+                alert(`Failed to ${action} request`);
+                buttons.forEach(b => b.disabled = false);
+                btn.innerHTML = action === 'accept' ? 'Accept' : 'Reject';
+            }
         }
     } catch (err) {
         console.error(err);

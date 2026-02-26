@@ -762,7 +762,12 @@
                             src="{{ url_for('static', filename='img/backgrounds/office.svg') }}"></div>
                     <div class="effect-item" data-bg="beach" title="Beach"><img
                             src="{{ url_for('static', filename='img/backgrounds/beach.svg') }}"></div>
+                    <div class="effect-item" data-bg="custom" id="customBgBtn" title="Upload Custom">
+                        <i class="bi bi-upload"></i>
+                    </div>
                 </div>
+                <!-- Hidden file input for custom bg -->
+                <input type="file" id="customBgInput" accept="image/*" style="display:none;">
             </div>
         </div>
 
@@ -912,11 +917,49 @@
                 activeEffect = effect;
             } else if (bg !== undefined) {
                 // Handle BG
+                if (bg === 'custom') {
+                    // Trigger file picker instead of immediately selecting
+                    document.getElementById('customBgInput').click();
+                    return;
+                }
                 document.querySelectorAll('#bgGrid .effect-item').forEach(el => el.classList.remove('active'));
                 this.classList.add('active');
                 activeBg = bg;
             }
         });
+    });
+
+    // Custom background upload handler
+    document.getElementById('customBgInput').addEventListener('change', function (e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function (ev) {
+            // Create the custom background image
+            const img = new Image();
+            img.onload = function () {
+                assets.custom = img;
+                activeBg = 'custom';
+
+                // Update UI: highlight the custom button and show thumbnail
+                document.querySelectorAll('#bgGrid .effect-item').forEach(el => el.classList.remove('active'));
+                const customBtn = document.getElementById('customBgBtn');
+                customBtn.classList.add('active');
+                customBtn.innerHTML = '';
+                const thumb = document.createElement('img');
+                thumb.src = ev.target.result;
+                thumb.style.width = '100%';
+                thumb.style.height = '100%';
+                thumb.style.objectFit = 'cover';
+                thumb.style.borderRadius = '6px';
+                customBtn.appendChild(thumb);
+            };
+            img.src = ev.target.result;
+        };
+        reader.readAsDataURL(file);
+        // Reset so the same file can be re-selected
+        this.value = '';
     });
 
     // Processing Loop
@@ -1485,6 +1528,7 @@
     }
 
     window.addEventListener('beforeunload', cleanup);
+
     init();
 </script>
 {% endblock %}

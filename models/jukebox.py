@@ -47,58 +47,74 @@ def extract_song_info(message_text):
 def get_songs_from_channel(community_id, channel_name='song-recommendations', user_type_filter=None):
     """
     Get all song recommendations from a specific channel.
-    
+
     Args:
         community_id: ID of the community
         channel_name: Name of the channel (default: 'song-recommendations')
-        user_type_filter: Filter songs by submitter type ('youth' or 'senior'), None for all
-    
-    Returns list of song dicts with: id, title, artist, year, reason, userId, userName, userType, timestamp
+        user_type_filter: Filter songs by era:
+            'youth'  → songs released in 2000 or later
+            'senior' → songs released before 2000
+            None     → return all songs
+
+    Returns list of song dicts with: id, title, artist, year, reason, userId, userName, timestamp
     """
     supabase = get_supabase()
-    
+
     # Find the channel
     channel = supabase.table('community_channels').select('*').eq(
         'community_id', community_id
     ).ilike('name', f'%{channel_name}%').execute()
-    
+
     if not channel.data:
         return []
-    
+
     channel_id = channel.data[0]['channel_id']
-    
+
     # Get messages from the channel
     messages = supabase.table('community_messages').select('*').eq(
         'channel_id', channel_id
     ).order('created_at', desc=True).limit(100).execute()
-    
+
     songs = []
     for msg in messages.data:
         song_info = extract_song_info(msg['content'])
-        if song_info:
-            # Get user info including user type
-            user = fetch_one('users', 'user_id, username, user_type', user_id=msg['user_id'])
-            
-            if user:
-                user_type = user.get('user_type', '')
-                
-                # Apply filter if specified
-                if user_type_filter and user_type != user_type_filter:
-                    continue
-                
-                songs.append({
-                    'id': msg['message_id'],
-                    'title': song_info['title'],
-                    'artist': song_info.get('artist', 'Unknown'),
-                    'year': song_info.get('year', ''),
-                    'reason': song_info.get('reason', ''),
-                    'userId': msg['user_id'],
-                    'userName': user['username'],
-                    'userType': user_type,
-                    'timestamp': msg['created_at']
-                })
-    
+        if not song_info:
+            continue
+
+        # Determine the song's era based on year
+        year = song_info.get('year')
+        try:
+            year_int = int(year)
+        except (ValueError, TypeError):
+            year_int = None  # year is missing or not a number
+
+        # Apply era filter if specified
+        if user_type_filter == 'youth':
+            # Youth wheel: songs from 2000 onwards
+            if year_int is None or year_int < 2000:
+                continue
+        elif user_type_filter == 'senior':
+            # Senior wheel: songs before 2000
+            if year_int is None or year_int >= 2000:
+                continue
+
+        # Fetch sender username (no longer needed for filtering, just for display)
+        user = fetch_one('users', 'user_id, username', user_id=msg['user_id'])
+        user_name = user['username'] if user else 'Unknown'
+
+        songs.append({
+            'id': msg['message_id'],
+            'title': song_info['title'],
+            'artist': song_info.get('artist', 'Unknown'),
+            'year': year_int if year_int is not None else year,
+            'reason': song_info.get('reason', ''),
+            'userId': msg['user_id'],
+            'userName': user_name,
+            'timestamp': msg['created_at']
+        })
+
     return songs
+
 
 
 def save_song_rating(user_id, song_id, rating, community_id):
