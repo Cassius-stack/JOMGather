@@ -14,10 +14,21 @@
                 </h1>
                 <p style="font-size: 1.1rem; color: #6b7280;">Share your perspective on today's prompt</p>
             </div>
-            <a href="{{ url_for('slice_of_life.catalog') }}"
-                style="background: white; color: #1e3a5f; border: 2px solid #1e3a5f; border-radius: 25px; padding: 0.75rem 1.5rem; font-weight: 600; text-decoration: none; font-size: 1rem;">
-                <i class="bi bi-images me-2"></i>View Catalog
-            </a>
+            <div class="d-flex gap-2 flex-wrap">
+                {% if pending_sol_count > 0 %}
+                <a href="{{ url_for('slice_of_life.waiting_room') }}"
+                    style="background: linear-gradient(135deg, #1e3a5f, #2563eb); color: white; border: none; border-radius: 25px; padding: 0.75rem 1.5rem; font-weight: 600; text-decoration: none; font-size: 1rem; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); transition: all 0.2s;">
+                    <i class="bi bi-hourglass-split me-2"></i>Waiting Room
+                    <span
+                        style="background: rgba(255,255,255,0.25); padding: 2px 8px; border-radius: 12px; font-size: 0.8rem; margin-left: 6px;">{{
+                        pending_sol_count }}</span>
+                </a>
+                {% endif %}
+                <a href="{{ url_for('slice_of_life.catalog') }}"
+                    style="background: white; color: #1e3a5f; border: 2px solid #1e3a5f; border-radius: 25px; padding: 0.75rem 1.5rem; font-weight: 600; text-decoration: none; font-size: 1rem;">
+                    <i class="bi bi-images me-2"></i>View Catalog
+                </a>
+            </div>
         </div>
 
         <!-- Main Prompt Card -->

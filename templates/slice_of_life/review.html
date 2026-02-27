@@ -124,26 +124,58 @@
                         <!-- Review Input -->
                         {% if sub.user_id != current_user_id and not sub.comment and display.status == 'pending' %}
                         <div class="mt-4">
-                            <form method="POST" class="d-flex gap-2">
-                                <input type="text" name="comment" class="form-control rounded-pill"
-                                    placeholder="Comment... (Enter to share)" required>
-                                <button type="submit"
-                                    class="btn btn-primary rounded-circle d-flex align-items-center justify-content-center"
-                                    style="width: 40px; height: 40px; padding: 0;">
-                                    <i class="bi bi-arrow-right-short" style="font-size: 1.5rem;"></i>
-                                </button>
-                            </form>
-                            <small class="text-muted ms-2" style="font-size: 0.75rem;">Your partner needs your comment
-                                to publish.</small>
+                            <div
+                                style="background: linear-gradient(135deg, #f0f7ff 0%, #e8f4f8 100%); border-radius: 16px; padding: 20px; border: 1px solid rgba(37, 99, 235, 0.1);">
+                                <div class="d-flex align-items-center gap-2 mb-3">
+                                    <div
+                                        style="width: 28px; height: 28px; background: linear-gradient(135deg, #2563eb, #1e40af); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                        <i class="bi bi-chat-heart-fill" style="color: white; font-size: 0.7rem;"></i>
+                                    </div>
+                                    <span style="font-weight: 600; font-size: 0.85rem; color: #1e3a5f;">Share your
+                                        thoughts on {{ sub.username }}'s response</span>
+                                </div>
+                                <form method="POST">
+                                    <div style="background: white; border-radius: 12px; border: 2px solid #e2e8f0; overflow: hidden; transition: border-color 0.2s;"
+                                        onfocus="this.style.borderColor='#2563eb'"
+                                        onblur="this.style.borderColor='#e2e8f0'">
+                                        <textarea name="comment" rows="2" required
+                                            style="width: 100%; border: none; padding: 14px 16px; font-size: 0.95rem; resize: none; outline: none; font-family: inherit; color: #334155;"
+                                            placeholder="What do you think about this?"></textarea>
+                                        <div
+                                            style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #fafbfc; border-top: 1px solid #f1f5f9;">
+                                            <small style="color: #94a3b8; font-size: 0.75rem;"><i
+                                                    class="bi bi-lock-fill me-1"></i>Only visible to you two</small>
+                                            <button type="submit"
+                                                style="background: linear-gradient(135deg, #2563eb, #1e40af); color: white; border: none; border-radius: 20px; padding: 6px 18px; font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: transform 0.15s, box-shadow 0.15s;"
+                                                onmouseover="this.style.transform='scale(1.03)'; this.style.boxShadow='0 4px 12px rgba(37,99,235,0.3)'"
+                                                onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none'">
+                                                <i class="bi bi-send-fill me-1"></i>Share
+                                            </button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
                         </div>
                         {% endif %}
 
                         <!-- Showing your own comment on partner's card -->
                         {% if sub.user_id != current_user_id and sub.comment and display.status == 'pending' %}
-                        <div class="mt-4 p-3 bg-light rounded-3 border-start border-4 border-success">
-                            <small class="text-uppercase text-success fw-bold d-block mb-1"
-                                style="font-size: 0.7rem;">Your Comment</small>
-                            <p class="mb-0 fst-italic text-muted">"{{ sub.comment }}"</p>
+                        <div class="mt-4">
+                            <div
+                                style="background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%); border-radius: 16px; padding: 16px 20px; border: 1px solid rgba(22, 163, 74, 0.15); position: relative;">
+                                <div
+                                    style="position: absolute; top: -6px; left: 24px; width: 12px; height: 12px; background: #f0fdf4; border-left: 1px solid rgba(22,163,74,0.15); border-top: 1px solid rgba(22,163,74,0.15); transform: rotate(45deg);">
+                                </div>
+                                <div class="d-flex align-items-center gap-2 mb-2">
+                                    <i class="bi bi-check-circle-fill" style="color: #16a34a; font-size: 0.9rem;"></i>
+                                    <span
+                                        style="font-weight: 600; font-size: 0.78rem; color: #16a34a; text-transform: uppercase; letter-spacing: 0.5px;">Your
+                                        Comment</span>
+                                </div>
+                                <p
+                                    style="margin: 0; color: #334155; font-style: italic; font-size: 0.95rem; line-height: 1.5;">
+                                    &ldquo;{{ sub.comment }}&rdquo;</p>
+                            </div>
                         </div>
                         {% endif %}
 
@@ -151,15 +183,30 @@
                         {% if sub.user_id == current_user_id and display.status == 'pending' %}
                         <div class="mt-4">
                             {% if sub.comment %}
-                            <div class="p-3 bg-light rounded-3 border-start border-4 border-primary">
-                                <small class="text-uppercase text-primary fw-bold d-block mb-1"
-                                    style="font-size: 0.7rem;">Partner's Comment</small>
-                                <p class="mb-0 fst-italic text-muted">"{{ sub.comment }}"</p>
+                            <div
+                                style="background: linear-gradient(135deg, #eff6ff 0%, #eef2ff 100%); border-radius: 16px; padding: 16px 20px; border: 1px solid rgba(37, 99, 235, 0.12); position: relative;">
+                                <div
+                                    style="position: absolute; top: -6px; left: 24px; width: 12px; height: 12px; background: #eff6ff; border-left: 1px solid rgba(37,99,235,0.12); border-top: 1px solid rgba(37,99,235,0.12); transform: rotate(45deg);">
+                                </div>
+                                <div class="d-flex align-items-center gap-2 mb-2">
+                                    <i class="bi bi-chat-quote-fill" style="color: #2563eb; font-size: 0.9rem;"></i>
+                                    <span
+                                        style="font-weight: 600; font-size: 0.78rem; color: #2563eb; text-transform: uppercase; letter-spacing: 0.5px;">{{
+                                        partner.username }}'s Comment</span>
+                                </div>
+                                <p
+                                    style="margin: 0; color: #334155; font-style: italic; font-size: 0.95rem; line-height: 1.5;">
+                                    &ldquo;{{ sub.comment }}&rdquo;</p>
                             </div>
                             {% else %}
-                            <div class="text-muted small">
-                                <i class="bi bi-hourglass-split me-1"></i> Waiting for {{ partner.username }} to comment
-                                on your part...
+                            <div
+                                style="background: #f8fafc; border-radius: 12px; padding: 14px 18px; border: 1px dashed #cbd5e1;">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="spinner-grow spinner-grow-sm"
+                                        style="color: #94a3b8; width: 12px; height: 12px;" role="status"></div>
+                                    <span style="color: #64748b; font-size: 0.88rem;">Waiting for <strong>{{
+                                            partner.username }}</strong> to share their thoughts...</span>
+                                </div>
                             </div>
                             {% endif %}
                         </div>
@@ -172,52 +219,82 @@
 
         <!-- PUBLIC COMMENTS SECTION (Only after Publishing) -->
         {% if display.status == 'completed' %}
-        <div class="row justify-content-center">
-            <div class="col-md-8">
-                <div class="bg-white rounded-4 p-4 shadow-sm">
-                    <h5 class="fw-bold mb-4 d-flex align-items-center">
-                        <i class="bi bi-chat-left-text me-2 text-primary"></i>
-                        Public Comments
-                        <span class="badge bg-light text-muted ms-2">{{ comments|length }}</span>
-                    </h5>
+        <div class="mb-4">
+            <div
+                style="background: white; border-radius: 20px; padding: 28px 32px; box-shadow: 0 4px 24px rgba(0,0,0,0.06); border: 1px solid #f1f5f9;">
+                <!-- Section Header -->
+                <div class="d-flex align-items-center justify-content-between mb-4">
+                    <div class="d-flex align-items-center gap-3">
+                        <div
+                            style="width: 40px; height: 40px; background: linear-gradient(135deg, #eff6ff, #dbeafe); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                            <i class="bi bi-chat-left-text-fill" style="color: #2563eb; font-size: 1.1rem;"></i>
+                        </div>
+                        <div>
+                            <h5 style="font-weight: 700; margin: 0; color: #1e293b; font-size: 1.1rem;">Comments</h5>
+                            <small style="color: #94a3b8; font-size: 0.78rem;">{{ comments|length }} {{ 'comment' if
+                                comments|length == 1 else 'comments' }}</small>
+                        </div>
+                    </div>
+                </div>
 
-                    <!-- Comment List -->
-                    <div class="comment-feed mb-4" style="max-height: 400px; overflow-y: auto;">
-                        {% if comments %}
-                        {% for comm in comments %}
-                        <div class="d-flex gap-3 mb-3 pb-3 border-bottom border-light">
-                            <img src="{{ comm.profile_picture or 'https://ui-avatars.com/api/?name=' ~ comm.username ~ '&background=1e3a5f&color=fff&size=100&rounded=true&bold=true' }}"
-                                class="rounded-circle flex-shrink-0 border"
-                                style="width: 40px; height: 40px; object-fit: cover;">
-                            <div>
-                                <div class="d-flex align-items-center gap-2 mb-1">
-                                    <span class="fw-bold small">{{ comm.username }}</span>
-                                    <small class="text-muted" style="font-size: 0.7rem;">{{ comm.created_at[:16]
-                                        }}</small>
-                                </div>
-                                <p class="mb-0 text-dark" style="font-size: 0.95rem;">{{ comm.content }}</p>
+                <!-- Comment Input (top, like social media) -->
+                <form action="{{ url_for('slice_of_life.post_comment', display_id=display.display_id) }}" method="POST"
+                    class="mb-4">
+                    <div style="display: flex; gap: 12px; align-items: flex-start;">
+                        <div
+                            style="width: 38px; height: 38px; background: linear-gradient(135deg, #1e3a5f, #2563eb); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 0.85rem; flex-shrink: 0; margin-top: 4px;">
+                            {{ session.get('username', 'U')[0] | upper }}
+                        </div>
+                        <div style="flex: 1; background: #f8fafc; border-radius: 16px; border: 2px solid #e2e8f0; overflow: hidden; transition: border-color 0.2s, box-shadow 0.2s;"
+                            onfocusin="this.style.borderColor='#2563eb'; this.style.boxShadow='0 0 0 3px rgba(37,99,235,0.08)'"
+                            onfocusout="this.style.borderColor='#e2e8f0'; this.style.boxShadow='none'">
+                            <textarea name="content" rows="2" required
+                                style="width: 100%; border: none; padding: 12px 16px; font-size: 0.95rem; resize: none; outline: none; font-family: inherit; background: transparent; color: #334155;"
+                                placeholder="Share your thoughts on this memory..."></textarea>
+                            <div
+                                style="display: flex; justify-content: flex-end; padding: 6px 10px; background: rgba(241, 245, 249, 0.5);">
+                                <button type="submit"
+                                    style="background: linear-gradient(135deg, #2563eb, #1e40af); color: white; border: none; border-radius: 20px; padding: 6px 20px; font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: transform 0.15s;"
+                                    onmouseover="this.style.transform='translateY(-1px)'"
+                                    onmouseout="this.style.transform='translateY(0)'">
+                                    <i class="bi bi-send-fill me-1" style="font-size: 0.75rem;"></i>Post
+                                </button>
                             </div>
                         </div>
-                        {% endfor %}
-                        {% else %}
-                        <div class="text-center py-4 text-muted">
-                            <i class="bi bi-chat-dots fs-1 d-block mb-2 opacity-25"></i>
-                            No comments yet. Be the first to say something!
-                        </div>
-                        {% endif %}
                     </div>
+                </form>
 
-                    <!-- Post Comment Form -->
-                    <form action="{{ url_for('slice_of_life.post_comment', display_id=display.display_id) }}"
-                        method="POST">
-                        <div class="input-group shadow-sm rounded-pill overflow-hidden"
-                            style="border: 2px solid #e2e8f0;">
-                            <input type="text" name="content" class="form-control border-0 px-4"
-                                style="height: 50px; font-size: 1rem;" placeholder="Add a public comment..." required>
-                            <button class="btn btn-primary border-0 px-4" type="submit"
-                                style="font-weight: 600;">Post</button>
+                <!-- Comment Feed -->
+                <div style="max-height: 450px; overflow-y: auto;">
+                    {% if comments %}
+                    {% for comm in comments %}
+                    <div
+                        style="display: flex; gap: 12px; padding: 14px 0; {{ 'border-top: 1px solid #f1f5f9;' if not loop.first else '' }}">
+                        <img src="{{ comm.profile_picture or 'https://ui-avatars.com/api/?name=' ~ comm.username ~ '&background=1e3a5f&color=fff&size=100&rounded=true&bold=true' }}"
+                            style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover; flex-shrink: 0; border: 2px solid #f1f5f9;">
+                        <div style="flex: 1;">
+                            <div style="background: #f8fafc; border-radius: 14px; padding: 10px 14px;">
+                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 2px;">
+                                    <span style="font-weight: 700; font-size: 0.85rem; color: #1e293b;">{{ comm.username
+                                        }}</span>
+                                    <span style="color: #94a3b8; font-size: 0.7rem;">{{ comm.created_at[:10] }}</span>
+                                </div>
+                                <p style="margin: 0; color: #475569; font-size: 0.92rem; line-height: 1.5;">{{
+                                    comm.content }}</p>
+                            </div>
                         </div>
-                    </form>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <div style="text-align: center; padding: 32px 0;">
+                        <div
+                            style="width: 56px; height: 56px; background: #f1f5f9; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px;">
+                            <i class="bi bi-chat-dots" style="font-size: 1.4rem; color: #94a3b8;"></i>
+                        </div>
+                        <p style="color: #94a3b8; font-size: 0.95rem; margin: 0;">No comments yet. Be the first to share
+                            your thoughts!</p>
+                    </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -241,7 +318,7 @@
                 <p class="text-muted">Choose where to save your display. (+10 coins)</p>
                 <form method="POST" action="{{ url_for('slice_of_life.publish', display_id=display.display_id) }}">
                     <div class="form-check mb-3 p-3 bg-light rounded-3">
-                        <input class="form-check-input ms-0 me-3" type="checkbox" name="publish_public"
+                        <input class="form-check-input ms-0 me-3 publish-check" type="checkbox" name="publish_public"
                             id="publicCheck">
                         <label class="form-check-label fw-bold d-block" for="publicCheck">
                             Public Catalog
@@ -249,18 +326,36 @@
                         </label>
                     </div>
                     <div class="form-check mb-3 p-3 bg-light rounded-3">
-                        <input class="form-check-input ms-0 me-3" type="checkbox" name="publish_private"
+                        <input class="form-check-input ms-0 me-3 publish-check" type="checkbox" name="publish_private"
                             id="privateCheck">
                         <label class="form-check-label fw-bold d-block" for="privateCheck">
                             Private Collection
                             <small class="d-block fw-normal text-muted">Only you and your partner can see.</small>
                         </label>
                     </div>
-                    <button type="submit" class="btn btn-primary w-100 rounded-pill py-2">Confirm & Publish</button>
+                    <button type="submit" id="publishBtn" class="btn btn-primary w-100 rounded-pill py-2"
+                        disabled>Confirm & Publish</button>
+                    <p id="publishHint" class="text-center text-muted small mt-2 mb-0"><i
+                            class="bi bi-info-circle me-1"></i>Select at least one option above</p>
                 </form>
             </div>
         </div>
     </div>
 </div>
+<script>
+    (function () {
+        var checks = document.querySelectorAll('.publish-check');
+        var btn = document.getElementById('publishBtn');
+        var hint = document.getElementById('publishHint');
+        if (!btn || !hint) return;
+        function toggle() {
+            var any = false;
+            checks.forEach(function (c) { if (c.checked) any = true; });
+            btn.disabled = !any;
+            hint.style.display = any ? 'none' : 'block';
+        }
+        checks.forEach(function (c) { c.addEventListener('change', toggle); });
+    })();
+</script>
 
 {% endblock %}
