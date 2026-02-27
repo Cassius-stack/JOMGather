@@ -143,7 +143,7 @@ def spin_wheel():
 def rate_song():
     """
     Submit a rating for a song.
-    Also posts the rating to the community chat.
+    Posts the rating to the dedicated 'song-ratings' channel (not song-recommendations).
     """
     try:
         data = request.get_json()
@@ -164,24 +164,37 @@ def rate_song():
         # Save the rating
         save_song_rating(user_id, song_id, rating, community_id)
         
-        # Post rating to the song recommendations channel
         supabase = get_supabase()
         
-        # Find the song recommendations channel
-        channel = supabase.table('community_channels').select('*').eq(
+        # Find the dedicated 'song-ratings' channel
+        ratings_channel = supabase.table('community_channels').select('*').eq(
             'community_id', community_id
-        ).ilike('name', '%song%recommend%').execute()
+        ).ilike('name', '%song-rating%').execute()
         
-        if channel.data:
-            channel_id = channel.data[0]['channel_id']
-            
+        # If it doesn't exist, create it automatically
+        if not ratings_channel.data:
+            try:
+                new_chan = supabase.table('community_channels').insert({
+                    'community_id': community_id,
+                    'name': 'song-ratings',
+                    'is_announcement': False,
+                    'created_by': user_id
+                }).execute()
+                ratings_channel_id = new_chan.data[0]['channel_id'] if new_chan.data else None
+            except Exception as ce:
+                print(f"Warning: Could not create song-ratings channel: {ce}")
+                ratings_channel_id = None
+        else:
+            ratings_channel_id = ratings_channel.data[0]['channel_id']
+        
+        if ratings_channel_id:
             # Create star rating display
             stars = '⭐' * rating
             rating_message = f"🎵 {username} rated \"{song_title}\" {stars} ({rating}/5) via Generational Jukebox!"
             
-            # Post to chat
+            # Post rating to the song-ratings channel
             supabase.table('community_messages').insert({
-                'channel_id': channel_id,
+                'channel_id': ratings_channel_id,
                 'user_id': user_id,
                 'content': rating_message,
                 'created_at': datetime.now().isoformat()
@@ -189,7 +202,7 @@ def rate_song():
         
         return jsonify({
             'success': True,
-            'message': 'Rating submitted and posted to chat!'
+            'message': 'Rating submitted and posted to song-ratings channel!'
         })
         
     except Exception as e:

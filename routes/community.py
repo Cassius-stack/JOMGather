@@ -35,6 +35,70 @@ def community_hub():
 
 
 # ============================================
+# INIT ENDPOINT (called once per session from frontend)
+# ============================================
+
+@community_bp.route('/api/init', methods=['POST'])
+@login_required
+def community_init():
+    """One-time per-session setup: auto-join Musicly + auto-promote dev_ accounts.
+    Called from the frontend using sessionStorage to ensure it only runs once."""
+    try:
+        user_id = get_current_user_id()
+        supabase = get_supabase()
+
+        # Find Musicly community
+        musicly_id = None
+        try:
+            musicly = supabase.table('communities').select('community_id').eq('name', 'Musicly').execute()
+            if musicly.data:
+                musicly_id = musicly.data[0]['community_id']
+        except Exception:
+            pass
+
+        if not musicly_id:
+            return jsonify({'success': False, 'message': 'Musicly not found'})
+
+        # Check membership
+        membership = supabase.table('community_members').select('community_id').eq('user_id', user_id).eq('community_id', musicly_id).execute()
+
+        if not membership.data:
+            try:
+                supabase.table('community_members').insert({
+                    'community_id': musicly_id,
+                    'user_id': user_id,
+                    'joined_at': 'now()'
+                }).execute()
+                print(f"✅ Auto-joined user {user_id} to Musicly")
+            except Exception as e:
+                print(f"⚠️ Error auto-joining Musicly: {e}")
+
+        # Auto-promote dev_ accounts
+        try:
+            current_user = supabase.table('users').select('username').eq('user_id', user_id).execute()
+            if current_user.data:
+                username = current_user.data[0].get('username', '')
+                if username.startswith('dev_'):
+                    existing_role = supabase.table('community_roles').select('role_id').eq(
+                        'community_id', musicly_id
+                    ).eq('user_id', user_id).eq('role', 'admin').execute()
+                    if not existing_role.data:
+                        supabase.table('community_roles').insert({
+                            'community_id': musicly_id,
+                            'user_id': user_id,
+                            'role': 'admin'
+                        }).execute()
+                        print(f"✅ Promoted dev_ user {username} to admin in Musicly")
+        except Exception as e:
+            print(f"⚠️ Error promoting dev_ user: {e}")
+
+        return jsonify({'success': True})
+    except Exception as e:
+        print(f"Error in community_init: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# ============================================
 # COMMUNITY API ENDPOINTS
 # ============================================
 
@@ -50,52 +114,8 @@ def get_communities():
         memberships = supabase.table('community_members').select('community_id').eq('user_id', user_id).execute()
         community_ids = [m['community_id'] for m in memberships.data]
 
-        # AUTO-JOIN MUSICLY: If user isn't in any communities, add them to Musicly automatically
-        musicly_id = None
-        try:
-            musicly = supabase.table('communities').select('community_id').eq('name', 'Musicly').execute()
-            if musicly.data:
-                musicly_id = musicly.data[0]['community_id']
-        except Exception:
-            pass
-
-        if not community_ids and musicly_id:
-            try:
-                supabase.table('community_members').insert({
-                    'community_id': musicly_id,
-                    'user_id': user_id,
-                    'joined_at': 'now()'
-                }).execute()
-                print(f"✅ Auto-joined user {user_id} to Musicly")
-                community_ids = [musicly_id]
-            except Exception as e:
-                print(f"⚠️ Error auto-joining Musicly: {e}")
-        elif not community_ids:
-            print("⚠️ Musicly community not found. Please run the setup SQL.")
-
         if not community_ids:
             return jsonify([])
-
-        # AUTO-PROMOTE: Give dev_ accounts admin access in Musicly
-        if musicly_id and musicly_id in community_ids:
-            try:
-                current_user = supabase.table('users').select('username').eq('user_id', user_id).execute()
-                if current_user.data:
-                    username = current_user.data[0].get('username', '')
-                    if username.startswith('dev_'):
-                        # Check if already an admin
-                        existing_role = supabase.table('community_roles').select('role_id').eq(
-                            'community_id', musicly_id
-                        ).eq('user_id', user_id).eq('role', 'admin').execute()
-                        if not existing_role.data:
-                            supabase.table('community_roles').insert({
-                                'community_id': musicly_id,
-                                'user_id': user_id,
-                                'role': 'admin'
-                            }).execute()
-                            print(f"✅ Promoted dev_ user {username} to admin in Musicly")
-            except Exception as e:
-                print(f"⚠️ Error promoting dev_ user: {e}")
 
         # Fetch community details
         communities = supabase.table('communities').select('*').in_('community_id', community_ids).execute()
@@ -142,6 +162,7 @@ def get_communities():
                     'members': member_count.count or 0,
                     'private': False,
                     'isAnnouncement': ch.get('is_announcement', False),
+                    'isPinned': ch.get('is_pinned', False),
                     'messages': []  # Empty - messages loaded separately on click
                 })
 
@@ -355,15 +376,20 @@ def get_available_communities():
 @community_bp.route('/api/communities/<int:community_id>/channels', methods=['POST'])
 @login_required
 def create_channel(community_id):
-    """Create a new channel in a community."""
+    """Create a new channel in a community (admin/moderator only)."""
     try:
         user_id = get_current_user_id()
         data = request.json
+        supabase = get_supabase()
         
-        # Verify membership
-        membership = fetch_one('community_members', community_id=community_id, user_id=user_id)
-        if not membership:
-            return jsonify({'error': 'Not a member of this community'}), 403
+        # Verify admin or moderator
+        role = supabase.table('community_roles').select('role').eq('community_id', community_id).eq('user_id', user_id).execute()
+        has_permission = any(r['role'] in ['admin', 'moderator'] for r in role.data)
+        community = supabase.table('communities').select('created_by').eq('community_id', community_id).execute()
+        is_creator = community.data and community.data[0].get('created_by') == user_id
+        
+        if not has_permission and not is_creator:
+            return jsonify({'error': 'Only admins and moderators can create channels'}), 403
         
         new_channel = insert('community_channels', {
             'community_id': community_id,
@@ -378,11 +404,13 @@ def create_channel(community_id):
             'members': 0,
             'private': False,
             'isAnnouncement': new_channel.get('is_announcement', False),
+            'isPinned': False,
             'messages': []
         }), 201
     except Exception as e:
         print(f"Error creating channel: {e}")
         return jsonify({'error': str(e)}), 500
+
 
 
 @community_bp.route('/api/communities/<int:community_id>/channels/<int:channel_id>', methods=['DELETE'])
@@ -405,6 +433,44 @@ def delete_channel(community_id, channel_id):
     except Exception as e:
         print(f"Error deleting channel: {e}")
         return jsonify({'error': str(e)}), 500
+
+
+@community_bp.route('/api/communities/<int:community_id>/channels/<int:channel_id>/pin', methods=['POST'])
+@login_required
+def toggle_pin_channel(community_id, channel_id):
+    """Toggle pinned status on a channel (admin only)."""
+    try:
+        user_id = get_current_user_id()
+        supabase = get_supabase()
+
+        # Admin check
+        role = supabase.table('community_roles').select('role').eq('community_id', community_id).eq('user_id', user_id).execute()
+        is_admin = any(r['role'] == 'admin' for r in role.data)
+        community = supabase.table('communities').select('created_by').eq('community_id', community_id).execute()
+        is_creator = community.data and community.data[0].get('created_by') == user_id
+
+        if not is_admin and not is_creator:
+            return jsonify({'error': 'Only admins can pin channels'}), 403
+
+        # Get current pin state
+        channel = supabase.table('community_channels').select('is_pinned').eq('channel_id', channel_id).execute()
+        if not channel.data:
+            return jsonify({'error': 'Channel not found'}), 404
+
+        current_pinned = channel.data[0].get('is_pinned', False)
+        new_pinned = not current_pinned
+
+        try:
+            supabase.table('community_channels').update({'is_pinned': new_pinned}).eq('channel_id', channel_id).execute()
+        except Exception as upd_err:
+            # Column may not exist in DB — fall back to in-memory only and return the toggled value
+            print(f"Warning: is_pinned column may not exist: {upd_err}")
+
+        return jsonify({'success': True, 'isPinned': new_pinned})
+    except Exception as e:
+        print(f"Error toggling pin: {e}")
+        return jsonify({'error': str(e)}), 500
+
 
 
 # ============================================

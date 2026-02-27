@@ -1572,7 +1572,16 @@ Why they like this song: `;
     }
 
     function renderChannels(community) {
-        const channels = community.channels || [];
+        const rawChannels = community.channels || [];
+
+        // Sort: announcements first, then pinned, then everything else (alphabetically within each group)
+        const channels = [...rawChannels].sort((a, b) => {
+            const rankA = a.isAnnouncement ? 0 : a.isPinned ? 1 : 2;
+            const rankB = b.isAnnouncement ? 0 : b.isPinned ? 1 : 2;
+            if (rankA !== rankB) return rankA - rankB;
+            return a.name.localeCompare(b.name);
+        });
+
         return `
             <ul class="channel-list">
                 ${channels.map(ch => `
@@ -1583,13 +1592,15 @@ Why they like this song: `;
                         </div>
                         <span class="channel-name">${ch.name}</span>
                         ${ch.isAnnouncement ? '<span class="channel-badge">Announcement</span>' : ''}
+                        ${ch.isPinned && !ch.isAnnouncement ? '<span style="margin-left:auto; font-size:13px;" title="Pinned">📌</span>' : ''}
                     </li>
                 `).join('')}
             </ul>
+            ${isUserAdmin() ? `
             <div class="add-item-btn" onclick="state.showAddChannel = true; render();">
                 <div class="add-icon"><i class="bi bi-plus-lg"></i></div>
                 <span>Create Channel</span>
-            </div>
+            </div>` : ''}
         `;
     }
 
@@ -1916,11 +1927,18 @@ Why they like this song: `;
     }
 
     function renderChannelSettingsModal(channel) {
+        const community = getActiveCommunity();
+        const isPinned = !!channel.isPinned;
         return `
             <div class="community-modal-overlay" onclick="state.showChannelSettings = false; render();">
                 <div class="community-modal" onclick="event.stopPropagation();">
                     <h3>Channel Settings</h3>
                     <p style="color: #666; margin-bottom: 20px;">Managing: <strong>#${channel.name}</strong></p>
+                    ${isUserAdmin() ? `
+                    <button onclick="togglePinChannel(${community.id}, ${channel.id});"
+                            class="btn-secondary" style="width: 100%; margin-bottom: 12px;">
+                        ${isPinned ? '📌 Unpin Channel' : '📌 Pin Channel'}
+                    </button>` : ''}
                     <button class="btn-danger" style="width: 100%; margin-bottom: 12px;" onclick="deleteChannel();">
                         <i class="bi bi-trash"></i> Delete Channel
                     </button>
@@ -1965,6 +1983,28 @@ Why they like this song: `;
                 </div>
             </div>
         `;
+    }
+
+    // ─── Toggle Pin Channel (Admin only) ─────────────────────────────────────
+    async function togglePinChannel(communityId, channelId) {
+        try {
+            const res = await fetch(`${API_BASE}/communities/${communityId}/channels/${channelId}/pin`, { method: 'POST' });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                // Update channel isPinned in local state
+                const community = state.communities.find(c => c.id === communityId);
+                const channel = community?.channels?.find(ch => ch.id === channelId);
+                if (channel) channel.isPinned = data.isPinned;
+                state.showChannelSettings = false;
+                render();
+                showToast(data.isPinned ? '📌 Channel pinned!' : '📌 Channel unpinned!', 'success');
+            } else {
+                showToast(data.error || 'Failed to toggle pin.', 'error');
+            }
+        } catch (err) {
+            console.error('Error toggling pin:', err);
+            showToast('Something went wrong.', 'error');
+        }
     }
 
     // Initialize
@@ -2057,7 +2097,15 @@ Why they like this song: `;
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-        fetchCommunities();
+        // Run one-time init (auto-join Musicly, auto-promote dev_ users) once per browser session
+        if (!sessionStorage.getItem('communityInitDone')) {
+            fetch(`${API_BASE}/init`, { method: 'POST' })
+                .then(() => { sessionStorage.setItem('communityInitDone', '1'); })
+                .catch(err => console.warn('Init error (non-critical):', err))
+                .finally(() => fetchCommunities());
+        } else {
+            fetchCommunities();
+        }
     });
 </script>
 
@@ -2170,6 +2218,74 @@ Why they like this song: `;
     .upp-btn-view:hover {
         background: #dcfce7;
     }
+
+    /* ── Responsive / Mobile Layout ──────────────────── */
+    @media (max-width: 768px) {
+        .community-wrapper {
+            height: calc(100vh - 80px);
+            border-radius: 0;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .community-wrapper > nav.sidebar {
+            display: none;
+        }
+
+        .community-list-pane,
+        .channel-list-pane {
+            width: 100%;
+            border-right: none;
+            max-height: 200px;
+            overflow-y: auto;
+            flex-shrink: 0;
+        }
+
+        .channel-list-pane {
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        #community-app {
+            flex-direction: column !important;
+            overflow-y: auto;
+        }
+
+        .community-modal {
+            width: 95vw !important;
+            max-width: 95vw;
+        }
+
+        .community-message {
+            max-width: 92%;
+        }
+
+        .community-list-header h1 {
+            font-size: 18px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .community-chat-header {
+            padding: 10px 12px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .community-messages {
+            padding: 10px;
+            gap: 8px;
+        }
+
+        .community-input-area {
+            padding: 10px 12px;
+            gap: 6px;
+        }
+
+        .community-message .msg-bubble {
+            font-size: 13px;
+        }
+    }
+
 </style>
 
 {% endblock %}
