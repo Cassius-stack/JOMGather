@@ -73,12 +73,12 @@ def community_init():
             except Exception as e:
                 print(f"⚠️ Error auto-joining Musicly: {e}")
 
-        # Auto-promote dev_ accounts
+        # Auto-promote dev_ accounts (checks email, not username)
         try:
-            current_user = supabase.table('users').select('username').eq('user_id', user_id).execute()
+            current_user = supabase.table('users').select('email, username').eq('user_id', user_id).execute()
             if current_user.data:
-                username = current_user.data[0].get('username', '')
-                if username.startswith('dev_'):
+                email = current_user.data[0].get('email', '')
+                if email.startswith('dev_'):
                     existing_role = supabase.table('community_roles').select('role_id').eq(
                         'community_id', musicly_id
                     ).eq('user_id', user_id).eq('role', 'admin').execute()
@@ -88,7 +88,7 @@ def community_init():
                             'user_id': user_id,
                             'role': 'admin'
                         }).execute()
-                        print(f"✅ Promoted dev_ user {username} to admin in Musicly")
+                        print(f"✅ Promoted dev_ user {email} to admin in Musicly")
         except Exception as e:
             print(f"⚠️ Error promoting dev_ user: {e}")
 
@@ -174,6 +174,7 @@ def get_communities():
                 'admins': admins,
                 'moderators': moderators,
                 'memberList': member_list,
+                'createdBy': comm.get('created_by'),
                 'channels': formatted_channels
             })
 
@@ -693,6 +694,11 @@ def manage_roles(community_id):
         if not is_admin and community.get('created_by') != user_id:
             return jsonify({'error': 'Unauthorized'}), 403
         
+        # Protect community creator — their admin role can never be removed
+        creator_id = community.get('created_by')
+        if target_user_id == creator_id and role == 'admin':
+            return jsonify({'error': 'Cannot remove admin from the community creator'}), 403
+
         # Check if role exists
         existing = fetch_one('community_roles', community_id=community_id, user_id=target_user_id, role=role)
         
