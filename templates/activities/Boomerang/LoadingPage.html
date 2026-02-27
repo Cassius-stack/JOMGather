@@ -358,6 +358,7 @@
     let socket = null;
     let audioEnabled = true;
     let videoEnabled = true;
+    let isBanned = false;
 
     // Initialize
     async function init() {
@@ -403,7 +404,16 @@
 
         socket.on('boomerang_queue_status', (data) => {
             console.log('[BOOMERang] Queue status:', data);
-            document.getElementById('statusMessage').textContent = 'Searching for a partner...';
+            if (data.status === 'banned') {
+                isBanned = true;
+                document.getElementById('statusMessage').textContent = data.reason;
+                document.getElementById('statusMessage').style.color = '#ff416c';
+                const pulse = document.querySelector('.loading-pulse');
+                if (pulse) pulse.style.display = 'none';
+                socket.disconnect();
+            } else {
+                document.getElementById('statusMessage').textContent = 'Searching for a partner...';
+            }
         });
 
         socket.on('boomerang_matched', (data) => {
@@ -417,6 +427,7 @@
             sessionStorage.setItem('boomerang_partner_id', data.partner_id || '');
             sessionStorage.setItem('boomerang_initiator', data.is_initiator);
             sessionStorage.setItem('boomerang_user', userName);
+            sessionStorage.setItem('boomerang_shared_interests', JSON.stringify(data.shared_interests || []));
 
             // Redirect to meetup page after short delay
             setTimeout(() => {
@@ -426,8 +437,10 @@
 
         socket.on('disconnect', () => {
             console.log('[BOOMERang] Disconnected');
-            document.getElementById('statusMessage').textContent = 'Connection lost. Reconnecting...';
-            document.getElementById('statusMessage').style.color = '#ff416c';
+            if (!isBanned) {
+                document.getElementById('statusMessage').textContent = 'Connection lost. Reconnecting...';
+                document.getElementById('statusMessage').style.color = '#ff416c';
+            }
         });
     }
 

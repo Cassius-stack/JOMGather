@@ -620,6 +620,95 @@
         pointer-events: none;
     }
 
+    /* Shared Interests Popup */
+    .shared-interests-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.7);
+        z-index: 10000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        animation: fadeIn 0.3s ease;
+    }
+
+    .shared-interests-overlay.show {
+        display: flex;
+    }
+
+    .shared-interests-popup {
+        background: rgba(30, 30, 45, 0.95);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 24px;
+        padding: 40px;
+        text-align: center;
+        max-width: 450px;
+        width: 90%;
+        box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6);
+        animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        position: relative;
+    }
+
+    .shared-interests-popup .close-popup-btn {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        background: none;
+        border: none;
+        color: rgba(255, 255, 255, 0.5);
+        font-size: 1.2rem;
+        cursor: pointer;
+        transition: color 0.2s;
+        padding: 5px;
+    }
+
+    .shared-interests-popup .close-popup-btn:hover {
+        color: white;
+    }
+
+    .shared-interests-popup h3 {
+        color: white;
+        font-size: 1.6rem;
+        margin-bottom: 12px;
+        background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
+        background-clip: text;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .shared-interests-popup p {
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 1.05rem;
+        line-height: 1.5;
+        margin-bottom: 20px;
+    }
+
+    .shared-interests-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        justify-content: center;
+        margin-bottom: 25px;
+    }
+
+    .interest-pill {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        padding: 8px 18px;
+        border-radius: 50px;
+        font-size: 0.95rem;
+        color: white;
+        transition: all 0.2s;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    }
+
+    .interest-pill:hover {
+        background: rgba(0, 242, 254, 0.2);
+        border-color: #00f2fe;
+        transform: translateY(-2px);
+    }
+
     @keyframes popIn {
         from {
             transform: scale(0.8);
@@ -640,6 +729,32 @@
         to {
             opacity: 1;
         }
+    }
+
+    .report-btn-corner {
+        position: absolute;
+        top: 15px;
+        left: 15px;
+        background: rgba(255, 65, 108, 0.8);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: white;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        z-index: 10;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        backdrop-filter: blur(4px);
+    }
+
+    .report-btn-corner:hover {
+        background: #ff416c;
+        transform: scale(1.1);
+        box-shadow: 0 6px 15px rgba(255, 65, 108, 0.5);
     }
 
     @media (max-width: 1000px) {
@@ -693,6 +808,9 @@
 
         <div class="video-grid">
             <div class="video-frame">
+                <button id="reportBtn" title="Report User" class="report-btn-corner">
+                    <i class="bi bi-flag-fill"></i>
+                </button>
                 <video id="remoteVideo" autoplay playsinline></video>
                 <div class="video-placeholder" id="remotePlaceholder">
                     <div
@@ -827,6 +945,22 @@
                 <i class="bi bi-check-lg"></i> Accept
             </button>
         </div>
+    </div>
+</div>
+
+<!-- Shared Interests Popup (Ad-style) -->
+<div class="shared-interests-overlay" id="sharedInterestsOverlay">
+    <div class="shared-interests-popup">
+        <button class="close-popup-btn" onclick="closeSharedInterests()"><i class="bi bi-x-lg"></i></button>
+        <h3 id="sharedInterestsTitle">It's a Match!</h3>
+        <p>You and your partner both like:</p>
+        <div class="shared-interests-tags" id="sharedInterestsTagsContainer">
+            <!-- Pills get injected here -->
+        </div>
+        <button class="popup-btn accept" onclick="closeSharedInterests()"
+            style="width: 100%; margin-top: 15px; justify-content: center;">
+            Awesome!
+        </button>
     </div>
 </div>
 
@@ -1268,6 +1402,13 @@
             }
         });
 
+        // Global ban received
+        socket.on('boomerang_global_ban', (data) => {
+            alert(data.reason || "You have been suspended.");
+            cleanup();
+            window.location.href = "{{ url_for('auth.logout') }}";
+        });
+
         socket.on('disconnect', () => {
             showStatus('Connection lost', 'error');
         });
@@ -1527,8 +1668,62 @@
         }
     }
 
+    document.getElementById('reportBtn').addEventListener('click', function () {
+        if (confirm("Are you sure you want to report this user? This will end the call immediately.")) {
+            if (socket) {
+                socket.emit('boomerang_report_user', { reason: 'Inappropriate behavior' });
+            }
+            cleanup();
+            window.location.href = "{{ url_for('activities.boomerang') }}";
+        }
+    });
+
     window.addEventListener('beforeunload', cleanup);
 
     init();
+
+    // Display shared interests toast shortly after joining
+    setTimeout(() => {
+        try {
+            const sharedInterestsStr = sessionStorage.getItem('boomerang_shared_interests');
+            if (sharedInterestsStr && partnerName) {
+                const shared = JSON.parse(sharedInterestsStr);
+                if (shared && shared.length > 0) {
+                    document.getElementById('sharedInterestsTitle').textContent = `Meet ${partnerName}!`;
+
+                    // Inject pills
+                    const tagsContainer = document.getElementById('sharedInterestsTagsContainer');
+                    tagsContainer.innerHTML = ''; // clear any placeholders
+
+                    // Show up to 5 interests cleanly
+                    const displayList = shared.slice(0, 5);
+                    displayList.forEach(interest => {
+                        const pill = document.createElement('div');
+                        pill.className = 'interest-pill';
+                        pill.textContent = interest;
+                        tagsContainer.appendChild(pill);
+                    });
+
+                    if (shared.length > 5) {
+                        const morePill = document.createElement('div');
+                        morePill.className = 'interest-pill';
+                        morePill.textContent = `+${shared.length - 5} more`;
+                        morePill.style.background = 'rgba(255, 255, 255, 0.05)';
+                        tagsContainer.appendChild(morePill);
+                    }
+
+                    document.getElementById('sharedInterestsOverlay').classList.add('show');
+                }
+            }
+        } catch (e) {
+            console.error(e);
+        }
+    }, 4000);
+
+    function closeSharedInterests() {
+        const overlay = document.getElementById('sharedInterestsOverlay');
+        if (overlay) overlay.classList.remove('show');
+    }
+
 </script>
 {% endblock %}

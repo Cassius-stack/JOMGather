@@ -192,6 +192,20 @@ def login():
                 if internal_user and internal_user.get('is_deleted'):
                      flash("This account has been deleted.", "danger")
                      return render_template('auth/login.html')
+                     
+                if internal_user:
+                    # Check for active ban
+                    banned_until_str = internal_user.get('boomerang_banned_until')
+                    if banned_until_str:
+                        import datetime
+                        try:
+                            banned_until = datetime.datetime.fromisoformat(banned_until_str.replace('Z', '+00:00'))
+                            if datetime.datetime.now(datetime.timezone.utc) < banned_until:
+                                session.clear()
+                                flash("Your account is temporarily suspended due to multiple community reports.", "danger")
+                                return render_template('auth/login.html')
+                        except Exception as e:
+                            print(f"Error parsing ban date at dev login: {e}")
                 if internal_user and check_password_hash(internal_user.get('password_hash', ''), password):
                      session['user_id'] = internal_user['user_id']
                      session['username'] = internal_user['username']
@@ -227,6 +241,19 @@ def login():
                 return render_template('auth/login.html')
             
             if internal_user:
+                # Check for active ban
+                banned_until_str = internal_user.get('boomerang_banned_until')
+                if banned_until_str:
+                    import datetime
+                    try:
+                        banned_until = datetime.datetime.fromisoformat(banned_until_str.replace('Z', '+00:00'))
+                        if datetime.datetime.now(datetime.timezone.utc) < banned_until:
+                            session.clear()
+                            flash("Your account is temporarily suspended due to multiple community reports.", "danger")
+                            return render_template('auth/login.html')
+                    except Exception as e:
+                        print(f"Error parsing ban date at login: {e}")
+                
                 # 3. Create Session with Internal ID
                 session.clear() # Clear any old session data first
                 session['user_id'] = internal_user['user_id']
