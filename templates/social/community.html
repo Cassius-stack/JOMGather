@@ -982,6 +982,10 @@
         showReactionPicker: null
     };
 
+    // Cache mapping message ID -> text, used by delete handler to avoid
+    // embedding multiline text into inline onclick attributes.
+    const _msgCache = {};
+
     const emojis = ['👍', '❤️', '🎉'];
 
     // API Functions
@@ -1395,11 +1399,13 @@ Why they like this song: `;
     }
 
     async function deleteMessage(messageId) {
-        // This function is now just a wrapper that shows the modal
+        // Look up text from cache first (handles multiline song messages),
+        // then fall back to state, then a generic placeholder.
         const community = state.communities.find(c => c.id === state.activeCommunityId);
         const channel = community?.channels?.find(ch => ch.id === state.activeChannelId);
         const message = channel?.messages?.find(m => m.id === messageId);
-        showDeleteModal(messageId, message?.text || 'this message');
+        const text = _msgCache[messageId] || message?.text || 'this message';
+        showDeleteModal(messageId, text);
     }
 
 
@@ -1783,19 +1789,23 @@ Why they like this song: `;
             ? `onclick="showUserPopup(${msg.userId}, '${escapedUserName}', event); event.stopPropagation();"`
             : '';
 
+        // Cache message text so delete handler can look it up safely
+        // (avoids embedding multiline/special-char text into inline onclick)
+        _msgCache[msg.id] = msg.text;
+
         // Message action buttons (edit/delete) - positioned to the left of message
         const actionsHtml = isOwn ? `
             <div class="message-actions">
                 <button class="message-action-btn edit" title="Edit message" onclick="startEditMessage(${msg.id})">
                     <i class="bi bi-pencil"></i>
                 </button>
-                <button class="message-action-btn delete" title="Delete message" onclick="showDeleteModal(${msg.id}, '${msg.text.replace(/'/g, "\\'")}')">
+                <button class="message-action-btn delete" title="Delete message" onclick="deleteMessage(${msg.id})">
                     <i class="bi bi-trash"></i>
                 </button>
             </div>
         ` : (canDelete ? `
             <div class="message-actions">
-                <button class="message-action-btn delete" title="Delete message" onclick="showDeleteModal(${msg.id}, '${msg.text.replace(/'/g, "\\'")}')">
+                <button class="message-action-btn delete" title="Delete message" onclick="deleteMessage(${msg.id})">
                     <i class="bi bi-trash"></i>
                 </button>
             </div>
@@ -2228,7 +2238,7 @@ Why they like this song: `;
             overflow-y: auto;
         }
 
-        .community-wrapper > nav.sidebar {
+        .community-wrapper>nav.sidebar {
             display: none;
         }
 
@@ -2285,7 +2295,6 @@ Why they like this song: `;
             font-size: 13px;
         }
     }
-
 </style>
 
 {% endblock %}
