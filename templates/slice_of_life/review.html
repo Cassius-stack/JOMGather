@@ -318,7 +318,7 @@
                 <p class="text-muted">Choose where to save your display. (+10 coins)</p>
                 <form method="POST" action="{{ url_for('slice_of_life.publish', display_id=display.display_id) }}">
                     <div class="form-check mb-3 p-3 bg-light rounded-3">
-                        <input class="form-check-input ms-0 me-3" type="checkbox" name="publish_public"
+                        <input class="form-check-input ms-0 me-3 publish-check" type="checkbox" name="publish_public"
                             id="publicCheck">
                         <label class="form-check-label fw-bold d-block" for="publicCheck">
                             Public Catalog
@@ -326,18 +326,36 @@
                         </label>
                     </div>
                     <div class="form-check mb-3 p-3 bg-light rounded-3">
-                        <input class="form-check-input ms-0 me-3" type="checkbox" name="publish_private"
+                        <input class="form-check-input ms-0 me-3 publish-check" type="checkbox" name="publish_private"
                             id="privateCheck">
                         <label class="form-check-label fw-bold d-block" for="privateCheck">
                             Private Collection
                             <small class="d-block fw-normal text-muted">Only you and your partner can see.</small>
                         </label>
                     </div>
-                    <button type="submit" class="btn btn-primary w-100 rounded-pill py-2">Confirm & Publish</button>
+                    <button type="submit" id="publishBtn" class="btn btn-primary w-100 rounded-pill py-2"
+                        disabled>Confirm & Publish</button>
+                    <p id="publishHint" class="text-center text-muted small mt-2 mb-0"><i
+                            class="bi bi-info-circle me-1"></i>Select at least one option above</p>
                 </form>
             </div>
         </div>
     </div>
 </div>
+<script>
+    (function () {
+        var checks = document.querySelectorAll('.publish-check');
+        var btn = document.getElementById('publishBtn');
+        var hint = document.getElementById('publishHint');
+        if (!btn || !hint) return;
+        function toggle() {
+            var any = false;
+            checks.forEach(function (c) { if (c.checked) any = true; });
+            btn.disabled = !any;
+            hint.style.display = any ? 'none' : 'block';
+        }
+        checks.forEach(function (c) { c.addEventListener('change', toggle); });
+    })();
+</script>
 
 {% endblock %}
