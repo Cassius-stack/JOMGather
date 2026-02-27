@@ -32,13 +32,70 @@ def register_boomerang_events(socketio):
         user_name = data.get('name', 'Anonymous')
         user_id = data.get('user_id')
 
-        
+        # Check for active ban
+        if user_id:
+            try:
+                from utils.supabase_db import fetch_one
+                user_record = fetch_one('users', 'boomerang_banned_until', user_id=user_id)
+                if user_record and user_record.get('boomerang_banned_until'):
+                    banned_until_str = user_record['boomerang_banned_until']
+                    try:
+                        banned_until = datetime.datetime.fromisoformat(banned_until_str.replace('Z', '+00:00'))
+                        if datetime.datetime.now(datetime.timezone.utc) < banned_until:
+                            # User is currently banned
+                            print(f"[BOOMERang] Blocked banned user {user_name} ({sid}) from joining queue.")
+                            emit('boomerang_queue_status', {
+                                'status': 'banned',
+                                'reason': f"You are banned from BOOMERang until {banned_until.strftime('%b %d, %Y')} due to multiple reports."
+                            })
+                            return
+                    except Exception as e:
+                        print(f"[BOOMERang] Error parsing ban date: {e}")
+            except Exception as e:
+                print(f"[BOOMERang] Error checking ban status: {e}")
+
         print(f"[BOOMERang] {user_name} ({sid}) joining queue")
+        
+        # Fetch user's hobbies and skills for matchmaking
+        user_interests = set()
+        if user_id:
+            try:
+                from utils.supabase_db import fetch_one
+                profile_record = fetch_one('users', 'hobbies,skills', user_id=user_id)
+                if profile_record:
+                    hobbies = profile_record.get('hobbies') or []
+                    skills = profile_record.get('skills') or []
+                    # Combine into lowercased set for easy intersection
+                    user_interests = set(str(item).lower() for item in hobbies + skills)
+            except Exception as e:
+                print(f"[BOOMERang] Error fetching interests for {user_id}: {e}")
         
         # Check if there's someone waiting to be matched
         if boomerang_queue:
-            # Get the first waiting user
-            partner_sid, partner_info = next(iter(boomerang_queue.items()))
+            best_match_sid = None
+            best_match_info = None
+            best_shared_interests = []
+            max_intersection_size = -1
+            
+            # Find the best match
+            for q_sid, q_info in boomerang_queue.items():
+                q_interests = q_info.get('interests', set())
+                # Calculate shared interests (intersection)
+                shared = user_interests.intersection(q_interests)
+                
+                if len(shared) > max_intersection_size:
+                    max_intersection_size = len(shared)
+                    best_match_sid = q_sid
+                    best_match_info = q_info
+                    best_shared_interests = list(shared)
+            
+            # Use the best match found (or the first one evaluated if none had overlap, as max_intersection_size will be >= 0)
+            partner_sid = best_match_sid
+            partner_info = best_match_info
+            
+            # Format shared interests nicely (capitalize words)
+            formatted_shared_interests = [s.title() for s in best_shared_interests]
+            
             del boomerang_queue[partner_sid]
             
             # Create a room for them
@@ -60,7 +117,7 @@ def register_boomerang_events(socketio):
             join_room(room_id, sid=sid)
             join_room(room_id, sid=partner_sid)
             
-            print(f"[BOOMERang] Matched! {user_name} with {partner_info['name']} in room {room_id}")
+            print(f"[BOOMERang] Matched! {user_name} with {partner_info['name']} in room {room_id}. Shared: {formatted_shared_interests}")
             
             # Notify both users they're matched
             # User 1 (the one already waiting) is the initiator
@@ -68,7 +125,8 @@ def register_boomerang_events(socketio):
                 'room_id': room_id,
                 'partner_name': user_name,
                 'partner_id': user_id,
-                'is_initiator': True
+                'is_initiator': True,
+                'shared_interests': formatted_shared_interests
             }, room=partner_sid)
             
             # User 2 (the one who just joined) waits for offer
@@ -76,14 +134,16 @@ def register_boomerang_events(socketio):
                 'room_id': room_id,
                 'partner_name': partner_info['name'],
                 'partner_id': partner_info.get('user_id'),
-                'is_initiator': False
+                'is_initiator': False,
+                'shared_interests': formatted_shared_interests
             }, room=sid)
         else:
             # Add to queue
             boomerang_queue[sid] = {
                 'name': user_name,
                 'user_id': user_id,
-                'sid': sid
+                'sid': sid,
+                'interests': user_interests
             }
             print(f"[BOOMERang] {user_name} added to queue. Queue size: {len(boomerang_queue)}")
             emit('boomerang_queue_status', {'status': 'waiting', 'position': len(boomerang_queue)})
@@ -200,6 +260,53 @@ def register_boomerang_events(socketio):
                 'accepted': data.get('accepted', False),
                 'from_name': data.get('from_name', 'Partner')
             }, room=room_id, include_self=False)
+
+    @socketio.on('boomerang_report_user')
+    def handle_report_user(data):
+        """Handle user reporting their partner."""
+        sid = request.sid
+        room_id = user_room_map.get(sid)
+        
+        if room_id and room_id in room_metadata:
+            meta = room_metadata[room_id]
+            users_dict = meta.get('users', {})
+            
+            # Find the partner's sid and user_id by looking for the other SID in the room
+            partner_sid = next((s for s in users_dict if s != sid), None)
+            
+            if partner_sid:
+                partner_id = users_dict[partner_sid]
+                
+                try:
+                    # Fetch partner's current reports count
+                    from utils.supabase_db import fetch_one, update
+                    partner_record = fetch_one('users', 'reports', user_id=partner_id)
+                    current_reports = partner_record.get('reports', 0) if partner_record else 0
+                    
+                    new_reports = current_reports + 1
+                    
+                    if new_reports >= 3:
+                        # Ban for 1 day
+                        banned_until = (datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=1)).isoformat()
+                        update('users', {
+                            'reports': 0,
+                            'boomerang_banned_until': banned_until
+                        }, user_id=partner_id)
+                        print(f"[BOOMERang] User {partner_id} banned globally until {banned_until} due to 3 reports.")
+                        
+                        # Emit a targeted socket event to force logout on the partner's client
+                        emit('boomerang_global_ban', {'reason': 'You have been suspended for 24 hours due to multiple community reports.'}, room=partner_sid)
+                    else:
+                        # Increment reports
+                        update('users', {'reports': new_reports}, user_id=partner_id)
+                        print(f"[BOOMERang] User {users_dict.get(sid)} reported {partner_id}. Total reports: {new_reports}")
+                    
+                except Exception as e:
+                    print(f"[BOOMERang] Error processing report: {e}")
+                    
+            # We don't need to manually disconnect them here because the frontend
+            # calls `cleanup()` immediately after emitting this event, which 
+            # triggers `boomerang_end_call`.
     
     @socketio.on('boomerang_end_call')
     def handle_end_call():
