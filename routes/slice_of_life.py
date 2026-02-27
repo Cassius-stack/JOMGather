@@ -508,6 +508,11 @@ def publish(display_id):
     publish_public = request.form.get('publish_public') == 'on'
     publish_private = request.form.get('publish_private') == 'on'
     
+    # Guard: at least one visibility option must be selected
+    if not publish_public and not publish_private:
+        flash('Please select at least one visibility option (Public or Private).', 'warning')
+        return redirect(url_for('slice_of_life.review', display_id=display_id))
+    
     # 0. Generate AI Title (Poetic summary of thoughts)
     submissions = fetch_all('sol_submissions', display_id=display_id) or []
     thoughts = [s['thought'] for s in submissions if s['thought']]
